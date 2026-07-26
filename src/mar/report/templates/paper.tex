@@ -1,0 +1,62 @@
+% !TEX program = lualatex
+% 自動生成: mar.report.latex — 手で編集した場合は再生成で上書きされる
+\documentclass[paper=a4,fontsize=10.5pt,jafontsize=10.5pt]{jlreq}
+
+\usepackage{luatexja}
+\usepackage[haranoaji]{luatexja-preset}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[margin=25mm]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  frame=single,
+  showstringspaces=false,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  captionpos=b,
+}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{定理}[section]
+\newtheorem{proposition}[theorem]{命題}
+\newtheorem{lemma}[theorem]{補題}
+\newtheorem{corollary}[theorem]{系}
+\newtheorem{conjecture}[theorem]{予想}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{定義}
+\newtheorem{example}[theorem]{例}
+\newtheorem{remark}[theorem]{注意}
+
+\renewcommand{\proofname}{証明}
+
+\title{{{TITLE}}}
+\author{{{AUTHOR}}}
+\date{{{DATE}}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+{{ABSTRACT}}
+\end{abstract}
+
+\noindent\textbf{キーワード:} {{KEYWORDS}}
+
+{{BODY}}
+
+\section*{再現性}
+{{REPRODUCIBILITY}}
+
+\begin{thebibliography}{99}
+{{BIBLIOGRAPHY}}
+\end{thebibliography}
+
+\end{document}

@@ -1,0 +1,150 @@
+"""CLI: 探索 → 独立検証 → 日本語論文 (PDF) のパイプライン.
+
+使い方::
+
+    python -m mar list
+    python -m mar survey  p0001_xxx
+    python -m mar search  p0001_xxx --budget 120 --seed 0
+    python -m mar verify  p0001_xxx          # 証明書 JSON だけを見る
+    python -m mar paper   p0001_xxx
+    python -m mar run     p0001_xxx          # search → verify → paper
+    python -m mar verify --all               # 全証明書の再検査
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+import time
+from pathlib import Path
+
+from .certificate import Certificate
+from .problem import REPO_ROOT, iter_problem_modules, load
+
+CERT_DIR = REPO_ROOT / "data" / "certificates"
+
+
+def cert_path(problem_id: str) -> Path:
+    return CERT_DIR / f"{problem_id}.json"
+
+
+def cmd_list(_: argparse.Namespace) -> int:
+    for pid in iter_problem_modules():
+        p = load(pid)
+        status = "証明書あり" if cert_path(pid).exists() else "未探索"
+        print(f"{pid:36s} {status:8s} {p.title}")
+    return 0
+
+
+def cmd_survey(args: argparse.Namespace) -> int:
+    p = load(args.problem_id)
+    s = p.survey
+    print(f"# {p.title}\n")
+    print(f"主張: {s.statement}\n")
+    print(f"未解決と確認した日: {s.open_as_of}")
+    if s.caveats:
+        print(f"留意点: {s.caveats}")
+    print("根拠:")
+    for r in s.evidence:
+        print(f"  - [{r.key}] {r.text} {r.url}")
+    if not s.evidence:
+        print("  (なし) — 先行研究ゲート未通過。探索してはならない。")
+        return 1
+    return 0
+
+
+def cmd_search(args: argparse.Namespace) -> int:
+    p = load(args.problem_id)
+    if not p.survey.evidence:
+        print("先行研究ゲート未通過のため探索を中止する。", file=sys.stderr)
+        return 1
+    t0 = time.time()
+    cert = p.search(budget_seconds=args.budget, seed=args.seed)
+    dt = time.time() - t0
+    if cert is None:
+        print(f"探索は証明書を返さなかった ({dt:.1f} 秒)。")
+        return 2
+    path = cert.save(cert_path(p.problem_id))
+    print(f"証明書を保存: {path} (digest={cert.digest()}, {dt:.1f} 秒)")
+    return 0
+
+
+def cmd_verify(args: argparse.Namespace) -> int:
+    targets = iter_problem_modules() if args.all else [args.problem_id]
+    failed = 0
+    for pid in targets:
+        path = cert_path(pid)
+        if not path.exists():
+            if args.all:
+                continue
+            print(f"証明書がない: {path}", file=sys.stderr)
+            return 1
+        cert = Certificate.load(path)
+        if cert.problem_id != pid:
+            print(f"[FAIL] {pid}: 証明書の problem_id 不一致", file=sys.stderr)
+            failed += 1
+            continue
+        report = load(pid).verify(cert)
+        print(f"# {pid}  digest={cert.digest()}")
+        print(f"  主張: {cert.claim}")
+        print(report.render())
+        failed += 0 if report.ok else 1
+    return 1 if failed else 0
+
+
+def cmd_paper(args: argparse.Namespace) -> int:
+    from .report.latex import make_paper
+    p = load(args.problem_id)
+    path = cert_path(p.problem_id)
+    if not path.exists():
+        print("証明書がない。先に search を実行する。", file=sys.stderr)
+        return 1
+    cert = Certificate.load(path)
+    report = p.verify(cert)
+    if not report.ok:
+        print("検証に失敗した証明書は論文化しない。\n" + report.render(), file=sys.stderr)
+        return 1
+    pdf = make_paper(p, cert)
+    print(f"PDF: {pdf}")
+    return 0
+
+
+def cmd_run(args: argparse.Namespace) -> int:
+    for step in (cmd_search, cmd_verify, cmd_paper):
+        rc = step(args)
+        if rc != 0:
+            return rc
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(prog="mar", description=__doc__)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    sub.add_parser("list").set_defaults(func=cmd_list)
+
+    for name, func in (("survey", cmd_survey), ("paper", cmd_paper)):
+        sp = sub.add_parser(name)
+        sp.add_argument("problem_id")
+        sp.set_defaults(func=func)
+
+    for name, func in (("search", cmd_search), ("run", cmd_run)):
+        sp = sub.add_parser(name)
+        sp.add_argument("problem_id")
+        sp.add_argument("--budget", type=float, default=60.0)
+        sp.add_argument("--seed", type=int, default=0)
+        sp.set_defaults(func=func, all=False)
+
+    sp = sub.add_parser("verify")
+    sp.add_argument("problem_id", nargs="?")
+    sp.add_argument("--all", action="store_true")
+    sp.set_defaults(func=cmd_verify)
+
+    args = ap.parse_args(argv)
+    if args.cmd == "verify" and not args.all and not args.problem_id:
+        ap.error("verify には problem_id か --all が必要")
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

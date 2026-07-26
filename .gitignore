@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+papers/**/*.aux
+papers/**/*.log
+papers/**/*.out
+papers/**/*.toc
+papers/**/preview/
+data/scratch/
