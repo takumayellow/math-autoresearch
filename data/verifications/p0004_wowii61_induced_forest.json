@@ -1,0 +1,47 @@
+{
+  "certificate_digest": "3fff050678ad5827",
+  "checks": [
+    {
+      "detail": "0 件",
+      "name": "反例リストは空",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証人ファイルの SHA-256 と長さが証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "13402242 個すべてで F が森を誘導し |F| >= R + ceil(diam/3)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "走査したグラフ数が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "列挙個数が検証器の持つ公表値 (OEIS A001349 / A000055 / A002851 / A006820-A006822) と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "等号 6854 個を厳密に再計算し、残り全部で |F| >= 右辺 + 1 (全族で分類が閉じた)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証明書の合計 (論文の見出し数) が族ごとの集計と一致",
+      "passed": true
+    }
+  ],
+  "ok": true,
+  "platform": "Windows 11 (build 26200)",
+  "problem_id": "p0004_wowii61_induced_forest",
+  "python": "3.10.11",
+  "seconds": 1516.1,
+  "verified_at": "2026-07-26T14:24:49+00:00",
+  "verifier_hash": "b299437129430151"
+}

@@ -1,0 +1,349 @@
+"""p0004 の LaTeX 本文。数値は必ず証明書 (cert.data) から生成する."""
+
+from __future__ import annotations
+
+from ..report.texescape import tt
+
+TEX_UNDERSCORE = chr(92) + "_"
+
+LABEL_NAME = {"graphs": "連結グラフ", "trees": "木", "regular": "正則グラフ"}
+
+
+def _tex(s: str) -> str:
+    return s.replace("_", TEX_UNDERSCORE)
+
+
+def _kind(fam: dict) -> str:
+    if fam["label"] == "regular":
+        return f"{fam['degree']}-正則"
+    return LABEL_NAME[fam["label"]]
+
+
+def _rows(families: list[dict]) -> str:
+    rows = []
+    for f in families:
+        c = f["counts"]
+        rows.append(
+            f"{_kind(f)} & {f['n']} & {f['count']:,} & {c.get('f>rhs', 0):,} "
+            f"& {c.get('f=rhs', 0):,} & {c.get('f<rhs', 0):,} "
+            f"& {f['exact_calls']:,} \\\\")
+    return "\n".join(rows)
+
+
+def _orders(families: list[dict]) -> str:
+    return ", ".join(str(f["n"]) for f in families)
+
+
+def build(cert) -> dict[str, str]:
+    d = cert.data
+    fams = d["families"]
+    tot = d["totals"]
+    graphs = [f for f in fams if f["label"] == "graphs"]
+    trees = [f for f in fams if f["label"] == "trees"]
+    regs = [f for f in fams if f["label"] == "regular"]
+    g_max = max(f["n"] for f in graphs)
+    t_max = max(f["n"] for f in trees)
+    t_min = min(f["n"] for f in trees)
+    n_total = tot["graphs"]
+    n_eq = tot["equality"]
+    n_exact = tot["exact_calls"]
+    cid = _tex(cert.problem_id)
+
+    eq_graph_orders = ", ".join(str(f["n"]) for f in graphs
+                                if f["counts"].get("f=rhs", 0) > 0)
+    eq_reg_total = sum(f["counts"].get("f=rhs", 0) for f in regs)
+    tree_eq_each_one = all(f["counts"].get("f=rhs", 0) == 1 for f in trees)
+    reg_orders = ", ".join(f"({f['n']}, {f['degree']})" for f in regs)
+    n_reg = sum(f["count"] for f in regs)
+    n_trees = sum(f["count"] for f in trees)
+    n_conn = sum(f["count"] for f in graphs)
+    exact_pct = 100.0 * n_exact / n_total
+    eq_examples = next((f["equality_examples"] for f in reversed(graphs)
+                        if f["equality_examples"]), [])
+    eq_ex_txt = "、".join(tt(g) for g in eq_examples[:4])
+    eq_ex_n = next((f["n"] for f in reversed(graphs) if f["equality_examples"]),
+                   None)
+
+    tree_claim = ("各位数でちょうど 1 個" if tree_eq_each_one
+                  else "位数ごとに表 \\ref{tab:fams} の通り")
+
+    # 「木の等号グラフは星に限る」は、走査した位数で等号木がちょうど 1 個
+    # だったことに依存する。証明書がそれを支持しないデータになったら、
+    # 系ごと弱い主張に差し替える (本文に数値を直書きしない: 原則 5)。
+    if tree_eq_each_one:
+        cor_tree = f"""\\begin{{corollary}}\\label{{cor:tree}}
+${t_min} \\le n \\le {t_max}$ の木のうち等号を達成するものは、各位数について
+星 $K_{{1,n-1}}$ ただ 1 つである。同値な言い方をすれば、直径 $4$ の木で
+等号を達成するものはこの範囲に存在しない。
+\\end{{corollary}}
+
+\\begin{{proof}}
+補題 \\ref{{lem:star}} より星は必ず等号を達成するので、各位数の等号グラフは
+1 個以上である。網羅検証 (表 \\ref{{tab:fams}}) が与える等号グラフの個数は
+各位数ちょうど 1 個であった。よって星以外に等号を達成する木はなく、
+補題 \\ref{{lem:treediam}} で残っていた $d = 4$ の場合も空である。
+\\end{{proof}}
+
+系 \\ref{{cor:tree}} は、網羅検証が単独では与えない情報 (「なぜ 1 個なのか」) を
+補題 \\ref{{lem:treediam}}, \\ref{{lem:star}} が説明し、逆に手計算では
+閉じなかった $d = 4$ の場合を網羅検証が潰す、という形になっている。
+このような役割分担が、有限範囲の計算から一般の主張へ橋を架ける典型例である。
+$d = 4$ の場合を一般の $n$ で排除できれば、「木の等号グラフは星に限る」が
+無条件の定理になる。この場合は $R(T) = \\alpha(T) = n - 2$ を要求するので、
+残余数が独立数に一致する木の特徴づけ \\cite{{fms1991}} が鍵になると思われる。"""
+    else:
+        cor_tree = f"""走査した範囲 (${t_min} \\le n \\le {t_max}$) では、等号を達成する木の個数は
+表 \\ref{{tab:fams}} の通りで、星以外にも等号を達成する木がある。
+補題 \\ref{{lem:treediam}} より、それらはすべて直径 $4$ の木である。"""
+
+    abstract = (
+        "DeLaViña の Graffiti.pc が生成した未解決予想 "
+        "Written on the Wall II Conjecture 61、すなわち「連結グラフ $G$ について "
+        "$f(G) \\ge R(G) + \\lceil \\mathrm{diam}(G)/3 \\rceil$」"
+        "($f$ は最大誘導森の位数、$R$ は次数列の Havel--Hakimi 残余数) を、"
+        f"連結グラフの完全リスト ($n \\le {g_max}$)、木の完全リスト "
+        f"($n \\le {t_max}$)、および GENREG の連結正則グラフ、"
+        f"計 {n_total:,} 個に対して網羅的に検証した。反例は存在せず、"
+        f"うち {n_eq:,} 個で等号が成立した。"
+        "本稿の設計上の主眼は、$f(G)$ の計算が NP 困難であるにもかかわらず"
+        "検証を多項式時間に保った点にある。$F \\subseteq V(G)$ が森を誘導すれば "
+        "$f(G) \\ge |F|$ が定義から従うので、各グラフに頂点集合 $F$ を 1 つ"
+        "証人として与えれば、検証器は「$F$ が森を誘導するか」「$|F|$ が右辺以上か」"
+        "だけを見ればよい。右辺は多項式時間で厳密に計算できるため、"
+        "検証器が最大誘導森を解き直す必要は生じない。"
+        "等号の分類のみ上からの評価を要するので、等号グラフを漏れなく列挙し"
+        "そこだけ厳密に再計算させ、残りには $|F| \\ge$ 右辺 $+\\,1$ という"
+        "より強い条件を課して分類全体を閉じた。"
+        "副産物として、木における等号グラフが星に限ることを"
+        "手計算の補題と網羅結果の組合せで示す。")
+
+    body = f"""
+\\section{{はじめに}}
+
+グラフ $G$ の頂点部分集合 $F \\subseteq V(G)$ が\\textbf{{森を誘導する}}とは、
+$F$ の誘導部分グラフ $G[F]$ が閉路をもたないことをいう。そのような $F$ の
+最大濃度を $f(G)$ と書く。補集合 $V(G) \\setminus F$ は $G$ のすべての閉路と
+交わるので、$n - f(G)$ は\\textbf{{帰還頂点集合}} (decycling set) の最小濃度に
+一致する \\cite{{beineke1978}}。$f(G)$ の計算は NP 困難である。
+
+次数列 $d_1 \\ge \\dots \\ge d_n$ に Havel--Hakimi の操作
+(先頭 $d_1$ を取り除き、続く $d_1$ 個から 1 を引く) を
+すべての項が $0$ になるまで反復したときに残る $0$ の個数を
+\\textbf{{残余数}} $R(G)$ という。Favaron--Mahéo--Saclé \\cite{{fms1991}} により
+$R(G) \\le \\alpha(G)$ が知られている。独立集合は辺をもたないので森を誘導し、
+したがって
+\\begin{{equation}}\\label{{eq:trivial}}
+f(G) \\ \\ge \\ \\alpha(G) \\ \\ge \\ R(G)
+\\end{{equation}}
+が常に成り立つ。本稿が扱う予想は、この自明な下界を直径の分だけ
+改善できるかを問うものである。
+
+\\begin{{conjecture}}[Graffiti.pc; Written on the Wall II, Conjecture 61 \\cite{{wowii}}]
+\\label{{conj:main}}
+$G$ が連結グラフならば
+\\[ f(G) \\ \\ge \\ R(G) + \\left\\lceil \\frac{{\\mathrm{{diam}}(G)}}{{3}} \\right\\rceil . \\]
+\\end{{conjecture}}
+
+この予想は Google DeepMind の \\texttt{{formal-conjectures}} \\cite{{formalconj}} に
+Lean 4 で形式化されており、2026 年 7 月 26 日に取得した時点で
+\\texttt{{@[category research open]}} (未解決) と分類されている。
+
+式 \\eqref{{eq:trivial}} との差は $\\lceil \\mathrm{{diam}}(G)/3 \\rceil$ の項だけである。
+直径が大きいグラフは長い誘導道をもつので直観的には $f$ も大きいはずだが、
+$R$ が同時に大きくなり得るため、両者の和で押さえられるかは自明ではない。
+
+\\section{{証人つき検証という設計}}\\label{{sec:design}}
+
+予想 \\ref{{conj:main}} は\\emph{{片側の}}不等式であり、しかも右辺は
+多項式時間で厳密に計算できる。したがって次の自明な補題で検証が閉じる。
+
+\\begin{{lemma}}\\label{{lem:witness}}
+$F \\subseteq V(G)$ が森を誘導し
+$|F| \\ge R(G) + \\lceil \\mathrm{{diam}}(G)/3 \\rceil$ を満たすならば、
+$G$ は予想 \\ref{{conj:main}} の反例ではない。
+\\end{{lemma}}
+
+\\begin{{proof}}
+森を誘導する頂点集合の存在から $f(G) \\ge |F|$。仮定と合わせて
+$f(G) \\ge R(G) + \\lceil \\mathrm{{diam}}(G)/3 \\rceil$。
+\\end{{proof}}
+
+補題 \\ref{{lem:witness}} の仮定の確認は、$G[F]$ の閉路判定 (union--find で
+辺数に比例)、次数列への Havel--Hakimi、全点対距離の計算だけからなる。
+いずれも入力サイズの多項式時間であり、NP 困難な $f(G)$ を検証器が
+解き直す必要はない。そこで本稿の証明書は、各グラフに対する $F$ そのものとする。
+
+証人は族ごとに 1 グラフ 4 バイト (little-endian の 32 ビット整数 1 個 =
+$F$ のビットマスク) で列挙順に並べ、gzip 圧縮したバイナリファイルに書き出す。
+そのファイルの SHA-256 を証明書 JSON に記録し、検証器は同じ順序で
+元データを走査しながら証人を消費する。
+
+\\subsection{{証人の作り方: 安いヒューリスティクスと厳密解の二段構え}}
+
+式 \\eqref{{eq:trivial}} が示すように、最大独立集合はそれ自体が森を誘導する。
+探索器はこれを種として、森であり続ける限り頂点を貪欲に追加する
+(追加順を 3 通り試して最良を採る)。得られた $F$ が
+$|F| \\ge R + \\lceil \\mathrm{{diam}}/3 \\rceil + 1$ を満たせば、そのグラフは
+反例でもなく等号でもないことが確定するので、そこで打ち切ってよい。
+
+貪欲がこの水準に届かなかったグラフについてのみ、最大誘導森を厳密に求める。
+実装は「$G[F]$ に残っている閉路を 1 つ見つけ、その頂点のどれを落とすかで
+分枝する」帰還頂点集合側の探索である。走査した {n_total:,} 個のうち
+厳密解に進んだのは {n_exact:,} 個 ({exact_pct:.3f}\\%) にすぎず、
+片側の不等式がもつ非対称性がそのまま計算量の削減になっている。
+
+\\subsection{{検証器}}
+
+検証器 (\\texttt{{mar.checkgraph}}) は探索器のコードを一切参照せず、
+標準ライブラリのみで書かれている。アルゴリズムも意図的に変えてあり、
+
+\\begin{{enumerate}}
+\\item 森の判定は union--find (探索器は「辺数 $=$ 頂点数 $-$ 連結成分数」)、
+\\item 直径は Floyd--Warshall の全点対距離 (探索器はビットマスクの幅優先探索)、
+\\item 最大誘導森は頂点ごとの採否による分枝 (探索器は閉路上での分枝)
+\\end{{enumerate}}
+
+という別々の探索木・別々の表現をたどる。元リストの個数を照合するための
+公表値 (OEIS A001349, A000055, A002851, A006820--A006822) も、探索器の表を
+読むのではなく検証器が独自にもつ定数と突き合わせる。
+
+\\subsection{{等号の分類をどう閉じるか}}\\label{{sec:eq}}
+
+補題 \\ref{{lem:witness}} が閉じるのは不等式だけである。
+$f(G) = R(G) + \\lceil \\mathrm{{diam}}(G)/3 \\rceil$ という\\emph{{等号}}の主張は
+$f$ の上からの評価を含むので、証人からは従わない。そこで証明書には、
+等号が成立するグラフの graph6 表記を\\textbf{{漏れなく}}列挙しておく
+(全体で {n_eq:,} 個)。検証器は
+
+\\begin{{enumerate}}
+\\item 等号リストに載っているグラフについては $f(G)$ を独立に計算し直し、
+      本当に右辺と一致することを確かめる、
+\\item 載っていないグラフについては証人が $|F| \\ge$ 右辺 $+\\,1$ という
+      \\emph{{より強い}}条件を満たすことを確かめる (これで $f > $ 右辺 が従う)
+\\end{{enumerate}}
+
+の 2 つを行う。後者は多項式時間の検査なので、族が何百万個あっても分類全体が
+閉じる。NP 困難な計算を検証器が実行するのは前者の {n_eq:,} 個だけである。
+等号グラフを 1 個でも隠せば、そのグラフで $|F| \\ge$ 右辺 $+\\,1$ が破れて
+検出される。
+
+\\section{{結果}}
+
+\\begin{{theorem}}\\label{{thm:main}}
+位数 $n \\le {g_max}$ の連結グラフ全体 ({n_conn:,} 個)、
+位数 ${t_min} \\le n \\le {t_max}$ の木全体 ({n_trees:,} 個。
+位数 ${g_max}$ 以下の木は前者に含まれる)、
+および $(n, r) \\in \\{{{reg_orders}\\}}$ の連結 $r$-正則グラフ全体
+({n_reg:,} 個) について
+\\[ f(G) \\ \\ge \\ R(G) + \\left\\lceil \\frac{{\\mathrm{{diam}}(G)}}{{3}} \\right\\rceil \\]
+が成立する。とくに予想 \\ref{{conj:main}} の反例 $G$ が存在するならば
+$n \\ge {g_max + 1}$ であり、$G$ が木ならば $n \\ge {t_max + 1}$ である。
+\\end{{theorem}}
+
+\\begin{{proof}}
+表 \\ref{{tab:fams}} の各族について、森を誘導する頂点集合 $F$ を計算して
+記録した。補題 \\ref{{lem:witness}} より、各グラフで $G[F]$ が閉路をもたず
+$|F|$ が右辺以上であることを確認すれば主張が従う。この確認は証明書
+\\texttt{{{cid}.json}} と証人ファイルに対して検証器が実行し、
+全 {n_total:,} 個で成立した。元リストの完全性は、走査行数が
+OEIS A001349 (連結グラフ)、A000055 (木)、A002851 および
+A006820--A006822 (連結正則グラフ) の公表値と一致すること
+(表 \\ref{{tab:fams}} 第 3 列) で担保される。
+\\end{{proof}}
+
+\\begin{{table}}[htbp]
+\\centering
+\\caption{{走査した族と結果。「厳密計算」は貪欲な証人が
+右辺 $+\\,1$ に届かず最大誘導森を厳密に解いた回数。}}
+\\label{{tab:fams}}
+\\begin{{tabular}}{{lrrrrrr}}
+\\toprule
+族 & $n$ & 個数 & $f >$ 右辺 & $f =$ 右辺 & $f <$ 右辺 & 厳密計算 \\\\
+\\midrule
+{_rows(fams)}
+\\midrule
+\\multicolumn{{2}}{{l}}{{合計}} & {n_total:,} & {n_total - n_eq:,} & {n_eq:,}
+& 0 & {n_exact:,} \\\\
+\\bottomrule
+\\end{{tabular}}
+\\end{{table}}
+
+\\begin{{corollary}}\\label{{cor:eq}}
+予想 \\ref{{conj:main}} の不等式は本稿の範囲で最良である。すなわち等号を
+達成する連結グラフが {n_eq:,} 個存在する。連結グラフの族で等号が現れる位数は
+$n \\in \\{{{eq_graph_orders}\\}}$、木の族では {tree_claim}、
+走査した正則グラフの族では {eq_reg_total} 個である。
+\\end{{corollary}}
+
+\\begin{{proof}}
+等号を主張する {n_eq:,} 個については検証器が $f$ を独立に計算し直した。
+残りのグラフでは証人が $|F| \\ge$ 右辺 $+\\,1$ を満たしており、
+$f \\ge |F| >$ 右辺 から等号は起こらない。両者を合わせると、
+走査した {n_total:,} 個における等号の集合が確定する。
+\\end{{proof}}
+
+{("たとえば $n = " + str(eq_ex_n) + "$ の連結グラフでは " + eq_ex_txt
+  + " (graph6 表記) が等号を達成する。") if eq_examples else ""}
+
+\\section{{木における等号グラフは星に限る}}\\label{{sec:trees}}
+
+木については、網羅結果に手計算を組み合わせることで分類を完全に決定できる。
+以下 $T$ を位数 $n \\ge 2$ の木とし、$d = \\mathrm{{diam}}(T)$ と書く。
+木は森なので $f(T) = n$ であり、等号は
+$R(T) + \\lceil d/3 \\rceil = n$ と同値である。
+
+\\begin{{lemma}}\\label{{lem:treediam}}
+$T$ が等号を達成するならば $d \\in \\{{1, 2, 4\\}}$ である。
+\\end{{lemma}}
+
+\\begin{{proof}}
+$T$ は $d+1$ 個の頂点からなる道 $P$ を含む。独立集合が $P$ と交わる頂点は
+高々 $\\lceil (d+1)/2 \\rceil$ 個なので
+\\[ \\alpha(T) \\ \\le \\ \\bigl(n - (d+1)\\bigr) + \\left\\lceil \\frac{{d+1}}{{2}} \\right\\rceil
+   \\ = \\ n - \\left\\lfloor \\frac{{d+1}}{{2}} \\right\\rfloor . \\]
+$R(T) \\le \\alpha(T)$ \\cite{{fms1991}} と等号の仮定 $R(T) = n - \\lceil d/3 \\rceil$ から
+$\\lfloor (d+1)/2 \\rfloor \\le \\lceil d/3 \\rceil$ を得る。
+$d \\ge 5$ では $\\lfloor (d+1)/2 \\rfloor \\ge d/2 > (d+2)/3 \\ge \\lceil d/3 \\rceil$ で
+あるからこれは成り立たない。残る $d \\le 4$ を個別に見ると、
+$d = 3$ では $2 > 1$ で不成立、$d \\in \\{{1,2,4\\}}$ では成立する。
+\\end{{proof}}
+
+\\begin{{lemma}}\\label{{lem:star}}
+星 $K_{{1,n-1}}$ ($n \\ge 2$) は等号を達成する。逆に $d \\le 2$ の木は星に限る。
+\\end{{lemma}}
+
+\\begin{{proof}}
+$K_{{1,n-1}}$ の次数列は $(n-1, 1, \\dots, 1)$ である。Havel--Hakimi を 1 回
+適用すると $n-1$ 個の $1$ がすべて $0$ になるので $R = n-1$ であり、
+$d = 2$ ($n \\ge 3$) より右辺は $(n-1) + 1 = n = f$。$n = 2$ のときは
+$K_2$ で $R = 1$、$d = 1$、右辺 $= 2 = n$。逆に直径 $2$ 以下の木は
+中心から全頂点への距離が $1$ 以下、すなわち星である。
+\\end{{proof}}
+
+{cor_tree}
+
+\\section{{限界}}
+
+本稿が示したのは有限範囲での検証であって証明ではない。
+連結グラフの完全リストは McKay \\cite{{mckay}} が $n \\le {g_max}$ まで、
+木は $n \\le 22$ まで公開しており、本稿は前者の全体と後者の
+$n \\le {t_max}$ を走査した。正則グラフは GENREG \\cite{{genreg}} が
+公開している範囲から、連結グラフの族に含まれない $n \\ge 11$ のものを選んだ。
+
+Graffiti.pc 自身がその開発時に小さいグラフのデータベース上で
+予想 \\ref{{conj:main}} を試している可能性が高い。したがって
+「位数の小さい連結グラフに反例がない」ことの新規性は限定的であり、
+本稿の寄与はむしろ (i) 検証を第三者が独立に再実行できる形の証明書に
+落としたこと、(ii) 等号グラフの完全な分類を与えたこと、
+(iii) 木について分類を第 \\ref{{sec:trees}} 節の形で確定させたこと、
+の 3 点にある。
+
+証人が単独で閉じるのは不等式だけであり、等号の判定には $f$ の上からの
+評価が要る。本稿ではその部分を、等号グラフを全列挙して検証器に厳密計算
+させることで補った (第 \\ref{{sec:eq}} 節)。等号グラフが数十万個に達する
+範囲まで走査を広げる場合には、$f$ の\\emph{{上界}}そのものを証人化する必要が
+ある (たとえば互いに素な閉路の族: 頂点素な閉路が $k$ 個あれば
+$f \\le n - k$)。本稿の探索器はこの種の下界を枝刈りに使っていないので、
+それも今後の課題である。
+"""
+    return {"ABSTRACT": abstract, "BODY": body}

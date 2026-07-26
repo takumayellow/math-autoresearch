@@ -28,10 +28,13 @@ WITNESS_SRC = REPO_ROOT / "data" / "witnesses"
 
 P0002 = "p0002_txgraffiti_zf_alpha"
 P0003 = "p0003_saturation_harmonic"
+P0004 = "p0004_wowii61_induced_forest"
 #: 元データの走査が軽く、かつ等号グラフを含む族。
 P0002_FAMILIES = ("subcubic_06", "subcubic_08")
 #: 反例は $n \ge 9$ にしか無いので、ここで検査するのは比と証人の側。
 P0003_FAMILIES = ("graphs_06", "graphs_07")
+#: 等号グラフを含み (n=6 で 11 個、n=7 で 32 個)、かつ数秒で走る族。
+P0004_FAMILIES = ("graphs_06", "graphs_07")
 
 
 def _prepare(pid: str, keep, tmp_path, monkeypatch):
@@ -204,10 +207,14 @@ def test_p0003_non_maximal_matching_witness_is_detected(sat):
     path = wdir / fam["witness_file"]
     blob = bytearray(gzip.decompress(path.read_bytes()))
     n = fam["n"]
-    partner = blob[0] - 1          # 先頭グラフの頂点 0 の相手
-    assert partner >= 0
-    blob[0] = 0                    # 辺を 1 本外す -> 極大性が壊れる
-    blob[partner] = 0
+    # 全バイト 0 の記録は「反例」の印なので、辺を 1 本外しても 0 にならない
+    # (マッチングが 2 辺以上ある) グラフを選ぶ。
+    base = next(i * n for i in range(fam["witness_records"])
+                if sum(1 for b in blob[i * n:(i + 1) * n] if b) >= 4)
+    v = next(j for j in range(n) if blob[base + j])
+    partner = blob[base + v] - 1   # 頂点 v の相手
+    blob[base + v] = 0             # 辺を 1 本外す -> 極大性が壊れる
+    blob[base + partner] = 0
     raw = gzip.compress(bytes(blob))
     path.write_bytes(raw)
     fam["witness_sha256"] = hashlib.sha256(raw).hexdigest()
@@ -263,3 +270,160 @@ def test_p0003_wrong_published_count_is_detected(sat):
     report = prob.verify(cert)
     assert not report.ok
     assert "公表値" in _failed(report)
+
+
+# ----------------------------------------------------------------- p0004
+
+
+@pytest.fixture()
+def forest(tmp_path, monkeypatch):
+    cert, prob, wdir = _prepare(P0004, P0004_FAMILIES, tmp_path, monkeypatch)
+    # 族を間引いたので、合計も残った族に合わせ直す (検証器が突き合わせる)。
+    fams = cert.data["families"]
+    cert.data["totals"] = {
+        "graphs": sum(f["count"] for f in fams),
+        "families": len(fams),
+        "equality": sum(f["counts"].get("f=rhs", 0) for f in fams),
+        "counterexamples": sum(f["counts"].get("f<rhs", 0) for f in fams),
+        "exact_calls": sum(f["exact_calls"] for f in fams),
+    }
+    return cert, prob, wdir
+
+
+def _p0004_graphs(fam: dict):
+    """検証器が読むのと同じ順序で族のグラフを返す."""
+    import mar.checkgraph as ck
+    from mar.problems.p0004_wowii61_induced_forest import _verifier_source
+
+    return list(_verifier_source(ck, fam))
+
+
+def test_p0004_clean_certificate_verifies(forest):
+    cert, prob, _ = forest
+    report = prob.verify(cert)
+    assert report.ok, _failed(report)
+
+
+def test_p0004_bit_flip_in_witness_is_detected(forest):
+    cert, prob, wdir = forest
+    _flip_first_byte(wdir / _fam(cert, "graphs_06")["witness_file"])
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "SHA-256" in _failed(report)
+
+
+def test_p0004_empty_witness_with_updated_hash_is_detected(forest):
+    """空集合は森を誘導してしまうので、落ちるのは $|F| \\ge$ 右辺 の側."""
+    import hashlib
+
+    cert, prob, wdir = forest
+    fam = _fam(cert, "graphs_06")
+    path = wdir / fam["witness_file"]
+    blob = bytearray(gzip.decompress(path.read_bytes()))
+    struct.pack_into("<I", blob, 0, 0)      # 先頭グラフの証人を空集合にする
+    raw = gzip.compress(bytes(blob))
+    path.write_bytes(raw)
+    fam["witness_sha256"] = hashlib.sha256(raw).hexdigest()
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "F が森を誘導し" in _failed(report)
+
+
+def test_p0004_witness_with_a_cycle_is_detected(forest):
+    """閉路を含む頂点集合を証人にすると森の判定で落ちる."""
+    import hashlib
+
+    import mar.checkgraph as ck
+
+    cert, prob, wdir = forest
+    fam = _fam(cert, "graphs_06")
+    graphs = _p0004_graphs(fam)
+    index = next(i for i, g in enumerate(graphs)
+                 if not ck.induces_forest(g, set(range(fam["n"]))))
+    path = wdir / fam["witness_file"]
+    blob = bytearray(gzip.decompress(path.read_bytes()))
+    # 全頂点を証人にする -> 閉路をもつグラフでは森でなくなる
+    struct.pack_into("<I", blob, 4 * index, (1 << fam["n"]) - 1)
+    raw = gzip.compress(bytes(blob))
+    path.write_bytes(raw)
+    fam["witness_sha256"] = hashlib.sha256(raw).hexdigest()
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "F が森を誘導し" in _failed(report)
+
+
+def _detail(report, label_part: str) -> str:
+    """指定した検査項目の detail を返す (どの防御が発火したかを見分けるため)."""
+    return next(detail for label, ok, detail in report.checks
+                if label_part in label and not ok)
+
+
+def test_p0004_hidden_equality_graph_is_detected(forest):
+    """等号グラフを 1 個隠すと、そのグラフで |F| >= 右辺 + 1 が破れる.
+
+    個数の照合ではなく**証人の条件**が先に破れることまで確かめる (論文が
+    謳っているのはそちらの機構なので、そこが死んでいたら気づけない)。
+    """
+    cert, prob, _ = forest
+    fam = _fam(cert, "graphs_07")
+    assert fam["equality_graphs"], "等号グラフを含む族でないとテストにならない"
+    hidden = fam["equality_graphs"].pop()
+    fam["counts"]["f=rhs"] -= 1
+    fam["counts"]["f>rhs"] += 1
+    cert.data["totals"]["equality"] -= 1
+    report = prob.verify(cert)
+    assert not report.ok
+    detail = _detail(report, "分類が閉じた")
+    assert "等号リストに無いのに" in detail and hidden in detail
+
+
+def test_p0004_false_equality_claim_is_detected(forest):
+    """等号でないグラフを等号リストに入れると、厳密再計算で露見する."""
+    import mar.checkgraph as ck
+
+    cert, prob, _ = forest
+    fam = _fam(cert, "graphs_06")
+    listed = set(fam["equality_graphs"])
+    innocent = next(g6 for g6 in (ck.sets_to_graph6(g) for g in _p0004_graphs(fam))
+                    if g6 not in listed)
+    fam["equality_graphs"].append(innocent)
+    fam["counts"]["f=rhs"] += 1
+    fam["counts"]["f>rhs"] -= 1
+    cert.data["totals"]["equality"] += 1
+    report = prob.verify(cert)
+    assert not report.ok
+    detail = _detail(report, "分類が閉じた")
+    assert "等号の主張が再現しない" in detail and innocent in detail
+
+
+def test_p0004_incomplete_equality_list_is_not_reported_as_closed(forest):
+    cert, prob, _ = forest
+    _fam(cert, "graphs_06")["equality_complete"] = False
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "全リストが証明書にない" in _detail(report, "分類が閉じた")
+
+
+def test_p0004_inflated_totals_are_detected(forest):
+    """族ごとの集計と合わない合計 (論文の見出し数) は通さない."""
+    cert, prob, _ = forest
+    cert.data["totals"]["graphs"] += 1000
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "graphs" in _detail(report, "証明書の合計")
+
+
+def test_p0004_wrong_published_count_is_detected(forest):
+    cert, prob, _ = forest
+    _fam(cert, "graphs_07")["source_expected"] = 999
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "公表値" in _failed(report)
+
+
+def test_p0004_wrong_graph_count_is_detected(forest):
+    cert, prob, _ = forest
+    _fam(cert, "graphs_06")["count"] += 1
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "グラフ数" in _failed(report)
