@@ -271,13 +271,52 @@ TREE_COUNTS = {1: 1, 2: 1, 3: 1, 4: 2, 5: 3, 6: 6, 7: 11, 8: 23, 9: 47,
                21: 2144505, 22: 5623756}
 
 
+def _extract_tree_tarball(n: int) -> None:
+    """``tree{n}.all.tar.gz`` を落として ``trees/`` に展開する.
+
+    McKay は $n \\ge 17$ の木を個別の ``tree{n}.{d}.txt`` では公開しておらず、
+    直径ごとのファイルを固めた tar だけを置いている (2026-07-26 に
+    ``trees.html`` の一覧で確認)。展開はアーカイブ内の**ファイル名の
+    basename** だけを使い、``tree{n}.`` で始まるものに限る (パス traversal 防止)。
+    """
+    import tarfile
+
+    name = f"tree{n}.all.tar.gz"
+    archive = CACHE / "trees" / name
+    if not archive.exists() or archive.stat().st_size == 0:
+        _download(f"{BASE_URL}/{name}", archive)
+    prefix = f"tree{n}."
+    with tarfile.open(archive, "r:gz") as tar:
+        for member in tar.getmembers():
+            base = Path(member.name).name
+            if not member.isfile() or not base.startswith(prefix) \
+                    or not base.endswith(".txt"):
+                continue
+            target = CACHE / "trees" / base
+            if target.exists() and target.stat().st_size > 0:
+                continue
+            handle = tar.extractfile(member)
+            if handle is None:
+                continue
+            tmp = target.with_suffix(".txt.part")
+            tmp.write_bytes(handle.read())
+            tmp.replace(target)
+
+
 def tree_file(n: int, diameter: int) -> Path:
     """``tree{n}.{d}.txt`` (辺リスト形式) を必要ならダウンロードして返す."""
     name = f"tree{n}.{diameter}.txt"
     path = CACHE / "trees" / name
     if path.exists() and path.stat().st_size > 0:
         return path
-    return _download(f"{BASE_URL}/{name}", path)
+    try:
+        return _download(f"{BASE_URL}/{name}", path)
+    except Exception:
+        # 個別ファイルが無い位数 (n >= 17) は tar からまとめて取り出す。
+        _extract_tree_tarball(n)
+        if path.exists() and path.stat().st_size > 0:
+            return path
+        raise
 
 
 def parse_edge_list(line: str, n: int) -> Graph:

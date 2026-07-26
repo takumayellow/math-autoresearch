@@ -51,8 +51,9 @@ class Survey:
 
     statement: str                 # 予想・問題の正確な主張 (日本語)
     open_as_of: str                # YYYY-MM-DD
-    evidence: list[Reference] = field(default_factory=list)
-    caveats: str = ""              # 既知の部分結果・関連する反例など
+    # 根拠は自由記述 (どこで未解決と確認したか) か Reference のどちらでもよい。
+    evidence: list[str | Reference] = field(default_factory=list)
+    caveats: list[str] = field(default_factory=list)  # 既知の部分結果・除外例など
 
 
 class Problem(ABC):

@@ -681,6 +681,159 @@ def girth(g: Graph) -> int:
 
 
 # ---------------------------------------------------------------------------
+# 誘導森 (induced forest) — WOWII 予想 61 用
+# ---------------------------------------------------------------------------
+
+def _components(adj: tuple[int, ...], mask: int) -> int:
+    """mask の誘導部分グラフの連結成分数."""
+    comps = 0
+    rest = mask
+    while rest:
+        comp = rest & -rest
+        frontier = comp
+        while frontier:
+            nxt = 0
+            m = frontier
+            while m:
+                b = m & -m
+                nxt |= adj[b.bit_length() - 1]
+                m ^= b
+            nxt &= mask & ~comp
+            comp |= nxt
+            frontier = nxt
+        comps += 1
+        rest &= ~comp
+    return comps
+
+
+def induces_forest(adj: tuple[int, ...], mask: int) -> bool:
+    """mask の誘導部分グラフが森か.
+
+    「辺数 = 頂点数 - 連結成分数」は森であることと同値。
+    """
+    edges2 = 0
+    m = mask
+    while m:
+        b = m & -m
+        edges2 += _popcount(adj[b.bit_length() - 1] & mask)
+        m ^= b
+    return edges2 // 2 == _popcount(mask) - _components(adj, mask)
+
+
+def greedy_induced_forest(g: Graph) -> int:
+    r"""大きい誘導森を貪欲に作る (ビットマスク).
+
+    最大独立集合は常に誘導森なのでそこを種にし、森である限り頂点を足す。
+    追加順を何通りか試して一番大きいものを返す。**下界しか与えない**ので、
+    これで足りないグラフだけ :func:`max_induced_forest` に回す。
+    """
+    n, adj = g
+    seed = max_independent_set(g)
+    deg = degrees(g)
+    orders = (sorted(range(n), key=lambda v: deg[v]),
+              sorted(range(n), key=lambda v: -deg[v]),
+              list(range(n)))
+    best = seed
+    for order in orders:
+        mask = seed
+        for v in order:
+            bit = 1 << v
+            if mask & bit:
+                continue
+            if induces_forest(adj, mask | bit):
+                mask |= bit
+        if _popcount(mask) > _popcount(best):
+            best = mask
+    return best
+
+
+def _root_path(parent: dict[int, int], v: int) -> list[int]:
+    path = []
+    while v != -1:
+        path.append(v)
+        v = parent[v]
+    return path
+
+
+def _cycle_vertices(adj: tuple[int, ...], mask: int) -> int:
+    """mask の誘導部分グラフから閉路を 1 つ探し、その頂点集合を返す (無ければ 0).
+
+    BFS 木の非木辺 $uv$ を見つけたら、$u$ と $v$ の根への道が最初に合流する点
+    までを取る。2 本の道は合流点以外で交わらないので、辺 $uv$ と合わせて
+    ちょうど閉路 1 個の頂点集合になる (分枝の健全性はこれに依存する)。
+    """
+    rest = mask
+    while rest:
+        root = (rest & -rest).bit_length() - 1
+        parent = {root: -1}
+        order = [root]
+        visited = 1 << root
+        qi = 0
+        while qi < len(order):
+            v = order[qi]
+            qi += 1
+            m = adj[v] & mask
+            while m:
+                b = m & -m
+                u = b.bit_length() - 1
+                m ^= b
+                if u == parent[v]:
+                    continue
+                if visited & b:
+                    up = _root_path(parent, u)
+                    seen_u = set(up)
+                    cyc = 0
+                    for x in _root_path(parent, v):
+                        cyc |= 1 << x
+                        if x in seen_u:
+                            lca = x
+                            break
+                    for x in up:
+                        cyc |= 1 << x
+                        if x == lca:
+                            break
+                    return cyc
+                visited |= b
+                parent[u] = v
+                order.append(u)
+        rest &= ~visited
+    return 0
+
+
+def max_induced_forest(g: Graph, seed: int = 0) -> int:
+    r"""最大誘導森 $f(G)$ を達成する頂点集合 (ビットマスク) を厳密に求める.
+
+    補集合が最小の帰還頂点集合 (feedback vertex set) であることを使い、
+    「残っている閉路の頂点を 1 つ落とす」で分枝する。``seed`` に既知の誘導森を
+    渡すと、それ以下にしかならない枝を最初から捨てる。
+    """
+    n, adj = g
+    best_mask = seed if seed and induces_forest(adj, seed) else 0
+    best_removed = n - _popcount(best_mask) if best_mask else n + 1
+
+    def rec(mask: int, removed: int) -> None:
+        nonlocal best_removed, best_mask
+        if removed >= best_removed:
+            return
+        cyc = _cycle_vertices(adj, mask)
+        if cyc == 0:
+            best_removed, best_mask = removed, mask
+            return
+        m = cyc
+        while m:
+            b = m & -m
+            m ^= b
+            rec(mask & ~b, removed + 1)
+
+    rec((1 << n) - 1, 0)
+    return best_mask
+
+
+def max_induced_forest_size(g: Graph) -> int:
+    return _popcount(max_induced_forest(g))
+
+
+# ---------------------------------------------------------------------------
 # ゼロ強制数
 # ---------------------------------------------------------------------------
 

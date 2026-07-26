@@ -20,6 +20,7 @@ from pathlib import Path
 
 from .certificate import Certificate
 from .problem import REPO_ROOT, iter_problem_modules, load
+from .verification import load_record, render_record, save_record
 
 CERT_DIR = REPO_ROOT / "data" / "certificates"
 
@@ -52,10 +53,15 @@ def cmd_survey(args: argparse.Namespace) -> int:
     print(f"主張: {s.statement}\n")
     print(f"未解決と確認した日: {s.open_as_of}")
     if s.caveats:
-        print(f"留意点: {s.caveats}")
+        print("留意点:")
+        for c in s.caveats:
+            print(f"  - {c}")
     print("根拠:")
     for r in s.evidence:
-        print(f"  - [{r.key}] {r.text} {r.url}")
+        if isinstance(r, str):
+            print(f"  - {r}")
+        else:
+            print(f"  - [{r.key}] {r.text} {r.url}".rstrip())
     if not s.evidence:
         print("  (なし) — 先行研究ゲート未通過。探索してはならない。")
         return 1
@@ -94,13 +100,17 @@ def cmd_verify(args: argparse.Namespace) -> int:
             failed += 1
             continue
         prob = load(pid)
+        t0 = time.time()
         try:
             report = prob.verify(cert, deep=getattr(args, "deep", False))
         except TypeError:
             report = prob.verify(cert)
+        dt = time.time() - t0
         print(f"# {pid}  digest={cert.digest()}")
         print(f"  主張: {cert.claim}")
         print(report.render())
+        rec = save_record(cert, report, dt)
+        print(f"  検証記録: {rec}")
         failed += 0 if report.ok else 1
     return 1 if failed else 0
 
@@ -113,10 +123,21 @@ def cmd_paper(args: argparse.Namespace) -> int:
         print("証明書がない。先に search を実行する。", file=sys.stderr)
         return 1
     cert = Certificate.load(path)
-    report = p.verify(cert)
-    if not report.ok:
-        print("検証に失敗した証明書は論文化しない。\n" + report.render(), file=sys.stderr)
-        return 1
+    # 既定は「毎回検証をやり直す」(原則 4)。--use-record を明示したときだけ、
+    # 同じ証明書・同じ検証器コードに対する PASS 記録で代替する。
+    rec = load_record(cert) if getattr(args, "use_record", False) else None
+    if rec is not None:
+        print(f"検証をやり直さず記録を再利用 (--use-record, "
+              f"digest={cert.digest()}):")
+        print(render_record(rec))
+    else:
+        t0 = time.time()
+        report = p.verify(cert)
+        save_record(cert, report, time.time() - t0)
+        if not report.ok:
+            print("検証に失敗した証明書は論文化しない。\n" + report.render(),
+                  file=sys.stderr)
+            return 1
     pdf = make_paper(p, cert)
     print(f"PDF: {pdf}")
     return 0
@@ -152,10 +173,16 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser("list").set_defaults(func=cmd_list)
 
-    for name, func in (("survey", cmd_survey), ("paper", cmd_paper)):
-        sp = sub.add_parser(name)
-        sp.add_argument("problem_id")
-        sp.set_defaults(func=func)
+    sp = sub.add_parser("survey")
+    sp.add_argument("problem_id")
+    sp.set_defaults(func=cmd_survey)
+
+    sp = sub.add_parser("paper")
+    sp.add_argument("problem_id")
+    sp.add_argument("--use-record", action="store_true", dest="use_record",
+                    help="同じ証明書・同じ検証器コードの PASS 記録があれば "
+                         "検証をやり直さない (既定はやり直す)")
+    sp.set_defaults(func=cmd_paper)
 
     for name, func in (("search", cmd_search), ("run", cmd_run)):
         sp = sub.add_parser(name)
@@ -163,7 +190,8 @@ def main(argv: list[str] | None = None) -> int:
         sp.add_argument("--budget", type=float, default=60.0)
         sp.add_argument("--seed", type=int, default=0)
         sp.add_argument("--deep", action="store_true")
-        sp.set_defaults(func=func, all=False)
+        # run は verify → paper と続くので、直前の検証結果をそのまま使う。
+        sp.set_defaults(func=func, all=False, use_record=True)
 
     sp = sub.add_parser("new", help="新しい問題モジュールの雛形を作る")
     sp.add_argument("problem_id", help="pNNNN_slug 形式")

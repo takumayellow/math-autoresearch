@@ -362,6 +362,103 @@ def residue(g: GraphS) -> int:
     return len(seq)
 
 
+def all_pairs_distance(g: GraphS) -> list[list[int]]:
+    """全点対距離 (Floyd--Warshall)。到達不能は -1."""
+    order, nbr = g
+    inf = order + 1
+    dist = [[0 if u == v else (1 if v in nbr[u] else inf)
+             for v in range(order)] for u in range(order)]
+    for k in range(order):
+        dk = dist[k]
+        for u in range(order):
+            duk = dist[u][k]
+            if duk >= inf:
+                continue
+            du = dist[u]
+            for v in range(order):
+                alt = duk + dk[v]
+                if alt < du[v]:
+                    du[v] = alt
+    return [[-1 if d >= inf else d for d in row] for row in dist]
+
+
+def diameter(g: GraphS) -> int:
+    """直径。非連結なら -1 (探索側の BFS とは別に Floyd--Warshall で出す)."""
+    dist = all_pairs_distance(g)
+    best = 0
+    for row in dist:
+        for d in row:
+            if d < 0:
+                return -1
+            best = max(best, d)
+    return best
+
+
+def induced_forest_bound(g: GraphS) -> int:
+    r"""WOWII 予想 61 の右辺 $R(G) + \lceil \mathrm{diam}(G)/3 \rceil$.
+
+    検証対象の式そのものなので、探索側の実装 (``-(-d // 3)``) を借りず、
+    ここでは商と余りから切り上げを組み立てる。共通のオフバイワンが探索と検証の
+    両方をすり抜けるのを避けるため、式の結合まで独立にもつ。
+    """
+    d = diameter(g)
+    if d < 0:
+        raise ValueError("非連結なグラフには直径が定義できない")
+    q, r = divmod(d, 3)
+    return residue(g) + q + (1 if r else 0)
+
+
+def induces_forest(g: GraphS, subset: set[int]) -> bool:
+    """subset の誘導部分グラフが森か (union-find で閉路を検出)."""
+    parent = {v: v for v in subset}
+
+    def find(v: int) -> int:
+        while parent[v] != v:
+            parent[v] = parent[parent[v]]
+            v = parent[v]
+        return v
+
+    _, nbr = g
+    for u in subset:
+        for v in nbr[u]:
+            if v not in subset or v <= u:
+                continue
+            ru, rv = find(u), find(v)
+            if ru == rv:
+                return False
+            parent[ru] = rv
+    return True
+
+
+def max_induced_forest_size(g: GraphS) -> int:
+    r"""最大誘導森の位数 $f(G)$ を厳密に求める.
+
+    探索器は「閉路の頂点を 1 つ落とす」分枝 (帰還頂点集合側) で解くので、
+    検証器は逆に**頂点ごとの採否**で分枝し、残り頂点を全部足しても現在の最良に
+    届かない枝を捨てる。同じ誤りが両方をすり抜けないよう、意図的に別の探索木を
+    たどる。
+    """
+    order, _ = g
+    best = 0
+
+    def rec(index: int, chosen: set[int]) -> None:
+        nonlocal best
+        size = len(chosen)
+        if size > best:
+            best = size
+        if size + (order - index) <= best:
+            return
+        if index == order:
+            return
+        cand = chosen | {index}
+        if induces_forest(g, cand):
+            rec(index + 1, cand)
+        rec(index + 1, chosen)
+
+    rec(0, set())
+    return best
+
+
 def harmonic_index(g: GraphS) -> Fraction:
     deg = degree_sequence(g)
     total = Fraction(0)
