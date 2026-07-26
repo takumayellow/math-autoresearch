@@ -1,0 +1,47 @@
+{
+  "certificate_digest": "26e70873f0d05e73",
+  "checks": [
+    {
+      "detail": "0 件",
+      "name": "反例リストは空",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証人ファイルの SHA-256 と長さが証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "路の証人 3337585 個がハミルトン路であり、独立集合の証人 10064657 個が仮定を破る",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "走査したグラフ数・証人の内訳・仮定を満たす個数 (alpha >= 3 の内数を含む) が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "列挙個数が検証器の持つ公表値 (OEIS A001349 / A000055 / A002851 / A006820-A006822) と一致",
+      "passed": true
+    },
+    {
+      "detail": "個数のみ検証 (全リストは上限 200000 超): graphs_10",
+      "name": "分類する族で仮定の成否を厳密に再計算し、等号 287005 個を確認",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証明書の合計 (論文の見出し数) が族ごとの集計と一致",
+      "passed": true
+    }
+  ],
+  "ok": true,
+  "platform": "Windows 11 (build 26200)",
+  "problem_id": "p0006_wowii194_hamiltonian",
+  "python": "3.10.11",
+  "seconds": 2921.2,
+  "verified_at": "2026-07-26T20:17:16+00:00",
+  "verifier_hash": "a2237940f2f6aa92"
+}

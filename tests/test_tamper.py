@@ -30,6 +30,7 @@ P0002 = "p0002_txgraffiti_zf_alpha"
 P0003 = "p0003_saturation_harmonic"
 P0004 = "p0004_wowii61_induced_forest"
 P0005 = "p0005_wowii_induced_tree"
+P0006 = "p0006_wowii194_hamiltonian"
 #: 元データの走査が軽く、かつ等号グラフを含む族。
 P0002_FAMILIES = ("subcubic_06", "subcubic_08")
 #: 反例は $n \ge 9$ にしか無いので、ここで検査するのは比と証人の側。
@@ -38,6 +39,9 @@ P0003_FAMILIES = ("graphs_06", "graphs_07")
 P0004_FAMILIES = ("graphs_06", "graphs_07")
 #: 3 予想いずれの等号も現れ、かつ数秒で走る族。
 P0005_FAMILIES = ("graphs_06", "graphs_07")
+#: 2 種類の証人 (路と独立集合) と等号がどちらも現れ、かつ数秒で走る族。
+#: reg3_12 は正則族の読み口 (shortcode + 次数の検査) を通すために足してある。
+P0006_FAMILIES = ("graphs_06", "graphs_07", "reg3_12")
 
 
 def _prepare(pid: str, keep, tmp_path, monkeypatch):
@@ -677,3 +681,437 @@ def test_p0005_bogus_equality_example_is_detected(tree3):
     assert not report.ok
     detail = _detail(report, "分類が閉じた")
     assert "等号リストに無いグラフが例に載っている" in detail
+
+
+# ----------------------------------------------------------------- p0006
+
+
+@pytest.fixture()
+def ham(tmp_path, monkeypatch):
+    cert, prob, wdir = _prepare(P0006, P0006_FAMILIES, tmp_path, monkeypatch)
+    fams = cert.data["families"]
+    cert.data["totals"] = {
+        "graphs": sum(f["count"] for f in fams),
+        "families": len(fams),
+        "paths": sum(f["path_records"] for f in fams),
+        "masks": sum(f["mask_records"] for f in fams),
+        "hypothesis": sum(f["hypothesis_count"] for f in fams),
+        "deep": sum(f["deep_hypothesis_count"] for f in fams),
+        "classified": sum(f["count"] for f in fams if f["classified"]),
+        "equality": sum(f["equality_count"] for f in fams),
+        "counterexamples": len(cert.data["counterexamples"]),
+    }
+    return cert, prob, wdir
+
+
+def _p0006_graphs(fam: dict):
+    """検証器が読むのと同じ順序で族のグラフを返す."""
+    import mar.checkgraph as ck
+    from mar.problems.p0006_wowii194_hamiltonian import _verifier_source
+
+    return list(_verifier_source(ck, fam))
+
+
+def _p0006_blob(wdir, fam: dict) -> bytearray:
+    return bytearray(gzip.decompress((wdir / fam["witness_file"]).read_bytes()))
+
+
+def _p0006_rewrite(wdir, fam: dict, blob: bytearray) -> None:
+    """証人を書き戻し、SHA-256 も辻褄を合わせる (ハッシュ検査を素通しする)."""
+    import hashlib
+
+    raw = gzip.compress(bytes(blob))
+    (wdir / fam["witness_file"]).write_bytes(raw)
+    fam["witness_sha256"] = hashlib.sha256(raw).hexdigest()
+
+
+def _p0006_mode(blob: bytearray, index: int) -> int:
+    return (blob[index >> 3] >> (7 - (index & 7))) & 1
+
+
+def _p0006_first_path_index(blob: bytearray, fam: dict) -> int:
+    """路の証人が付いている (= 仮定が成り立つ) 最初のグラフの番号."""
+    return next(i for i in range(fam["count"]) if not _p0006_mode(blob, i))
+
+
+def _p0006_lonely_equality(cert: Certificate):
+    """論文の例に載っていない等号グラフを (族, g6) で返す.
+
+    例に載っているグラフを隠すと ``eq_hit`` 側の検査が先に落ちてしまい、
+    「等号リストが閉じているか」という本命の防御を試せない。
+    """
+    for fam in cert.data["families"]:
+        if not fam["classified"] or not fam.get("equality_complete"):
+            continue
+        examples = set(fam.get("equality_examples", []))
+        for g6 in fam.get("equality_graphs", []):
+            if g6 not in examples:
+                return fam, g6
+    return None, None
+
+
+def test_p0006_clean_certificate_verifies(ham):
+    cert, prob, _ = ham
+    report = prob.verify(cert)
+    assert report.ok, _failed(report)
+
+
+def test_p0006_bit_flip_in_witness_is_detected(ham):
+    cert, prob, wdir = ham
+    _flip_first_byte(wdir / _fam(cert, "graphs_06")["witness_file"])
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "SHA-256" in _failed(report)
+
+
+def test_p0006_mode_bit_flipped_to_mask_is_detected(ham):
+    r"""路の証人が付いたグラフを「仮定が破れる側」と偽ると必ず落ちる.
+
+    モード 0 のグラフは仮定 $n\alpha \le n+S$ を満たすので、独立集合 $T$ が
+    どれでも $n|T| \le n\alpha \le n+S$ となり、**どんなマスクを充てても**
+    この検査は通らない。証人の種類の取り違えが原理的に隠せないことの確認。
+    """
+    cert, prob, wdir = ham
+    fam = _fam(cert, "graphs_06")
+    blob = _p0006_blob(wdir, fam)
+    index = _p0006_first_path_index(blob, fam)
+    blob[index >> 3] |= 1 << (7 - (index & 7))
+    _p0006_rewrite(wdir, fam, blob)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "独立集合の証人が仮定を破らない" in _detail(report, "路の証人")
+
+
+def test_p0006_empty_independent_set_witness_is_detected(ham):
+    cert, prob, wdir = ham
+    fam = _fam(cert, "graphs_06")
+    blob = _p0006_blob(wdir, fam)
+    at = fam["mode_bytes"] + fam["path_bytes"]
+    blob[at:at + fam["mask_bytes"]] = bytes(fam["mask_bytes"])
+    _p0006_rewrite(wdir, fam, blob)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "独立集合の証人が仮定を破らない" in _detail(report, "路の証人")
+
+
+def test_p0006_too_small_independent_set_witness_is_detected(ham):
+    """独立ではあるが小さすぎる証人 (1 頂点) は落ちる.
+
+    独立性しか見ていない検証器はこれを通してしまう。上の空集合とは別の
+    防御 (証人の**大きさ**) なので、独立に試す。
+    """
+    cert, prob, wdir = ham
+    fam = _fam(cert, "graphs_06")
+    blob = _p0006_blob(wdir, fam)
+    at = fam["mode_bytes"] + fam["path_bytes"]
+    blob[at:at + fam["mask_bytes"]] = (1).to_bytes(fam["mask_bytes"], "little")
+    _p0006_rewrite(wdir, fam, blob)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "独立集合の証人が仮定を破らない" in _detail(report, "路の証人")
+
+
+def test_p0006_inflated_independent_set_witness_is_detected(ham):
+    """全頂点を証人だと言い張っても (独立でないので) 落ちる."""
+    cert, prob, wdir = ham
+    fam = _fam(cert, "graphs_06")
+    blob = _p0006_blob(wdir, fam)
+    at = fam["mode_bytes"] + fam["path_bytes"]
+    full = (1 << fam["n"]) - 1
+    blob[at:at + fam["mask_bytes"]] = full.to_bytes(fam["mask_bytes"], "little")
+    _p0006_rewrite(wdir, fam, blob)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "独立集合の証人が仮定を破らない" in _detail(report, "路の証人")
+
+
+def test_p0006_out_of_range_independent_set_witness_is_detected(ham):
+    """存在しない頂点を含むマスクを弾く."""
+    cert, prob, wdir = ham
+    fam = _fam(cert, "graphs_06")
+    blob = _p0006_blob(wdir, fam)
+    at = fam["mode_bytes"] + fam["path_bytes"]
+    blob[at:at + fam["mask_bytes"]] = \
+        (1 << fam["n"]).to_bytes(fam["mask_bytes"], "little")
+    _p0006_rewrite(wdir, fam, blob)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "独立集合の証人が仮定を破らない" in _detail(report, "路の証人")
+
+
+def test_p0006_broken_path_witness_is_detected(ham):
+    """路の証人を潰す (全頂点 0 の列) と、ハミルトン路の判定で落ちる."""
+    cert, prob, wdir = ham
+    fam = _fam(cert, "graphs_06")
+    blob = _p0006_blob(wdir, fam)
+    at = fam["mode_bytes"]
+    width = (fam["n"] * fam["path_bits"] + 7) // 8
+    blob[at:at + width] = bytes(width)
+    _p0006_rewrite(wdir, fam, blob)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "証人がハミルトン路でない" in _detail(report, "路の証人")
+
+
+def test_p0006_dropped_mask_record_is_detected(ham):
+    """独立集合の証人を 1 個削ると、長さの辻褄を合わせても落ちる."""
+    cert, prob, wdir = ham
+    fam = _fam(cert, "graphs_06")
+    blob = _p0006_blob(wdir, fam)
+    del blob[len(blob) - fam["mask_bytes"]:]
+    fam["mask_records"] -= 1
+    cert.data["totals"]["masks"] -= 1
+    _p0006_rewrite(wdir, fam, blob)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "独立集合の証人が仮定を破らない" in _detail(report, "路の証人")
+
+
+def test_p0006_truncated_witness_file_is_detected(ham):
+    """証人を後ろから削るだけなら、長さの検査で先に落ちる."""
+    cert, prob, wdir = ham
+    fam = _fam(cert, "graphs_06")
+    _p0006_rewrite(wdir, fam, _p0006_blob(wdir, fam)[:-1])
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "証人の長さが証明書と合わない" in _detail(report, "SHA-256")
+
+
+def test_p0006_fabricated_counterexample_is_detected(ham):
+    """反例を捏造すると、リストの非空検査だけでなく主張の再現でも落ちる."""
+    import mar.checkgraph as ck
+
+    cert, prob, wdir = ham
+    fam = _fam(cert, "graphs_06")
+    blob = _p0006_blob(wdir, fam)
+    index = _p0006_first_path_index(blob, fam)
+    g = _p0006_graphs(fam)[index]
+    alpha = ck.alpha_and_i(g)[0]
+    lhs, rhs = ck.hamiltonian_hypothesis_sides(g, alpha)
+    cert.data["counterexamples"].append(
+        {"g6": ck.sets_to_graph6(g), "n": fam["n"], "family": fam["tag"],
+         "alpha": alpha, "lhs": lhs, "rhs": rhs})
+    cert.data["totals"]["counterexamples"] += 1
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "反例の主張が再現しない" in _detail(report, "路の証人")
+
+
+def test_p0006_hidden_equality_graph_is_detected(ham):
+    """等号グラフを 1 個隠すと、そのグラフの再計算で露見する."""
+    cert, prob, _ = ham
+    fam, hidden = _p0006_lonely_equality(cert)
+    assert hidden, "例に載っていない等号グラフが族に無いとテストにならない"
+    fam["equality_graphs"].remove(hidden)
+    fam["equality_count"] -= 1
+    cert.data["totals"]["equality"] -= 1
+    report = prob.verify(cert)
+    assert not report.ok
+    detail = _detail(report, "分類する族")
+    assert "等号リストに無い" in detail and hidden in detail
+
+
+def test_p0006_false_equality_claim_is_detected(ham):
+    """狭義で成り立つグラフを等号リストに入れると、厳密再計算で露見する."""
+    import mar.checkgraph as ck
+
+    cert, prob, _ = ham
+    fam = _fam(cert, "graphs_06")
+    listed = set(fam["equality_graphs"])
+    innocent = None
+    for g in _p0006_graphs(fam):
+        g6 = ck.sets_to_graph6(g)
+        if g6 in listed:
+            continue
+        lhs, rhs = ck.hamiltonian_hypothesis_sides(g, ck.alpha_and_i(g)[0])
+        if lhs < rhs:
+            innocent = g6
+            break
+    assert innocent, "狭義で成り立つグラフが族に無いとテストにならない"
+    fam["equality_graphs"].append(innocent)
+    fam["equality_count"] += 1
+    cert.data["totals"]["equality"] += 1
+    report = prob.verify(cert)
+    assert not report.ok
+    detail = _detail(report, "分類する族")
+    assert "等号リストにあるが等号でない" in detail and innocent in detail
+
+
+def test_p0006_bogus_equality_example_is_detected(ham):
+    """論文に載る等号グラフの例が等号リスト外なら不合格になる."""
+    cert, prob, _ = ham
+    fam = _fam(cert, "graphs_06")
+    fam["equality_examples"] = ["E????"] + list(fam["equality_examples"])
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "等号リストに無いグラフが例に載っている" in _detail(report, "分類する族")
+
+
+def test_p0006_incomplete_equality_list_is_not_reported_as_closed(ham):
+    cert, prob, _ = ham
+    _fam(cert, "graphs_06")["equality_complete"] = False
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "全リストがない" in _detail(report, "分類する族")
+
+
+def test_p0006_inflated_equality_count_is_detected(ham):
+    cert, prob, _ = ham
+    _fam(cert, "graphs_06")["equality_count"] += 5
+    cert.data["totals"]["equality"] += 5
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "等号の個数" in _detail(report, "分類する族")
+
+
+def test_p0006_inflated_hypothesis_count_is_detected(ham):
+    cert, prob, _ = ham
+    _fam(cert, "graphs_06")["hypothesis_count"] += 1
+    cert.data["totals"]["hypothesis"] += 1
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "仮定成立数" in _detail(report, "走査したグラフ数")
+
+
+def test_p0006_inflated_deep_count_is_detected(ham):
+    """alpha >= 3 の内数 (論文の主張の中心) も独立に数え直される."""
+    cert, prob, _ = ham
+    _fam(cert, "graphs_06")["deep_hypothesis_count"] += 1
+    cert.data["totals"]["deep"] += 1
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "alpha >= 3 の個数" in _detail(report, "走査したグラフ数")
+
+
+def test_p0006_inflated_totals_are_detected(ham):
+    cert, prob, _ = ham
+    cert.data["totals"]["deep"] += 7
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "deep" in _detail(report, "証明書の合計")
+
+
+def test_p0006_wrong_published_count_is_detected(ham):
+    cert, prob, _ = ham
+    _fam(cert, "graphs_07")["source_expected"] = 999
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "公表値" in _failed(report)
+
+
+def test_p0006_wrong_graph_count_is_detected(ham):
+    """個数だけを水増しすると、走査個数の照合で落ちる.
+
+    graphs_07 を選ぶのは 853 % 8 == 5 なので、1 増やしても ``mode_bytes`` が
+    変わらないから。長さ検査が先に発火してしまうと、本命の個数照合を試せない。
+    """
+    cert, prob, _ = ham
+    _fam(cert, "graphs_07")["count"] += 1
+    cert.data["totals"]["graphs"] += 1
+    cert.data["totals"]["classified"] += 1
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "グラフ数" in _detail(report, "走査したグラフ数")
+
+
+def _p0006_split(blob: bytearray, fam: dict):
+    """証人ファイルを (モード列, 路レコード列, マスク列) に解く."""
+    from mar.problems.p0006_wowii194_hamiltonian import _BitReader, _stream_bytes
+
+    n, count = fam["n"], fam["count"]
+    mode_bytes = (count + 7) // 8
+    path_bits = fam["path_bits"]
+    path_bytes = _stream_bytes(fam["path_records"] * n, path_bits)
+    reader = _BitReader(bytes(blob[mode_bytes:mode_bytes + path_bytes]), path_bits)
+    paths = [[reader.get() for _ in range(n)] for _ in range(fam["path_records"])]
+    rest = blob[mode_bytes + path_bytes:]
+    mb = fam["mask_bytes"]
+    masks = [bytes(rest[i * mb:(i + 1) * mb]) for i in range(fam["mask_records"])]
+    return bytearray(blob[:mode_bytes]), paths, masks
+
+
+def _p0006_join(fam: dict, modes: bytearray, paths, masks) -> bytearray:
+    """:func:`_p0006_split` の逆 (レコード数が変わっていてもよい)."""
+    from mar.problems.p0006_wowii194_hamiltonian import _BitWriter
+
+    writer = _BitWriter(fam["path_bits"])
+    for rec in paths:
+        for v in rec:
+            writer.put(v)
+    return bytearray(bytes(modes) + writer.getvalue() + b"".join(masks))
+
+
+def test_p0006_deep_count_agrees_between_the_two_tiers(ham):
+    """alpha >= 3 の内数は、分類の有無で数え方が変わっても一致する.
+
+    分類する族は alpha を厳密に計算し、分類しない族は極大独立集合の列挙で
+    「サイズ 3 以上があるか」だけを見る。実データでは分類しない族 (木) の
+    仮定成立数が 0 なので後者の経路は一度も走らない。族を分類なしに落として
+    走らせ、独立な 2 通りの数え方が同じ値を出すことを確かめる。
+    """
+    cert, prob, _ = ham
+    fam = _fam(cert, "graphs_06")
+    assert fam["classified"] and fam["hypothesis_count"] > 0
+    tot = cert.data["totals"]
+    tot["classified"] -= fam["count"]
+    tot["equality"] -= fam["equality_count"]
+    fam["classified"] = False
+    fam["equality_count"] = 0
+    fam["equality_graphs"] = []
+    fam["equality_examples"] = []
+    fam["equality_complete"] = False
+    report = prob.verify(cert)
+    assert report.ok, _failed(report)
+
+
+def test_p0006_relabelled_mask_with_real_path_is_detected(ham):
+    """仮定が成り立たないグラフに本物のハミルトン路を付けても見破られる.
+
+    モードビットを 1 -> 0 に倒し、独立集合の証人を捨てて、代わりに実在する
+    ハミルトン路を差し込む。長さもレコード数も辻褄が合うので、形式的な検査は
+    すべて素通りする。ここを止めるのは「分類する族では仮定の成否を検証器が
+    自分で計算し直す」という一点だけなので、その防御を直接試している。
+    """
+    import itertools
+
+    import mar.checkgraph as ck
+    from mar.problems.p0006_wowii194_hamiltonian import _stream_bytes
+
+    cert, prob, wdir = ham
+    fam = _fam(cert, "graphs_06")
+    n = fam["n"]
+    blob = _p0006_blob(wdir, fam)
+    graphs = _p0006_graphs(fam)
+    modes, paths, masks = _p0006_split(blob, fam)
+
+    # 仮定は破れている (モード 1) が、ハミルトン路自体は存在するグラフを探す。
+    target = seq = None
+    for i, g in enumerate(graphs):
+        if _p0006_mode(blob, i):
+            hit = next((p for p in itertools.permutations(range(n))
+                        if ck.is_hamiltonian_path(g, list(p))), None)
+            if hit is not None:
+                target, seq = i, list(hit)
+                break
+    assert target is not None, "路をもつ反証グラフが族に無いとテストにならない"
+
+    pos = sum(1 for j in range(target) if not _p0006_mode(blob, j))
+    midx = sum(1 for j in range(target) if _p0006_mode(blob, j))
+    paths.insert(pos, seq)
+    del masks[midx]
+    modes[target >> 3] &= ~(1 << (7 - (target & 7)))
+
+    fam["path_records"] += 1
+    fam["mask_records"] -= 1
+    fam["hypothesis_count"] += 1
+    fam["path_bytes"] = _stream_bytes(fam["path_records"] * n, fam["path_bits"])
+    tot = cert.data["totals"]
+    tot["paths"] += 1
+    tot["masks"] -= 1
+    tot["hypothesis"] += 1
+    _p0006_rewrite(wdir, fam, _p0006_join(fam, modes, paths, masks))
+
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "仮定を満たさないのに仮定成立として数えられている" in \
+        _detail(report, "分類する族")

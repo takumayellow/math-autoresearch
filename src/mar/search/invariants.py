@@ -23,38 +23,7 @@ def _popcount(x: int) -> int:
 
 def max_clique(n: int, adj: tuple[int, ...]) -> int:
     """最大クリークの大きさ (Tomita 型の枝刈り付き分枝限定)."""
-    best = 0
-
-    def expand(cand: int, size: int) -> None:
-        nonlocal best
-        if cand == 0:
-            best = max(best, size)
-            return
-        if size + _popcount(cand) <= best:
-            return
-        # ピボット: 候補内で次数最大の頂点
-        pivot, pivot_deg = -1, -1
-        m = cand
-        while m:
-            b = m & -m
-            v = b.bit_length() - 1
-            m ^= b
-            d = _popcount(adj[v] & cand)
-            if d > pivot_deg:
-                pivot, pivot_deg = v, d
-        ext = cand & ~adj[pivot] if pivot >= 0 else cand
-        m = ext
-        while m:
-            b = m & -m
-            v = b.bit_length() - 1
-            m ^= b
-            expand(cand & adj[v], size + 1)
-            cand ^= b
-            if size + _popcount(cand) <= best:
-                return
-
-    expand((1 << n) - 1, 0)
-    return best
+    return _max_clique_from(adj, (1 << n) - 1)
 
 
 def independence_number(g: Graph) -> int:
@@ -1270,3 +1239,151 @@ def max_induced_tree(g: Graph, seed: int = 0) -> int:
 
 def max_induced_tree_size(g: Graph) -> int:
     return _popcount(max_induced_tree(g))
+
+
+# ---------------------------------------------------------------------------
+# 近傍独立数の和とハミルトン路 (WOWII 予想 194)
+# ---------------------------------------------------------------------------
+
+
+def _max_clique_from(adj: tuple[int, ...], cand: int) -> int:
+    """候補集合 cand の中の最大クリークの大きさ (:func:`max_clique` の本体)."""
+    best = 0
+
+    def expand(cand: int, size: int) -> None:
+        nonlocal best
+        if cand == 0:
+            best = max(best, size)
+            return
+        if size + _popcount(cand) <= best:
+            return
+        # ピボット: 候補内で次数最大の頂点
+        pivot, pivot_deg = -1, -1
+        m = cand
+        while m:
+            b = m & -m
+            v = b.bit_length() - 1
+            m ^= b
+            d = _popcount(adj[v] & cand)
+            if d > pivot_deg:
+                pivot, pivot_deg = v, d
+        ext = cand & ~adj[pivot] if pivot >= 0 else cand
+        m = ext
+        while m:
+            b = m & -m
+            v = b.bit_length() - 1
+            m ^= b
+            expand(cand & adj[v], size + 1)
+            cand ^= b
+            if size + _popcount(cand) <= best:
+                return
+
+    expand(cand, 0)
+    return best
+
+
+def _complement(g: Graph) -> tuple[int, ...]:
+    n, adj = g
+    full = (1 << n) - 1
+    return tuple((full ^ adj[i]) & ~(1 << i) for i in range(n))
+
+
+def independence_number_on(g: Graph, mask: int) -> int:
+    r"""誘導部分グラフ $G[\mathrm{mask}]$ の独立数."""
+    return _max_clique_from(_complement(g), mask)
+
+
+def indep_neighbors_sum(g: Graph) -> int:
+    r"""$S(G) = \sum_{v} \alpha(G[N(v)])$.
+
+    WOWII 予想 194 の $\ell_{\mathrm{avg}}(G) = S(G)/n$ の分子。分数を経由
+    しないよう、以降もこの整数のまま扱う。
+    """
+    n, adj = g
+    comp = _complement(g)
+    return sum(_max_clique_from(comp, adj[v]) for v in range(n))
+
+
+def lex_min_independent_set(g: Graph, size: int) -> int | None:
+    r"""大きさ $k$ の独立集合のうち辞書式最小のもの (無ければ ``None``).
+
+    ``None`` は $\alpha(G) < k$ と同値なので、``size`` を
+    $\lfloor (n+S)/n \rfloor + 1$ に取れば「予想 194 の仮定が破れるか」の
+    **厳密な**判定になる。証人を小さく取ると族の中で似たマスクが並ぶので、
+    圧縮も効く。
+    """
+    n, adj = g
+    if size <= 0:
+        return 0
+    if size > n:
+        return None
+
+    def rec(start: int, chosen: int, chosen_size: int, banned: int) -> int | None:
+        if chosen_size == size:
+            return chosen
+        need = size - chosen_size
+        for v in range(start, n - need + 1):
+            if (banned >> v) & 1:
+                continue
+            got = rec(v + 1, chosen | (1 << v), chosen_size + 1, banned | adj[v])
+            if got is not None:
+                return got
+        return None
+
+    return rec(0, 0, 0, 0)
+
+
+def _rest_connected(adj: tuple[int, ...], full: int, cur: int, visited: int) -> bool:
+    """未訪問の頂点が、現在地 cur から未訪問だけを通って全部届くか."""
+    rest = full & ~visited
+    if not rest:
+        return True
+    seen = 1 << cur
+    stack = [cur]
+    while stack:
+        v = stack.pop()
+        m = adj[v] & rest & ~seen
+        while m:
+            b = m & -m
+            m ^= b
+            seen |= b
+            stack.append(b.bit_length() - 1)
+    return (seen & rest) == rest
+
+
+def lex_min_hamiltonian_path(g: Graph) -> tuple[int, ...] | None:
+    """辞書式最小のハミルトン路 (頂点列)。存在しなければ ``None``.
+
+    始点を小さい順に試し、各段でも小さい番号から伸ばすので、最初に見つかる
+    路が辞書式最小になる。枝刈りは「未訪問部分が現在地から連結でなければ
+    切る」の 1 つだけで、疎なグラフの非 traceable 判定が現実的な時間で
+    終わる。**完全探索**なので ``None`` は「路が存在しない」ことの証明で
+    ある (ただし論文で使うのは路が見つかった側だけ)。
+    """
+    n, adj = g
+    if n == 1:
+        return (0,)
+    full = (1 << n) - 1
+    path: list[int] = []
+
+    def go(v: int, visited: int) -> bool:
+        if visited == full:
+            return True
+        if not _rest_connected(adj, full, v, visited):
+            return False
+        cand = adj[v] & ~visited
+        while cand:
+            b = cand & -cand
+            cand ^= b
+            u = b.bit_length() - 1
+            path.append(u)
+            if go(u, visited | b):
+                return True
+            path.pop()
+        return False
+
+    for start in range(n):
+        path[:] = [start]
+        if go(start, 1 << start):
+            return tuple(path)
+    return None

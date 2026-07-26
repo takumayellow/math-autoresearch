@@ -41,7 +41,7 @@
   "platform": "Windows 11 (build 26200)",
   "problem_id": "p0001_txgraffiti_i_mustar",
   "python": "3.10.11",
-  "seconds": 91.8,
-  "verified_at": "2026-07-26T14:01:18+00:00",
-  "verifier_hash": "167b69b212be6add"
+  "seconds": 91.0,
+  "verified_at": "2026-07-26T17:46:03+00:00",
+  "verifier_hash": "3eae5942eed441fe"
 }

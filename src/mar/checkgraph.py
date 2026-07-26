@@ -725,3 +725,85 @@ def induced_tree_bounds(g: GraphS, tree_size: int) -> dict[str, tuple[int, int]]
         "c144": (gir - 1 + ec, tree_size),
         "c146": (2 * eb, tree_size * r2),
     }
+
+
+# ---------------------------------------------------------------------------
+# 近傍独立数の和とハミルトン路 (WOWII 予想 194 の検証)
+# ---------------------------------------------------------------------------
+
+def induced_subgraph(g: GraphS, subset: set[int]) -> GraphS:
+    """subset が誘導する部分グラフ (頂点は昇順に振り直す)."""
+    _, nbr = g
+    verts = sorted(subset)
+    index = {v: i for i, v in enumerate(verts)}
+    return (len(verts),
+            [{index[u] for u in nbr[v] & subset} for v in verts])
+
+
+def independence_number_on(g: GraphS, subset: set[int]) -> int:
+    r"""誘導部分グラフ $G[\mathrm{subset}]$ の独立数.
+
+    探索器は「補グラフの最大クリークを分枝限定」で解く。検証器は
+    :func:`maximal_independent_sets` の全列挙から最大値を取る。
+    """
+    if not subset:
+        return 0
+    sub = induced_subgraph(g, subset)
+    return max(len(s) for s in maximal_independent_sets(sub))
+
+
+def indep_neighbors_sum(g: GraphS) -> int:
+    r"""$S(G) = \sum_{v} \alpha(G[N(v)])$ (予想 194 の $\ell_{\mathrm{avg}}$ の分子)."""
+    order, nbr = g
+    return sum(independence_number_on(g, nbr[v]) for v in range(order))
+
+
+def hamiltonian_hypothesis_sides(g: GraphS,
+                                 alpha: int | None = None) -> tuple[int, int]:
+    r"""予想 194 の仮定 $\alpha \le 1 + \ell_{\mathrm{avg}}$ を整数で表した
+    $(n\alpha,\; n + S)$ を返す。仮定が成り立つ $\iff$ 左辺 $\le$ 右辺."""
+    order, _ = g
+    if alpha is None:
+        alpha = alpha_and_i(g)[0]
+    return order * alpha, order + indep_neighbors_sum(g)
+
+
+def is_hamiltonian_path(g: GraphS, seq: list[int]) -> bool:
+    """頂点列 seq が G のハミルトン路か (全頂点をちょうど 1 回ずつ通るか)."""
+    order, nbr = g
+    if len(seq) != order or sorted(seq) != list(range(order)):
+        return False
+    return all(seq[i + 1] in nbr[seq[i]] for i in range(order - 1))
+
+
+def has_hamiltonian_path(g: GraphS) -> bool:
+    """ハミルトン路が存在するか (Held--Karp 型のビット DP).
+
+    探索器は辞書式最小の路を DFS で全探索する。検証器は**部分集合ごとの
+    到達可能な終点集合**を配るまったく別の解法を使う。反例の主張
+    (路が存在しない) を確かめるときだけ呼ぶ。
+    """
+    order, nbr = g
+    if order <= 1:
+        return True
+    adj = [sum(1 << u for u in nbr[v]) for v in range(order)]
+    full = (1 << order) - 1
+    ends = [0] * (1 << order)
+    for v in range(order):
+        ends[1 << v] = 1 << v
+    for mask in range(1, 1 << order):
+        cur = ends[mask]
+        if not cur:
+            continue
+        if mask == full:
+            return True
+        rest = full & ~mask
+        while cur:
+            bit = cur & -cur
+            cur ^= bit
+            nxt = adj[bit.bit_length() - 1] & rest
+            while nxt:
+                nb = nxt & -nxt
+                nxt ^= nb
+                ends[mask | nb] |= nb
+    return False
