@@ -1,0 +1,47 @@
+{
+  "certificate_digest": "24b79714410310f6",
+  "checks": [
+    {
+      "detail": "0 件",
+      "name": "反例リストは空",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証人ファイルの SHA-256 と長さが証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "13402242 個すべてで T が木を誘導し 3 予想の下界を満たす",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "走査したグラフ数が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "列挙個数が検証器の持つ公表値 (OEIS A001349 / A000055 / A002851 / A006820-A006822) と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "等号 13374 個を厳密に再計算し、残り全部で 3 予想とも狭義成立 (全族で分類が閉じた)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証明書の合計 (論文の見出し数) が族ごとの集計と一致",
+      "passed": true
+    }
+  ],
+  "ok": true,
+  "platform": "Windows 11 (build 26200)",
+  "problem_id": "p0005_wowii_induced_tree",
+  "python": "3.10.11",
+  "seconds": 2272.9,
+  "verified_at": "2026-07-26T17:03:33+00:00",
+  "verifier_hash": "8ef7d58e67d30367"
+}

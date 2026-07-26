@@ -1049,3 +1049,224 @@ def spectral_radius_interval(g: Graph, digits: int = 30) -> tuple[int, int, int]
         else:
             lo = mid
     return lo, hi, den
+
+
+# ---------------------------------------------------------------------------
+# 誘導木 (induced tree) と集合の離心数 — WOWII 予想 142 / 144 / 146 用
+# ---------------------------------------------------------------------------
+
+def dist_to_set(g: Graph, target: int) -> list[int]:
+    r"""各頂点から頂点集合 ``target`` (ビットマスク) への距離.
+
+    到達できない頂点は ``-1``。``target`` が空なら全部 ``-1``。
+    """
+    n, adj = g
+    dist = [-1] * n
+    if not target:
+        return dist
+    seen = target
+    frontier = target
+    d = 0
+    m = target
+    while m:
+        b = m & -m
+        dist[b.bit_length() - 1] = 0
+        m ^= b
+    while frontier:
+        nxt = 0
+        m = frontier
+        while m:
+            b = m & -m
+            nxt |= adj[b.bit_length() - 1]
+            m ^= b
+        nxt &= ~seen
+        if not nxt:
+            break
+        d += 1
+        seen |= nxt
+        m = nxt
+        while m:
+            b = m & -m
+            dist[b.bit_length() - 1] = d
+            m ^= b
+        frontier = nxt
+    return dist
+
+
+def boundary_vertices(g: Graph) -> int:
+    r"""離心数が最大の頂点の集合 $B$ (ビットマスク)."""
+    ecc = eccentricities(g)
+    top = max(ecc)
+    mask = 0
+    for v, e in enumerate(ecc):
+        if e == top:
+            mask |= 1 << v
+    return mask
+
+
+def center_vertices(g: Graph) -> int:
+    r"""離心数が最小の頂点の集合 (中心, ビットマスク)."""
+    ecc = eccentricities(g)
+    low = min(ecc)
+    mask = 0
+    for v, e in enumerate(ecc):
+        if e == low:
+            mask |= 1 << v
+    return mask
+
+
+def ecc_set(g: Graph, target: int) -> int:
+    r"""集合の離心数 $\mathrm{ecc}(S) = \max_{v \in V} \mathrm{dist}(v, S)$.
+
+    $S$ の中の頂点も (距離 0 として) 数える。formal-conjectures の
+    ``eccSet`` に対応する。
+    """
+    if not target:
+        return 0
+    return max(dist_to_set(g, target))
+
+
+def ecc_outside(g: Graph, target: int) -> int:
+    r"""$S$ の外からの離心数 $\max_{v \notin S} \mathrm{dist}(v, S)$.
+
+    $S = V$ のときは 0。formal-conjectures の ``ecc`` に対応する
+    (予想 144 が使うのはこちら)。
+    """
+    n, _ = g
+    dist = dist_to_set(g, target)
+    outside = [dist[v] for v in range(n) if not (target >> v) & 1]
+    return max(outside) if outside else 0
+
+
+def graph_square(g: Graph) -> Graph:
+    r"""グラフの 2 乗 $G^2$ (距離 2 以下の相異なる 2 頂点を隣接とする)."""
+    n, adj = g
+    sq = []
+    for v in range(n):
+        nb = adj[v]
+        m = adj[v]
+        while m:
+            b = m & -m
+            nb |= adj[b.bit_length() - 1]
+            m ^= b
+        sq.append(nb & ~(1 << v))
+    return (n, tuple(sq))
+
+
+def graph_square_radius(g: Graph) -> int:
+    r"""$\mathrm{rad}(G^2)$."""
+    return radius(graph_square(g))
+
+
+def induces_tree(adj: tuple[int, ...], mask: int) -> bool:
+    """mask の誘導部分グラフが木か (連結かつ閉路なし)."""
+    if mask == 0:
+        return False
+    return _components(adj, mask) == 1 and induces_forest(adj, mask)
+
+
+def greedy_induced_tree(g: Graph, target: int | None = None) -> int:
+    r"""大きい誘導木を貪欲に作る (ビットマスク, 下界のみ).
+
+    誘導木は「ちょうど 1 本の辺で現在の木につながる頂点」を足していくことで
+    しか育たない。各頂点を根にして、その規則で足せる頂点のうち
+    「これ以上木を殺さない」ものを優先して足す。何通りかの優先順位を試す。
+
+    ``target`` を渡すと、その大きさに達した時点で打ち切る。証人は
+    「必要な大きさに届くこと」さえ示せればよいので、全数走査ではこれが効く。
+    """
+    n, adj = g
+    best = 0
+    for root in range(n):
+        if target is not None and _popcount(best) >= target:
+            break
+        for prefer_low in (True, False):
+            mask = 1 << root
+            dead = 0
+            while True:
+                cand = 0
+                rest = ((1 << n) - 1) & ~mask & ~dead
+                m = rest
+                while m:
+                    b = m & -m
+                    v = b.bit_length() - 1
+                    m ^= b
+                    hits = _popcount(adj[v] & mask)
+                    if hits == 1:
+                        cand |= b
+                    elif hits >= 2:
+                        dead |= b
+                if not cand:
+                    break
+                # 追加後に「まだ足せる頂点」が多く残る方を優先する。
+                pick, key = -1, None
+                m = cand
+                while m:
+                    b = m & -m
+                    v = b.bit_length() - 1
+                    m ^= b
+                    outside = _popcount(adj[v] & ~mask & ~dead)
+                    k = outside if prefer_low else -outside
+                    if key is None or k < key:
+                        pick, key = v, k
+                mask |= 1 << pick
+            if _popcount(mask) > _popcount(best):
+                best = mask
+            if target is not None and _popcount(best) >= target:
+                return best
+    return best
+
+
+def max_induced_tree(g: Graph, seed: int = 0) -> int:
+    r"""最大誘導木 $\mathrm{tree}(G)$ を達成する頂点集合を厳密に求める.
+
+    誘導木 $T$ の頂点を根からの距離順に並べると、各頂点は直前までの集合に
+    ちょうど 1 本の辺でつながる。したがって「根を固定し、隣接数が
+    ちょうど 1 の頂点を足す」という分枝ですべての誘導木を尽くせる。
+    隣接数が 2 以上になった頂点は以後どう育てても閉路を作るので恒久的に
+    捨てられる (これが枝刈りの中心)。
+
+    ``seed`` に既知の誘導木を渡すと、それ以下の枝を最初から捨てる。
+    """
+    n, adj = g
+    best = seed if seed and induces_tree(adj, seed) else 0
+    best_size = _popcount(best)
+
+    def rec(mask: int, size: int, dead: int, banned: int) -> None:
+        """banned: この分枝では根に選ばない (対称性の除去) 頂点."""
+        nonlocal best, best_size
+        cand = 0
+        rest = ((1 << n) - 1) & ~mask & ~dead & ~banned
+        m = rest
+        while m:
+            b = m & -m
+            v = b.bit_length() - 1
+            m ^= b
+            hits = _popcount(adj[v] & mask)
+            if hits == 1:
+                cand |= b
+            elif hits >= 2:
+                dead |= b
+        if size + _popcount(cand | (rest & ~cand & ~dead)) <= best_size:
+            return
+        if not cand:
+            if size > best_size:
+                best, best_size = mask, size
+            return
+        if size > best_size:
+            best, best_size = mask, size
+        skipped = 0
+        m = cand
+        while m:
+            b = m & -m
+            m ^= b
+            rec(mask | b, size + 1, dead, banned | skipped)
+            skipped |= b
+
+    for root in range(n):
+        rec(1 << root, 1, 0, (1 << root) - 1)
+    return best
+
+
+def max_induced_tree_size(g: Graph) -> int:
+    return _popcount(max_induced_tree(g))

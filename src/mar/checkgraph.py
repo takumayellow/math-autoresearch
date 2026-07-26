@@ -526,3 +526,202 @@ def mask_to_set(mask: int) -> set[int]:
         mask >>= 1
         index += 1
     return out
+
+# ---------------------------------------------------------------------------
+# 誘導木と集合の離心数 (WOWII 予想 142 / 144 / 146 の検証)
+# ---------------------------------------------------------------------------
+
+def girth(g: GraphS) -> int:
+    r"""最短閉路長。閉路をもたなければ $0$ (formal-conjectures の規約).
+
+    探索器は「各頂点から幅優先探索し、親以外の既訪問頂点に当たったら
+    $d_v + d_u + 1$ を候補にする」方式で求める。検証器は逆に
+    **辺を 1 本ずつ取り除いて両端の距離を測る**: 辺 $uv$ を含む最短閉路の長さは
+    $G - uv$ における $u$--$v$ 間距離 $+\,1$ である。別の探索木をたどるので、
+    片方の実装のオフバイワンがもう片方をすり抜けない。三角形が 1 つ見つかった
+    時点で $3$ が最小値なので打ち切る。
+    """
+    order, nbr = g
+    best = order + 1
+    for u, v in edge_list(g):
+        # G - uv における u から v への距離を幅優先探索で測る。
+        seen = {u}
+        frontier = {u}
+        depth = 0
+        while frontier and depth + 1 < best:
+            depth += 1
+            nxt: set[int] = set()
+            for x in frontier:
+                for y in nbr[x]:
+                    if (x == u and y == v) or (x == v and y == u):
+                        continue    # 取り除いた辺
+                    if y not in seen:
+                        nxt.add(y)
+            if v in nxt:
+                best = depth + 1
+                break
+            seen |= nxt
+            frontier = nxt
+        if best == 3:
+            break               # 閉路長は 3 未満になれない
+    return 0 if best > order else best
+
+
+def eccentricities(g: GraphS, dist: list[list[int]] | None = None) -> list[int]:
+    """各頂点の離心数 (Floyd--Warshall の全点対距離から)."""
+    if dist is None:
+        dist = all_pairs_distance(g)
+    out = []
+    for row in dist:
+        if any(d < 0 for d in row):
+            raise ValueError("非連結なグラフには離心数が定義できない")
+        out.append(max(row))
+    return out
+
+
+def boundary_vertices(g: GraphS, dist: list[list[int]] | None = None) -> set[int]:
+    r"""離心数が最大の頂点の集合 $B$ (境界)."""
+    ecc = eccentricities(g, dist)
+    top = max(ecc)
+    return {v for v, e in enumerate(ecc) if e == top}
+
+
+def center_vertices(g: GraphS, dist: list[list[int]] | None = None) -> set[int]:
+    r"""離心数が最小の頂点の集合 $C$ (中心)."""
+    ecc = eccentricities(g, dist)
+    low = min(ecc)
+    return {v for v, e in enumerate(ecc) if e == low}
+
+
+def dist_to_set(g: GraphS, target: set[int],
+                dist: list[list[int]] | None = None) -> list[int]:
+    """各頂点から集合 ``target`` への距離 (全点対距離の最小値として取る)."""
+    order, _ = g
+    if dist is None:
+        dist = all_pairs_distance(g)
+    out = []
+    for v in range(order):
+        cand = [dist[v][t] for t in target if dist[v][t] >= 0]
+        out.append(min(cand) if cand else -1)
+    return out
+
+
+def ecc_set(g: GraphS, target: set[int],
+            dist: list[list[int]] | None = None) -> int:
+    r"""$\mathrm{ecc}(S) = \max_{v \in V} \mathrm{dist}(v, S)$ ($S$ 自身も含む)."""
+    if not target:
+        return 0
+    return max(dist_to_set(g, target, dist))
+
+
+def ecc_outside(g: GraphS, target: set[int],
+                dist: list[list[int]] | None = None) -> int:
+    r"""$\max_{v \notin S} \mathrm{dist}(v, S)$。$S = V$ なら $0$."""
+    order, _ = g
+    to_set = dist_to_set(g, target, dist)
+    outside = [to_set[v] for v in range(order) if v not in target]
+    return max(outside) if outside else 0
+
+
+def graph_square(g: GraphS, dist: list[list[int]] | None = None) -> GraphS:
+    r"""グラフの 2 乗 $G^2$ (距離 $2$ 以下の相異なる 2 頂点を隣接とする)."""
+    order, _ = g
+    if dist is None:
+        dist = all_pairs_distance(g)
+    return (order, [{v for v in range(order)
+                     if v != u and 0 <= dist[u][v] <= 2}
+                    for u in range(order)])
+
+
+def graph_square_radius(g: GraphS, dist: list[list[int]] | None = None) -> int:
+    r"""$\mathrm{rad}(G^2)$ を $G^2$ 上の幅優先探索で求める.
+
+    $G$ 側の距離は Floyd--Warshall で出しているので、ここは意図的に
+    別のアルゴリズム (頂点ごとの幅優先探索) を使う。
+    """
+    order, nbr = graph_square(g, dist)
+    best = order + 1
+    for s in range(order):
+        seen = {s}
+        frontier = {s}
+        depth = 0
+        while frontier and depth < best:
+            nxt: set[int] = set()
+            for v in frontier:
+                nxt |= nbr[v]
+            nxt -= seen
+            if not nxt:
+                break
+            depth += 1
+            seen |= nxt
+            frontier = nxt
+        if len(seen) != order:
+            continue            # この頂点からは全体に届かない
+        best = min(best, depth)
+    if best > order:
+        raise ValueError("非連結なグラフには半径が定義できない")
+    return best
+
+
+def induces_tree(g: GraphS, subset: set[int]) -> bool:
+    """subset の誘導部分グラフが木か.
+
+    探索器は「連結成分数 $= 1$ かつ森」で判定する。検証器は
+    「森であり、かつ辺数 $= |subset| - 1$」で判定する
+    (森では連結成分数 $= |V| - |E|$ なので同値だが、数える量が違う)。
+    """
+    if not subset:
+        return False
+    if not induces_forest(g, subset):
+        return False
+    _, nbr = g
+    edges = sum(len(nbr[u] & subset) for u in subset) // 2
+    return edges == len(subset) - 1
+
+
+def max_induced_tree_size(g: GraphS) -> int:
+    r"""最大誘導木の位数 $\mathrm{tree}(G)$ を厳密に求める.
+
+    探索器は「葉を 1 枚ずつ生やす」分枝で解くので、検証器は
+    **頂点ごとの採否**で分枝する。誘導木の部分集合は誘導森なので途中で
+    森でなくなった枝は捨てられる (連結性は最後にまとめて見る)。
+    """
+    order, _ = g
+    best = 0
+
+    def rec(index: int, chosen: set[int]) -> None:
+        nonlocal best
+        size = len(chosen)
+        if size > best and induces_tree(g, chosen):
+            best = size
+        if size + (order - index) <= best or index == order:
+            return
+        cand = chosen | {index}
+        if induces_forest(g, cand):
+            rec(index + 1, cand)
+        rec(index + 1, chosen)
+
+    rec(0, set())
+    return best
+
+
+def induced_tree_bounds(g: GraphS, tree_size: int) -> dict[str, tuple[int, int]]:
+    r"""WOWII 予想 142 / 144 / 146 の (左辺, 右辺) を整数のまま返す.
+
+    検証対象の式そのものなので、探索器の実装を借りずにここで組み立てる。
+    分数を避けるため両辺を払ってある:
+
+    * 142: $2\,\mathrm{girth} + 3\,\mathrm{ecc}(B) \le 3\,|T|$
+    * 144: $\mathrm{girth} - 1 + \mathrm{ecc}^{\circ}(C) \le |T|$
+    * 146: $2\,\mathrm{ecc}(B) \le |T| \cdot \mathrm{rad}(G^2)$
+    """
+    dist = all_pairs_distance(g)
+    gir = girth(g)
+    eb = ecc_set(g, boundary_vertices(g, dist), dist)
+    ec = ecc_outside(g, center_vertices(g, dist), dist)
+    r2 = graph_square_radius(g, dist)
+    return {
+        "c142": (2 * gir + 3 * eb, 3 * tree_size),
+        "c144": (gir - 1 + ec, tree_size),
+        "c146": (2 * eb, tree_size * r2),
+    }

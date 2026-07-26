@@ -29,12 +29,15 @@ WITNESS_SRC = REPO_ROOT / "data" / "witnesses"
 P0002 = "p0002_txgraffiti_zf_alpha"
 P0003 = "p0003_saturation_harmonic"
 P0004 = "p0004_wowii61_induced_forest"
+P0005 = "p0005_wowii_induced_tree"
 #: 元データの走査が軽く、かつ等号グラフを含む族。
 P0002_FAMILIES = ("subcubic_06", "subcubic_08")
 #: 反例は $n \ge 9$ にしか無いので、ここで検査するのは比と証人の側。
 P0003_FAMILIES = ("graphs_06", "graphs_07")
 #: 等号グラフを含み (n=6 で 11 個、n=7 で 32 個)、かつ数秒で走る族。
 P0004_FAMILIES = ("graphs_06", "graphs_07")
+#: 3 予想いずれの等号も現れ、かつ数秒で走る族。
+P0005_FAMILIES = ("graphs_06", "graphs_07")
 
 
 def _prepare(pid: str, keep, tmp_path, monkeypatch):
@@ -427,3 +430,250 @@ def test_p0004_wrong_graph_count_is_detected(forest):
     report = prob.verify(cert)
     assert not report.ok
     assert "グラフ数" in _failed(report)
+
+
+# ----------------------------------------------------------------- p0005
+
+
+P0005_CONJ = ("c142", "c144", "c146")
+
+
+@pytest.fixture()
+def tree3(tmp_path, monkeypatch):
+    cert, prob, wdir = _prepare(P0005, P0005_FAMILIES, tmp_path, monkeypatch)
+    fams = cert.data["families"]
+    totals = {
+        "graphs": sum(f["count"] for f in fams),
+        "families": len(fams),
+        "equality": sum(f["counts"].get(f"{c}:equal", 0)
+                        for f in fams for c in P0005_CONJ),
+        "counterexamples": sum(f["counts"].get(f"{c}:fail", 0)
+                               for f in fams for c in P0005_CONJ),
+        "exact_calls": sum(f["exact_calls"] for f in fams),
+    }
+    for c in P0005_CONJ:
+        totals[f"{c}:equal"] = sum(f["counts"].get(f"{c}:equal", 0) for f in fams)
+        totals[f"{c}:fail"] = sum(f["counts"].get(f"{c}:fail", 0) for f in fams)
+    cert.data["totals"] = totals
+    return cert, prob, wdir
+
+
+def _p0005_graphs(fam: dict):
+    """検証器が読むのと同じ順序で族のグラフを返す."""
+    import mar.checkgraph as ck
+    from mar.problems.p0005_wowii_induced_tree import _verifier_source
+
+    return list(_verifier_source(ck, fam))
+
+
+def _rewrite_witness(wdir, fam: dict, index: int, mask: int) -> None:
+    """証人 1 個を差し替え、SHA-256 も辻褄を合わせる (ハッシュ検査を素通しする)."""
+    import hashlib
+
+    path = wdir / fam["witness_file"]
+    blob = bytearray(gzip.decompress(path.read_bytes()))
+    struct.pack_into("<I", blob, 4 * index, mask)
+    raw = gzip.compress(bytes(blob))
+    path.write_bytes(raw)
+    fam["witness_sha256"] = hashlib.sha256(raw).hexdigest()
+
+
+def _lonely_equality(cert: Certificate):
+    """ちょうど 1 本の予想でだけ等号になるグラフを (族, 予想, g6) で返す.
+
+    2 本以上で等号のグラフを隠すと、残った側の再計算で先に落ちてしまい、
+    「等号リストに無いのに狭義が閉じない」という本命の防御を試せない。
+    """
+    for fam in cert.data["families"]:
+        lists = {c: set(fam.get("equality_graphs", {}).get(c, []))
+                 for c in P0005_CONJ}
+        for c in P0005_CONJ:
+            others = set().union(*(lists[k] for k in P0005_CONJ if k != c))
+            for g6 in sorted(lists[c] - others):
+                return fam, c, g6
+    return None, None, None
+
+
+def test_p0005_clean_certificate_verifies(tree3):
+    cert, prob, _ = tree3
+    report = prob.verify(cert)
+    assert report.ok, _failed(report)
+
+
+def test_p0005_bit_flip_in_witness_is_detected(tree3):
+    cert, prob, wdir = tree3
+    _flip_first_byte(wdir / _fam(cert, "graphs_06")["witness_file"])
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "SHA-256" in _failed(report)
+
+
+def test_p0005_empty_witness_is_detected(tree3):
+    """空集合は木を誘導しない (p0004 の森と違い、ここは木の判定で落ちる)."""
+    cert, prob, wdir = tree3
+    fam = _fam(cert, "graphs_06")
+    _rewrite_witness(wdir, fam, 0, 0)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "T が木を誘導し" in _failed(report)
+
+
+def test_p0005_witness_with_a_cycle_is_detected(tree3):
+    """閉路を含む頂点集合を証人にすると木の判定で落ちる."""
+    import mar.checkgraph as ck
+
+    cert, prob, wdir = tree3
+    fam = _fam(cert, "graphs_06")
+    graphs = _p0005_graphs(fam)
+    full = set(range(fam["n"]))
+    index = next(i for i, g in enumerate(graphs) if not ck.induces_tree(g, full))
+    _rewrite_witness(wdir, fam, index, (1 << fam["n"]) - 1)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "T が木を誘導し" in _failed(report)
+
+
+def test_p0005_too_small_witness_is_detected(tree3):
+    """木ではあるが小さすぎる証人 (1 頂点) は下界に届かず落ちる.
+
+    証人の**大きさ**を見ていない検証器はこれを通してしまう。上の 2 つ
+    (木かどうか) とは別の防御なので、独立に試す。
+    """
+    import mar.checkgraph as ck
+
+    cert, prob, wdir = tree3
+    fam = _fam(cert, "graphs_06")
+    graphs = _p0005_graphs(fam)
+    index = next(i for i, g in enumerate(graphs)
+                 if any(lhs > rhs
+                        for lhs, rhs in ck.induced_tree_bounds(g, 1).values()))
+    _rewrite_witness(wdir, fam, index, 1)   # 頂点 0 だけ = 1 頂点の木
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "下界に届かない" in _detail(report, "T が木を誘導し")
+
+
+def test_p0005_out_of_range_witness_is_detected(tree3):
+    """存在しない頂点を含むマスクを弾く."""
+    cert, prob, wdir = tree3
+    fam = _fam(cert, "graphs_06")
+    _rewrite_witness(wdir, fam, 0, 1 << (fam["n"] + 1))
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "T が木を誘導し" in _failed(report)
+
+
+def test_p0005_hidden_equality_graph_is_detected(tree3):
+    """等号グラフを 1 個隠すと、そのグラフで狭義の不等式が破れる."""
+    cert, prob, _ = tree3
+    fam, conj, hidden = _lonely_equality(cert)
+    assert hidden, "1 本だけで等号になるグラフが族に無いとテストにならない"
+    fam["equality_graphs"][conj].remove(hidden)
+    fam["counts"][f"{conj}:equal"] -= 1
+    fam["counts"][f"{conj}:strict"] += 1
+    cert.data["totals"]["equality"] -= 1
+    cert.data["totals"][f"{conj}:equal"] -= 1
+    report = prob.verify(cert)
+    assert not report.ok
+    detail = _detail(report, "分類が閉じた")
+    assert "等号リストに" in detail and hidden in detail
+
+
+def test_p0005_false_equality_claim_is_detected(tree3):
+    """等号でないグラフを等号リストに入れると、厳密再計算で露見する."""
+    import mar.checkgraph as ck
+
+    cert, prob, _ = tree3
+    fam = _fam(cert, "graphs_06")
+    listed = set().union(*(set(fam["equality_graphs"].get(c, []))
+                           for c in P0005_CONJ))
+    innocent = next(g6 for g6 in (ck.sets_to_graph6(g) for g in _p0005_graphs(fam))
+                    if g6 not in listed)
+    fam["equality_graphs"]["c142"].append(innocent)
+    fam["counts"]["c142:equal"] += 1
+    fam["counts"]["c142:strict"] -= 1
+    cert.data["totals"]["equality"] += 1
+    cert.data["totals"]["c142:equal"] += 1
+    report = prob.verify(cert)
+    assert not report.ok
+    detail = _detail(report, "分類が閉じた")
+    assert "等号の主張が再現しない" in detail and innocent in detail
+
+
+def test_p0005_equality_moved_to_another_conjecture_is_detected(tree3):
+    """どの予想で等号かを取り違えた証明書も落ちる (3 本まとめて扱う分の防御)."""
+    cert, prob, _ = tree3
+    fam, conj, g6 = _lonely_equality(cert)
+    assert g6, "1 本だけで等号になるグラフが族に無いとテストにならない"
+    other = next(c for c in P0005_CONJ if c != conj)
+    fam["equality_graphs"][conj].remove(g6)
+    fam["equality_graphs"].setdefault(other, []).append(g6)
+    fam["counts"][f"{conj}:equal"] -= 1
+    fam["counts"][f"{conj}:strict"] += 1
+    fam["counts"][f"{other}:equal"] += 1
+    fam["counts"][f"{other}:strict"] -= 1
+    cert.data["totals"][f"{conj}:equal"] -= 1
+    cert.data["totals"][f"{other}:equal"] += 1
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "等号の主張が再現しない" in _detail(report, "分類が閉じた")
+
+
+def test_p0005_incomplete_equality_list_is_not_reported_as_closed(tree3):
+    cert, prob, _ = tree3
+    _fam(cert, "graphs_06")["equality_complete"] = False
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "全リストが証明書にない" in _detail(report, "分類が閉じた")
+
+
+def test_p0005_inflated_totals_are_detected(tree3):
+    cert, prob, _ = tree3
+    cert.data["totals"]["c146:equal"] += 7
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "c146:equal" in _detail(report, "証明書の合計")
+
+
+def test_p0005_wrong_published_count_is_detected(tree3):
+    cert, prob, _ = tree3
+    _fam(cert, "graphs_07")["source_expected"] = 999
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "公表値" in _failed(report)
+
+
+def test_p0005_wrong_graph_count_is_detected(tree3):
+    cert, prob, _ = tree3
+    _fam(cert, "graphs_06")["count"] += 1
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "グラフ数" in _failed(report)
+
+
+def test_p0005_truncated_witness_file_is_detected(tree3):
+    """証人を後ろから削ると、例外ではなく不合格として報告される."""
+    import hashlib
+
+    cert, prob, wdir = tree3
+    fam = _fam(cert, "graphs_06")
+    path = wdir / fam["witness_file"]
+    raw = gzip.compress(gzip.decompress(path.read_bytes())[:-4])
+    path.write_bytes(raw)
+    fam["witness_sha256"] = hashlib.sha256(raw).hexdigest()
+    fam["witness_records"] -= 1
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "証人の個数が元リストより少ない" in _detail(report, "T が木を誘導")
+
+
+def test_p0005_bogus_equality_example_is_detected(tree3):
+    """論文に載る等号グラフの例が等号リスト外なら不合格になる."""
+    cert, prob, _ = tree3
+    fam = _fam(cert, "graphs_06")
+    fam["equality_examples"]["c142"] = ["E????"] + \
+        fam["equality_examples"].get("c142", [])
+    report = prob.verify(cert)
+    assert not report.ok
+    detail = _detail(report, "分類が閉じた")
+    assert "等号リストに無いグラフが例に載っている" in detail
