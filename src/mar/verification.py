@@ -22,12 +22,12 @@ from __future__ import annotations
 
 import hashlib
 import json
-import platform
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 from .certificate import Certificate, VerificationReport
+from .osinfo import os_label
 from .problem import REPO_ROOT
 
 RECORD_DIR = REPO_ROOT / "data" / "verifications"
@@ -64,7 +64,7 @@ def save_record(cert: Certificate, report: VerificationReport,
         "verified_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "seconds": round(seconds, 1),
         "python": sys.version.split()[0],
-        "platform": f"{platform.system()} {platform.release()}",
+        "platform": os_label(),
     }
     path = record_path(cert.problem_id)
     path.parent.mkdir(parents=True, exist_ok=True)

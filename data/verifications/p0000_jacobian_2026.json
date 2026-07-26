@@ -1,0 +1,52 @@
+{
+  "certificate_digest": "2a262dfa9a726e07",
+  "checks": [
+    {
+      "detail": "",
+      "name": "写像が 3 変数 3 成分",
+      "passed": true
+    },
+    {
+      "detail": "det JF = -2",
+      "name": "ヤコビ行列式が定数",
+      "passed": true
+    },
+    {
+      "detail": "主張 -2",
+      "name": "ヤコビ行列式が 0 でなく主張値と一致",
+      "passed": true
+    },
+    {
+      "detail": "3 点",
+      "name": "衝突点が相異なる",
+      "passed": true
+    },
+    {
+      "detail": "F(点) = (-1/4, 0, 0)",
+      "name": "衝突点がすべて同一の像をもつ",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "ファイバー多項式 g が 3 次",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "g が無平方 (相異なる 3 根)",
+      "passed": true
+    },
+    {
+      "detail": "一般ファイバーは 3 点以上",
+      "name": "g の各根が実際に原像を与える (QQ[z]/(g) 上の恒等式)",
+      "passed": true
+    }
+  ],
+  "ok": true,
+  "platform": "Windows 11 (build 26200)",
+  "problem_id": "p0000_jacobian_2026",
+  "python": "3.10.11",
+  "seconds": 0.0,
+  "verified_at": "2026-07-26T14:02:05+00:00",
+  "verifier_hash": "bbefaf185b2726a2"
+}

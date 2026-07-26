@@ -1,0 +1,47 @@
+{
+  "certificate_digest": "b9488babb31c4202",
+  "checks": [
+    {
+      "detail": "0 件",
+      "name": "反例リストは空",
+      "passed": true
+    },
+    {
+      "detail": "0 族で違反",
+      "name": "記録された (i, mu*) 分布に i > mu* の組がない",
+      "passed": true
+    },
+    {
+      "detail": "155033 vs 155033",
+      "name": "合計グラフ数が totals と一致",
+      "passed": true
+    },
+    {
+      "detail": "P_4: i=2, mu*=1",
+      "name": "非正則の証人 (正則性が必要であること) を独立に再計算",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "列挙個数が検証器の持つ公表値 (OEIS A002851 / A006820-A006822 / A014377) と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "独立実装で 25564 個を全数再計算し (i, mu*) 分布が一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "全数再計算しない族の証拠グラフを独立に再計算",
+      "passed": true
+    }
+  ],
+  "ok": true,
+  "platform": "Windows 11 (build 26200)",
+  "problem_id": "p0001_txgraffiti_i_mustar",
+  "python": "3.10.11",
+  "seconds": 91.8,
+  "verified_at": "2026-07-26T14:01:18+00:00",
+  "verifier_hash": "167b69b212be6add"
+}

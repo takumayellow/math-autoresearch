@@ -1,0 +1,47 @@
+{
+  "certificate_digest": "c9fdfb33ec5724e0",
+  "checks": [
+    {
+      "detail": "0 件",
+      "name": "反例リストは空",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証人ファイルの SHA-256 と長さが証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "48524 個すべてで A が独立・S がゼロ強制集合・|S| <= |A|+1",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "走査したグラフ数が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "元データの総数が検証器の持つ公表値 (OEIS A001349 / A002851) と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "等号 46 個を厳密に再計算し、残り全部で |S| <= |A| (全族で分類が閉じた)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "独立実装で 3163 個の alpha と Z を再計算し分類が一致",
+      "passed": true
+    }
+  ],
+  "ok": true,
+  "platform": "Windows 11 (build 26200)",
+  "problem_id": "p0002_txgraffiti_zf_alpha",
+  "python": "3.10.11",
+  "seconds": 23.9,
+  "verified_at": "2026-07-26T14:01:59+00:00",
+  "verifier_hash": "03fd950e06d18e81"
+}

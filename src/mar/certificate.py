@@ -18,13 +18,14 @@ from __future__ import annotations
 
 import hashlib
 import json
-import platform
 import subprocess
 import sys
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from .osinfo import os_label
 
 
 def _git_rev(repo_root: Path) -> str:
@@ -56,7 +57,7 @@ class Provenance:
         return Provenance(
             created_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
             python=sys.version.split()[0],
-            platform=f"{platform.system()} {platform.release()}",
+            platform=os_label(),
             git_rev=_git_rev(repo_root),
             search_seed=seed,
             search_seconds=seconds,

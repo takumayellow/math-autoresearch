@@ -393,7 +393,7 @@
     "created_at": "2026-07-26T11:26:27+00:00",
     "git_rev": "f78aa8f",
     "notes": "各グラフに (最大独立集合, フォート分枝で見つけた最小ゼロ強制集合) の 2 つ組を証人として付け、バイナリのサイドカーに保存した。",
-    "platform": "Windows 10",
+    "platform": "Windows 11 (build 26200)",
     "python": "3.10.11",
     "search_seconds": 936.544873714447,
     "search_seed": 0
