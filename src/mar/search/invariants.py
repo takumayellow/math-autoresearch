@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import math
 from functools import lru_cache
 from itertools import combinations
 
@@ -304,6 +305,115 @@ def greedy_maximal_matching(g: Graph, order: list[int] | None = None) -> int:
     return size
 
 
+def greedy_maximal_matching_edges(g: Graph,
+                                  order: list[int] | None = None) -> list[tuple[int, int]]:
+    """貪欲な極大マッチングを辺の列として返す (証人にする用)."""
+    n, adj = g
+    if order is None:
+        order = sorted(range(n), key=lambda v: _popcount(adj[v]))
+    used = 0
+    pairs: list[tuple[int, int]] = []
+    for v in order:
+        if (used >> v) & 1:
+            continue
+        cand = adj[v] & ~used
+        if not cand:
+            continue
+        best, best_deg = -1, 1 << 30
+        m = cand
+        while m:
+            b = m & -m
+            u = b.bit_length() - 1
+            m ^= b
+            d = _popcount(adj[u] & ~used)
+            if d < best_deg:
+                best, best_deg = u, d
+        used |= (1 << v) | (1 << best)
+        pairs.append((v, best) if v < best else (best, v))
+    return pairs
+
+
+def min_maximal_matching(g: Graph) -> list[tuple[int, int]]:
+    r"""最小極大マッチングそのものを返す (``min_maximal_matching_number`` の証人版)."""
+    n, adj = g
+    orders = [None, list(range(n)),
+              sorted(range(n), key=lambda v: -_popcount(adj[v]))]
+    cands = [greedy_maximal_matching_edges(g, o) for o in orders]
+    best_pairs = min(cands, key=len)
+    best = len(best_pairs)
+    if best == 0:
+        return []
+    memo: dict[int, int] = {}
+    full = (1 << n) - 1
+
+    def rec(used: int, chosen: list[tuple[int, int]]) -> None:
+        nonlocal best, best_pairs
+        size = len(chosen)
+        if size >= best:
+            return
+        free = full & ~used
+        u = -1
+        m = free
+        while m:
+            b = m & -m
+            v = b.bit_length() - 1
+            m ^= b
+            if adj[v] & free:
+                u = v
+                break
+        if u < 0:
+            best, best_pairs = size, list(chosen)
+            return
+        if size + (_matching_number_on(adj, free, memo) + 1) // 2 >= best:
+            return
+        w = ((adj[u] & free) & -(adj[u] & free)).bit_length() - 1
+        options: set[tuple[int, int]] = set()
+        for a in (u, w):
+            m = adj[a] & free
+            while m:
+                b = m & -m
+                x = b.bit_length() - 1
+                m ^= b
+                options.add((a, x) if a < x else (x, a))
+        for a, b2 in sorted(options):
+            chosen.append((a, b2))
+            rec(used | (1 << a) | (1 << b2), chosen)
+            chosen.pop()
+
+    rec(0, [])
+    return best_pairs
+
+
+#: 調和指数を整数演算で扱うための共通分母。lcm(2,...,18) なので、
+#: 最大次数 9 以下 (n <= 10) のグラフではすべての d(u)+d(v) を割り切る。
+HARMONIC_DEN = 12252240
+
+
+def harmonic_numerator(g: Graph, den: int | None = None) -> int:
+    r"""$H(G) \cdot den$ を整数で返す (``den`` は各 $d(u)+d(v)$ で割り切れること).
+
+    ``den`` を省くと位数から安全な共通分母を作る (既定値を固定にすると
+    $n \ge 11$ で割り切れずに例外になるため)。
+    """
+    n, adj = g
+    if den is None:
+        den = math.lcm(*range(2, 2 * n - 1)) if n >= 3 else 2
+    deg = [_popcount(a) for a in adj]
+    total = 0
+    for i in range(n):
+        m = adj[i] >> (i + 1)
+        j = i + 1
+        while m:
+            if m & 1:
+                s = deg[i] + deg[j]
+                if den % s:
+                    raise ValueError(f"共通分母 {den} が d(u)+d(v)={s} で割り切れない")
+                total += 2 * (den // s)
+            m >>= 1
+            j += 1
+    return total
+
+
 def min_maximal_matching_number_naive(g: Graph) -> int:
     r"""$\mu^*(G)$ の総当たり版 (照合用)."""
     n, adj = g
@@ -593,8 +703,8 @@ def zero_forcing_closure(g: Graph, start: int) -> int:
     return colored
 
 
-def _minimal_fort(g: Graph, seed: int) -> int:
-    r"""$seed$ を含む極小フォートを返す (ビットマスク).
+def _grow_fort(g: Graph, seed: int) -> int:
+    r"""$seed$ を含むフォートを 1 つ返す (ビットマスク).
 
     フォートとは $F \ne \emptyset$ であって、$F$ の外のどの点も $F$ にちょうど
     1 本の辺を持たない集合。$S$ がゼロ強制集合であることと、$S$ がすべての
@@ -615,11 +725,50 @@ def _minimal_fort(g: Graph, seed: int) -> int:
     return fort
 
 
+def disjoint_forts(g: Graph, wanted: int) -> list[int]:
+    r"""互いに素なフォートを貪欲に ``wanted`` 個まで集める.
+
+    フォート $F$ は「$V \setminus F$ のどの点も $F$ にちょうど 1 個の隣接点を
+    もたない」空でない集合で、ゼロ強制集合はすべてのフォートと交わらなければ
+    ならない。したがって互いに素なフォートが $k$ 個あれば $Z(G) \ge k$ である。
+    見つかった個数が ``wanted`` に届かなくても、それは下界が取れなかった
+    ことを意味するだけで、$Z$ について何も否定しない。
+    """
+    n, adj = g
+    blocked = 0
+    forts: list[int] = []
+    while len(forts) < wanted:
+        best = 0
+        for v in range(n):
+            if (blocked >> v) & 1:
+                continue
+            fort = _grow_fort(g, v)
+            if fort & blocked:
+                continue
+            if best == 0 or _popcount(fort) < _popcount(best):
+                best = fort
+        if best == 0:
+            break
+        forts.append(best)
+        blocked |= best
+    return forts
+
+
 def zero_forcing_set_at_most(g: Graph, limit: int) -> int | None:
     r"""大きさ $\le limit$ のゼロ強制集合を 1 つ返す (無ければ ``None``).
 
     フォート分枝による完全探索なので、``None`` は「存在しない」の証明になる
     (実装が正しい限り)。$Z(G)$ を求めきるより早く打ち切れる。
+
+    各節点では、まだ $S$ に当たっていない極小フォートを白頂点ごとに作り、
+
+    * 最小のものを分枝集合に選ぶ (どのゼロ強制集合もそれと交わる)、
+    * 互いに素なものを貪欲に $k$ 個取り、$|S| + k > limit$ なら枝を捨てる
+      (互いに素なフォートはそれぞれ別の頂点で当てる必要がある)
+
+    の 2 つに使う。後者の下界がないと、$Z(G) > limit$ の場合に
+    深さ $limit$ の木を丸ごと展開することになり、$n = 18$ の立方体グラフでは
+    1 個に 1 分以上かかる例が出る。
     """
     n, adj = g
     full = (1 << n) - 1
@@ -633,22 +782,31 @@ def zero_forcing_set_at_most(g: Graph, limit: int) -> int | None:
         if size >= limit:
             return None
         white = full & ~closed
-        # S と交わらない極小フォートのうち最小のものを分枝集合にする
-        best_fort = white
-        tried = 0
+        # S と交わらない極小フォートを集める (白頂点それぞれを種にする)
+        seen: set[int] = set()
         m = white
-        order = sorted((v for v in range(n) if (white >> v) & 1),
-                       key=lambda v: _popcount(adj[v]))
-        for v in order:
-            if tried >= 6:
-                break
-            tried += 1
-            fort = _minimal_fort(g, v)
-            if fort & chosen:
+        while m:
+            b = m & -m
+            v = b.bit_length() - 1
+            m ^= b
+            fort = _grow_fort(g, v)
+            if not (fort & chosen):
+                seen.add(fort)
+        forts = list(seen)
+        if not forts:
+            forts = [white]
+        forts.sort(key=_popcount)
+        # 互いに素なフォートの個数だけ、まだ頂点を足す必要がある
+        blocked = 0
+        need = 0
+        for fort in forts:
+            if fort & blocked:
                 continue
-            if _popcount(fort) < _popcount(best_fort):
-                best_fort = fort
-        m = best_fort
+            blocked |= fort
+            need += 1
+        if size + need > limit:
+            return None
+        m = forts[0]
         while m:
             b = m & -m
             m ^= b

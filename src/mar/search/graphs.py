@@ -260,6 +260,54 @@ def iter_bounded_degree(n: int, max_degree: int,
         stats["source_total"] = total
 
 
+# ---------------------------------------------------------------------------
+# 木 (McKay の直径別リスト)
+# ---------------------------------------------------------------------------
+
+#: n 頂点のラベルなし木の個数 (OEIS A000055)。網羅性の照合に使う。
+TREE_COUNTS = {1: 1, 2: 1, 3: 1, 4: 2, 5: 3, 6: 6, 7: 11, 8: 23, 9: 47,
+               10: 106, 11: 235, 12: 551, 13: 1301, 14: 3159, 15: 7741,
+               16: 19320, 17: 48629, 18: 123867, 19: 317955, 20: 823065,
+               21: 2144505, 22: 5623756}
+
+
+def tree_file(n: int, diameter: int) -> Path:
+    """``tree{n}.{d}.txt`` (辺リスト形式) を必要ならダウンロードして返す."""
+    name = f"tree{n}.{diameter}.txt"
+    path = CACHE / "trees" / name
+    if path.exists() and path.stat().st_size > 0:
+        return path
+    return _download(f"{BASE_URL}/{name}", path)
+
+
+def parse_edge_list(line: str, n: int) -> Graph:
+    """``0 8  0 9  1 8 ...`` 形式の 1 行を Graph にする."""
+    nums = [int(x) for x in line.split()]
+    if len(nums) != 2 * (n - 1):
+        raise ValueError(f"木の辺数が n-1 でない: {len(nums)//2}")
+    adj = [0] * n
+    for k in range(0, len(nums), 2):
+        u, v = nums[k], nums[k + 1]
+        if not (0 <= u < n and 0 <= v < n) or u == v:
+            raise ValueError("辺の頂点番号が不正")
+        adj[u] |= 1 << v
+        adj[v] |= 1 << u
+    return n, tuple(adj)
+
+
+def iter_trees(n: int) -> Iterator[Graph]:
+    """n 頂点の木をすべて返す (直径 2..n-1 のファイルを順に読む)."""
+    if n <= 2:
+        yield (n, (0,) * n) if n < 2 else (2, (0b10, 0b01))
+        return
+    for d in range(2, n):
+        with tree_file(n, d).open("r", encoding="ascii") as fh:
+            for line in fh:
+                line = line.strip()
+                if line:
+                    yield parse_edge_list(line, n)
+
+
 def count_check(n: int, seen: int, connected: bool = False) -> tuple[bool, int]:
     """列挙数が既知の個数と一致するかを返す (網羅性の証明書に使う)."""
     table = CONNECTED_COUNTS if connected else GRAPH_COUNTS

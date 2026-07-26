@@ -27,6 +27,48 @@ GraphS = tuple[int, list[set[int]]]
 
 
 # ---------------------------------------------------------------------------
+# 公表値 (検証器が独自に持つ。探索器の表を参照しない)
+# ---------------------------------------------------------------------------
+# 網羅性の主張「位数 n の対象を全部見た」は、走査個数が第三者の公表値と一致して
+# 初めて意味を持つ。探索器 (mar.search.graphs) も同じ表を持っているが、そちらを
+# import すると「探索器が書いた期待値に探索器の出力が一致した」という無内容な
+# 検査になる。以下は OEIS から検証器のために独立に書き起こした値。
+
+#: OEIS A001349 — 位数 n の連結グラフの個数
+PUBLISHED_CONNECTED_GRAPHS = {
+    1: 1, 2: 1, 3: 2, 4: 6, 5: 21, 6: 112, 7: 853, 8: 11117,
+    9: 261080, 10: 11716571, 11: 1006700565,
+}
+
+#: OEIS A000055 — 位数 n の木の個数
+PUBLISHED_TREES = {
+    1: 1, 2: 1, 3: 1, 4: 2, 5: 3, 6: 6, 7: 11, 8: 23, 9: 47, 10: 106,
+    11: 235, 12: 551, 13: 1301, 14: 3159, 15: 7741, 16: 19320, 17: 48629,
+    18: 123867, 19: 317955, 20: 823065, 21: 2144505, 22: 5623756,
+}
+
+#: OEIS A002851 — 位数 n の連結 3-正則 (立方体) グラフの個数
+PUBLISHED_CONNECTED_CUBIC = {
+    4: 1, 6: 2, 8: 5, 10: 19, 12: 85, 14: 509, 16: 4060, 18: 41301,
+    20: 510489, 22: 7319447,
+}
+
+_PUBLISHED = {
+    "connected": (PUBLISHED_CONNECTED_GRAPHS, "OEIS A001349"),
+    "trees": (PUBLISHED_TREES, "OEIS A000055"),
+    "cubic": (PUBLISHED_CONNECTED_CUBIC, "OEIS A002851"),
+}
+
+
+def published_count(kind: str, order: int) -> tuple[int | None, str]:
+    """(公表個数, 出典) を返す。表にない位数は (None, 出典)."""
+    if kind not in _PUBLISHED:
+        raise ValueError(f"未知の種別: {kind}")
+    table, source = _PUBLISHED[kind]
+    return table.get(order), source
+
+
+# ---------------------------------------------------------------------------
 # デコーダ (独立実装)
 # ---------------------------------------------------------------------------
 
@@ -119,6 +161,40 @@ def read_bounded_degree(path: Path, bound: int,
                 yield g
     if stats is not None:
         stats["source_total"] = total
+
+
+def read_tree_edge_lists(directory: Path, order: int) -> Iterator[GraphS]:
+    """``tree{n}.{d}.txt`` (辺リスト) を直径ごとに読み、木であることを確かめる.
+
+    探索側とは別に書いたパーサ。行を読むたびに「辺が n-1 本」「連結」を確認し、
+    どちらかが破れていれば例外にする (木の完全リストであることの最低条件)。
+    """
+    if order <= 2:
+        yield (order, [set() for _ in range(order)]) if order < 2 else \
+            (2, [{1}, {0}])
+        return
+    for diameter in range(2, order):
+        path = directory / f"tree{order}.{diameter}.txt"
+        if not path.exists():
+            continue
+        with path.open("r", encoding="ascii") as handle:
+            for row in handle:
+                nums = row.split()
+                if not nums:
+                    continue
+                if len(nums) != 2 * (order - 1):
+                    raise ValueError("木の辺数が n-1 でない")
+                nbr: list[set[int]] = [set() for _ in range(order)]
+                for k in range(0, len(nums), 2):
+                    u, v = int(nums[k]), int(nums[k + 1])
+                    if not (0 <= u < order and 0 <= v < order) or u == v:
+                        raise ValueError("辺の頂点番号が不正")
+                    nbr[u].add(v)
+                    nbr[v].add(u)
+                g = (order, nbr)
+                if len(edge_list(g)) != order - 1 or not connected(g):
+                    raise ValueError("木になっていない行がある")
+                yield g
 
 
 def read_shortcode_file(path: Path, order: int, degree: int) -> Iterator[GraphS]:

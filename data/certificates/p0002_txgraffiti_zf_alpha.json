@@ -1,0 +1,401 @@
+{
+  "claim": "連結・$\\Delta \\le 3$ のグラフ 48524 個 ($K_4$ を除く) すべてで Z(G) <= alpha(G)+1 が成立し、うち 46 個で等号が成立する。",
+  "data": {
+    "conjecture": "Z(G) <= alpha(G)+1 for connected G with Delta<=3, G != K_4",
+    "counterexamples": [],
+    "data_source": "B. McKay, connected graphs (graph6) を Delta<=3 で絞る / M. Meringer, GENREG connected cubic graphs",
+    "families": [
+      {
+        "count": 1,
+        "counts": {
+          "Z<=alpha": 1
+        },
+        "equality_complete": true,
+        "equality_examples": [],
+        "equality_graphs": [],
+        "excluded_k4": false,
+        "fully_rechecked": true,
+        "label": "subcubic",
+        "n": 2,
+        "source_expected": 1,
+        "source_total": 1,
+        "tag": "subcubic_02",
+        "witness_file": "p0002_subcubic_02.bin",
+        "witness_records": 1,
+        "witness_sha256": "64ed86b909d6d0502b64b28db0ea1272ffb358e20e9b1d88b63ccb07fa900cf5"
+      },
+      {
+        "count": 2,
+        "counts": {
+          "Z<=alpha": 1,
+          "Z=alpha+1": 1
+        },
+        "equality_complete": true,
+        "equality_examples": [
+          "Bw"
+        ],
+        "equality_graphs": [
+          "Bw"
+        ],
+        "excluded_k4": false,
+        "fully_rechecked": true,
+        "label": "subcubic",
+        "n": 3,
+        "source_expected": 2,
+        "source_total": 2,
+        "tag": "subcubic_03",
+        "witness_file": "p0002_subcubic_03.bin",
+        "witness_records": 2,
+        "witness_sha256": "cec1fe4bdff6517fe9db721d640dafacebb1ec48100fe81c1b106cd4a75699cf"
+      },
+      {
+        "count": 5,
+        "counts": {
+          "Z<=alpha": 5
+        },
+        "equality_complete": true,
+        "equality_examples": [],
+        "equality_graphs": [],
+        "excluded_k4": true,
+        "fully_rechecked": true,
+        "label": "subcubic",
+        "n": 4,
+        "source_expected": 6,
+        "source_total": 6,
+        "tag": "subcubic_04",
+        "witness_file": "p0002_subcubic_04.bin",
+        "witness_records": 5,
+        "witness_sha256": "3da6ab51e581d3d4c5024a4a2c64e0a30c2439860c13543b3062f3d4b5010a3d"
+      },
+      {
+        "count": 10,
+        "counts": {
+          "Z<=alpha": 9,
+          "Z=alpha+1": 1
+        },
+        "equality_complete": true,
+        "equality_examples": [
+          "D]w"
+        ],
+        "equality_graphs": [
+          "D]w"
+        ],
+        "excluded_k4": false,
+        "fully_rechecked": true,
+        "label": "subcubic",
+        "n": 5,
+        "source_expected": 21,
+        "source_total": 21,
+        "tag": "subcubic_05",
+        "witness_file": "p0002_subcubic_05.bin",
+        "witness_records": 10,
+        "witness_sha256": "42808a7309ca0755ba5d2136e2963188a146cc3822571eff83e57312275da3a9"
+      },
+      {
+        "count": 29,
+        "counts": {
+          "Z<=alpha": 25,
+          "Z=alpha+1": 4
+        },
+        "equality_complete": true,
+        "equality_examples": [
+          "EFz_",
+          "EQjO",
+          "EUZO",
+          "EUxo"
+        ],
+        "equality_graphs": [
+          "EFz_",
+          "EQjO",
+          "EUZO",
+          "EUxo"
+        ],
+        "excluded_k4": false,
+        "fully_rechecked": true,
+        "label": "subcubic",
+        "n": 6,
+        "source_expected": 112,
+        "source_total": 112,
+        "tag": "subcubic_06",
+        "witness_file": "p0002_subcubic_06.bin",
+        "witness_records": 29,
+        "witness_sha256": "29846767a3dac8b00a6751a78af84f313af64e3125db7f04377ae1e33b829ed3"
+      },
+      {
+        "count": 64,
+        "counts": {
+          "Z<=alpha": 63,
+          "Z=alpha+1": 1
+        },
+        "equality_complete": true,
+        "equality_examples": [
+          "FCxv?"
+        ],
+        "equality_graphs": [
+          "FCxv?"
+        ],
+        "excluded_k4": false,
+        "fully_rechecked": true,
+        "label": "subcubic",
+        "n": 7,
+        "source_expected": 853,
+        "source_total": 853,
+        "tag": "subcubic_07",
+        "witness_file": "p0002_subcubic_07.bin",
+        "witness_records": 64,
+        "witness_sha256": "97929f0c9cbfb498be3f25b0dd6bdc1a80626b1ff21fba385720fdcd8da24db2"
+      },
+      {
+        "count": 194,
+        "counts": {
+          "Z<=alpha": 188,
+          "Z=alpha+1": 6
+        },
+        "equality_complete": true,
+        "equality_examples": [
+          "GCQQV?",
+          "GCR`r_",
+          "GCXe`W",
+          "GCXmd_",
+          "GCY^B_",
+          "GCrb`o"
+        ],
+        "equality_graphs": [
+          "GCQQV?",
+          "GCR`r_",
+          "GCXe`W",
+          "GCXmd_",
+          "GCY^B_",
+          "GCrb`o"
+        ],
+        "excluded_k4": false,
+        "fully_rechecked": true,
+        "label": "subcubic",
+        "n": 8,
+        "source_expected": 11117,
+        "source_total": 11117,
+        "tag": "subcubic_08",
+        "witness_file": "p0002_subcubic_08.bin",
+        "witness_records": 194,
+        "witness_sha256": "ec68b4470a9676badaaa6a7c6f457ff70ec19dd9815f597b904c1a766276537c"
+      },
+      {
+        "count": 531,
+        "counts": {
+          "Z<=alpha": 527,
+          "Z=alpha+1": 4
+        },
+        "equality_complete": true,
+        "equality_examples": [
+          "HCOcbQc",
+          "HCOe`YW",
+          "HCQbQqc",
+          "HCQe`pc"
+        ],
+        "equality_graphs": [
+          "HCOcbQc",
+          "HCOe`YW",
+          "HCQbQqc",
+          "HCQe`pc"
+        ],
+        "excluded_k4": false,
+        "fully_rechecked": true,
+        "label": "subcubic",
+        "n": 9,
+        "source_expected": 261080,
+        "source_total": 261080,
+        "tag": "subcubic_09",
+        "witness_file": "p0002_subcubic_09.bin",
+        "witness_records": 531,
+        "witness_sha256": "d8c535db046689d8bb655830785e242cbb7b59f69f699403c7437f24f2b437f5"
+      },
+      {
+        "count": 1733,
+        "counts": {
+          "Z<=alpha": 1727,
+          "Z=alpha+1": 6
+        },
+        "equality_complete": true,
+        "equality_examples": [
+          "I?`@dbCK_",
+          "I?`DeGwM?",
+          "I?`cspoX?",
+          "I?bEHow[?",
+          "ICOcaOcw?",
+          "ICOf@pSb?"
+        ],
+        "equality_graphs": [
+          "I?`@dbCK_",
+          "I?`DeGwM?",
+          "I?`cspoX?",
+          "I?bEHow[?",
+          "ICOcaOcw?",
+          "ICOf@pSb?"
+        ],
+        "excluded_k4": false,
+        "fully_rechecked": true,
+        "label": "subcubic",
+        "n": 10,
+        "source_expected": 11716571,
+        "source_total": 11716571,
+        "tag": "subcubic_10",
+        "witness_file": "p0002_subcubic_10.bin",
+        "witness_records": 1733,
+        "witness_sha256": "e41b4b9ada41df5b4aa2b9f6bcc470422f3eb0ac6ed794514ef185bf95776472"
+      },
+      {
+        "count": 85,
+        "counts": {
+          "Z<=alpha": 82,
+          "Z=alpha+1": 3
+        },
+        "equality_complete": true,
+        "equality_examples": [
+          "K}KGGGA?_B_M",
+          "K}GOOSC@GE?F",
+          "K}GOOOE@OD?J"
+        ],
+        "equality_graphs": [
+          "K}KGGGA?_B_M",
+          "K}GOOSC@GE?F",
+          "K}GOOOE@OD?J"
+        ],
+        "excluded_k4": false,
+        "fully_rechecked": true,
+        "label": "cubic",
+        "n": 12,
+        "source_expected": 85,
+        "source_total": null,
+        "tag": "cubic_12",
+        "witness_file": "p0002_cubic_12.bin",
+        "witness_records": 85,
+        "witness_sha256": "35f9b1a630e735b2b8f90deb59258eca91acdae10f50779b7e268fc19561d6f6"
+      },
+      {
+        "count": 509,
+        "counts": {
+          "Z<=alpha": 504,
+          "Z=alpha+1": 5
+        },
+        "equality_complete": true,
+        "equality_examples": [
+          "M}KGGGA?gA?H?K?B_",
+          "M}KGGGA?_B?I?I?D_",
+          "M}GOOOF@_A?A?B?B_",
+          "Ms\\_gC@?O@?C?F?F?",
+          "MsP@P?SCOO?h?g?E_"
+        ],
+        "equality_graphs": [
+          "M}KGGGA?gA?H?K?B_",
+          "M}KGGGA?_B?I?I?D_",
+          "M}GOOOF@_A?A?B?B_",
+          "Ms\\_gC@?O@?C?F?F?",
+          "MsP@P?SCOO?h?g?E_"
+        ],
+        "excluded_k4": false,
+        "fully_rechecked": true,
+        "label": "cubic",
+        "n": 14,
+        "source_expected": 509,
+        "source_total": null,
+        "tag": "cubic_14",
+        "witness_file": "p0002_cubic_14.bin",
+        "witness_records": 509,
+        "witness_sha256": "c74c8dd8c3ff661d23ec5db2833a1b34a734fba1f2891ed048ed83221b45e644"
+      },
+      {
+        "count": 4060,
+        "counts": {
+          "Z<=alpha": 4055,
+          "Z=alpha+1": 5
+        },
+        "equality_complete": true,
+        "equality_examples": [
+          "O}KGGGA?gB_G?@?@??W?F",
+          "O}KGGGA?_B_K?C?@??W?F",
+          "O}KGGGA?_A?G?K?K_@_?X",
+          "O}GOOSF@??_A?A?A??w?M",
+          "O{O_okK?G?_A?A?A??w?M"
+        ],
+        "equality_graphs": [
+          "O}KGGGA?gB_G?@?@??W?F",
+          "O}KGGGA?_B_K?C?@??W?F",
+          "O}KGGGA?_A?G?K?K_@_?X",
+          "O}GOOSF@??_A?A?A??w?M",
+          "O{O_okK?G?_A?A?A??w?M"
+        ],
+        "excluded_k4": false,
+        "fully_rechecked": false,
+        "label": "cubic",
+        "n": 16,
+        "source_expected": 4060,
+        "source_total": null,
+        "tag": "cubic_16",
+        "witness_file": "p0002_cubic_16.bin",
+        "witness_records": 4060,
+        "witness_sha256": "64b8221feb143c7cf70cf210de407962a62161a1caddbffd2380909fbd0d790e"
+      },
+      {
+        "count": 41301,
+        "counts": {
+          "Z<=alpha": 41291,
+          "Z=alpha+1": 10
+        },
+        "equality_complete": true,
+        "equality_examples": [
+          "Q}KGGKA?O@?C?C?C?@_?X??o?BG",
+          "Q}KGGGA?gB_G?@?@??O?C??[?@o",
+          "Q}KGGGA?gA?G?G?C?@_?X??o?BG",
+          "Q}KGGGA?_B_K?D??_?G?A??K??w",
+          "Q}KGGGA?_A?G?K?K_@??P?@G?CW",
+          "Q}KGGGA?_A?G?K?K_@??O?@K?Co",
+          "Q}GOOSF@??_A?A?A_?_?H??o??w",
+          "Q}GOOSF@??_A?A?A??o?I??g?@W"
+        ],
+        "equality_graphs": [
+          "Q}KGGKA?O@?C?C?C?@_?X??o?BG",
+          "Q}KGGGA?gB_G?@?@??O?C??[?@o",
+          "Q}KGGGA?gA?G?G?C?@_?X??o?BG",
+          "Q}KGGGA?_B_K?D??_?G?A??K??w",
+          "Q}KGGGA?_A?G?K?K_@??P?@G?CW",
+          "Q}KGGGA?_A?G?K?K_@??O?@K?Co",
+          "Q}GOOSF@??_A?A?A_?_?H??o??w",
+          "Q}GOOSF@??_A?A?A??o?I??g?@W",
+          "Q}GOOOF@_A_@?@?@??O?C??[?@o",
+          "Q{O_okK?G?_A?A?A??o?I??g?@W"
+        ],
+        "excluded_k4": false,
+        "fully_rechecked": false,
+        "label": "cubic",
+        "n": 18,
+        "source_expected": 41301,
+        "source_total": null,
+        "tag": "cubic_18",
+        "witness_file": "p0002_cubic_18.bin",
+        "witness_records": 41301,
+        "witness_sha256": "8832ab38dc33aaf0f73dbbf4a649a067e20bb8cd7fc277d0223222de59ca2325"
+      }
+    ],
+    "recheck_threshold": 3000,
+    "source": "arXiv:2507.17780 Conjecture 2",
+    "totals": {
+      "counterexamples": 0,
+      "equality": 46,
+      "families": 13,
+      "graphs": 48524
+    },
+    "witness_format": "族ごとのバイナリ列。1 グラフあたり 8 バイト = little-endian uint32 2 個 (独立集合 A のビットマスク, ゼロ強制集合 S のビットマスク)。列挙順に並ぶ。"
+  },
+  "digest": "c9fdfb33ec5724e0",
+  "kind": "exhaustive-check-with-witnesses",
+  "problem_id": "p0002_txgraffiti_zf_alpha",
+  "provenance": {
+    "created_at": "2026-07-26T11:26:27+00:00",
+    "git_rev": "f78aa8f",
+    "notes": "各グラフに (最大独立集合, フォート分枝で見つけた最小ゼロ強制集合) の 2 つ組を証人として付け、バイナリのサイドカーに保存した。",
+    "platform": "Windows 10",
+    "python": "3.10.11",
+    "search_seconds": 936.544873714447,
+    "search_seed": 0
+  }
+}

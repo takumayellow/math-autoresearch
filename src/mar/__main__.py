@@ -23,6 +23,15 @@ from .problem import REPO_ROOT, iter_problem_modules, load
 
 CERT_DIR = REPO_ROOT / "data" / "certificates"
 
+# Windows では標準出力が cp932 になり、日本語やダッシュで UnicodeEncodeError に
+# なる (リダイレクト時に顕著)。検証結果が印字できずに落ちるのは致命的なので、
+# 起動時に UTF-8 へ切り替える。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):  # 差し替え済みのストリーム等
+        pass
+
 
 def cert_path(problem_id: str) -> Path:
     return CERT_DIR / f"{problem_id}.json"
@@ -113,6 +122,22 @@ def cmd_paper(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_new(args: argparse.Namespace) -> int:
+    from datetime import date
+
+    from .scaffold import create
+    try:
+        made = create(args.problem_id, args.title, args.date or date.today().isoformat())
+    except (ValueError, FileExistsError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    for path in made:
+        print(f"作成: {path}")
+    print("次: survey.evidence に未解決である根拠を書く "
+          f"→ python -m mar survey {args.problem_id}")
+    return 0
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     for step in (cmd_search, cmd_verify, cmd_paper):
         rc = step(args)
@@ -139,6 +164,12 @@ def main(argv: list[str] | None = None) -> int:
         sp.add_argument("--seed", type=int, default=0)
         sp.add_argument("--deep", action="store_true")
         sp.set_defaults(func=func, all=False)
+
+    sp = sub.add_parser("new", help="新しい問題モジュールの雛形を作る")
+    sp.add_argument("problem_id", help="pNNNN_slug 形式")
+    sp.add_argument("title", help="論文タイトル (日本語)")
+    sp.add_argument("--date", help="未解決だと確認した日 (既定: 今日)")
+    sp.set_defaults(func=cmd_new)
 
     sp = sub.add_parser("verify")
     sp.add_argument("problem_id", nargs="?")
