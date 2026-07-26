@@ -119,8 +119,9 @@ $(2r-2)$-正則なので、両辺はいずれも正則グラフの独立支配�
 \subsection{データ源}
 
 連結 $r$-正則グラフの同型類の完全リストは、M. Meringer の GENREG \cite{genreg}
-が生成し公開している shortcode 形式のファイルを用いた。各族の個数は同ページの
-公表値と照合しており (M. Meringer, GENREG connected regular graphs (shortcode))、
+が生成し公開している shortcode 形式のファイルを用いた (M. Meringer, GENREG connected regular graphs (shortcode))。
+各族の個数は、探索器が持つ表ではなく検証器が独自に書き写した OEIS の
+公表値 (A002851, A006820--A006822, A014377) と照合しており、
 本稿が扱った族と個数は表 \ref{tab:families} のとおりである。
 公開されているのは $r=3$ は $n \le 18$、$r=4$ は $n \le 14$、$r=5$ は $n \le 12$、$r=6$ は $n \le 11$、$r=7$ は $n \le 10$ などの範囲であり、本稿はその公開範囲を
 すべて走査した。
@@ -176,7 +177,7 @@ $(i,\mu^*)$ の分布 (ヒストグラム) が証明書の記録と完全に一�
 \begin{proof}
 表 \ref{tab:families} の各族について、GENREG の完全リストを走査し
 $i(G)$ と $\mu^*(G)$ を厳密に計算した。各族のグラフ数は
-\cite{genreg} の公表値と一致しており (表 \ref{tab:families} 第 3 列)、
+検証器が独自にもつ OEIS の公表値と一致しており (表 \ref{tab:families} 第 3 列)、
 リストが完全であることの根拠となる。得られた $(i,\mu^*)$ の組はすべて
 $i \le \mu^*$ を満たした。計算結果は証明書
 \texttt{p0001\_txgraffiti\_i\_mustar.json} に族ごとの分布として記録されており、

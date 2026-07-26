@@ -168,7 +168,8 @@ class JProblem(Problem):
         detail_bad: list[str] = []
         for fam in data["families"]:
             n, r = fam["n"], fam["r"]
-            path = G.regular_file(n, r)
+            # 探索器のパスヘルパを呼ばずに検証器が自分で組む (設計原則 2)。
+            path = ck.GRAPH_DIR / "reg" / f"{n:02d}_{r}_3.scd"
             do_full = deep or fam["fully_rechecked"]
             if do_full:
                 hist: Counter[str] = Counter()
@@ -182,17 +183,15 @@ class JProblem(Problem):
                     hist[f"{i_val},{mus}"] += 1
                     seen += 1
                 rechecked += seen
-                if seen != fam["count"] or seen != fam["expected"]:
+                if not _count_matches(ck, fam, seen, detail_bad):
                     count_ok = False
-                    detail_bad.append(f"({n},{r}) 個数 {seen} != {fam['count']}/{fam['expected']}")
                 if dict(sorted(hist.items())) != fam["histogram"]:
                     hist_ok = False
                     detail_bad.append(f"({n},{r}) 分布不一致")
             else:
                 seen = sum(1 for _ in ck.read_shortcode_file(path, n, r))
-                if seen != fam["count"] or seen != fam["expected"]:
+                if not _count_matches(ck, fam, seen, detail_bad):
                     count_ok = False
-                    detail_bad.append(f"({n},{r}) 個数 {seen} != {fam['count']}/{fam['expected']}")
                 targets = set(fam["equality_examples"]) | {fam["min_slack"]["g6"]}
                 for g6 in sorted(targets):
                     g = ck.graph6_to_sets(g6)
@@ -217,7 +216,8 @@ class JProblem(Problem):
                 i_w == nw["i"] and mu_w == nw["mu_star"] and i_w > mu_w,
                 f"{nw['name']}: i={i_w}, mu*={mu_w}")
 
-        rep.add("列挙個数が GENREG の公表個数と一致", count_ok, "; ".join(detail_bad[:4]))
+        rep.add("列挙個数が検証器の持つ公表値 (OEIS A002851 / A006820-A006822 / "
+                "A014377) と一致", count_ok, "; ".join(detail_bad[:4]))
         rep.add(f"独立実装で {rechecked} 個を全数再計算し (i, mu*) 分布が一致",
                 hist_ok, "; ".join(detail_bad[:4]))
         rep.add("全数再計算しない族の証拠グラフを独立に再計算", witness_ok,
@@ -257,6 +257,28 @@ class JProblem(Problem):
                       "graphs, arXiv:2008.01863, 2020.",
                       "https://arxiv.org/abs/2008.01863"),
         ]
+
+
+def _count_matches(ck, fam: dict, seen: int, detail_bad: list[str]) -> bool:
+    """走査個数を、検証器が独自にもつ公表値と突き合わせる.
+
+    証明書に書かれた期待値 (``fam["expected"]``) との比較だけでは
+    「探索器の表に探索器の出力が一致した」という無内容な検査になるので、
+    ``mar.checkgraph`` が自分で持つ OEIS の表を正とする (設計原則 2)。
+    """
+    n, r = fam["n"], fam["r"]
+    pub, src = ck.published_regular_count(n, r)
+    if pub is None:
+        detail_bad.append(f"({n},{r}) 検証器が公表値を持たない ({src})")
+        return False
+    if seen != pub:
+        detail_bad.append(f"({n},{r}) 走査 {seen} != {pub} ({src})")
+        return False
+    if seen != fam["count"] or fam["expected"] != pub:
+        detail_bad.append(f"({n},{r}) 証明書の値 {fam['count']}/{fam['expected']} "
+                          f"が公表値 {pub} と食い違う")
+        return False
+    return True
 
 
 PROBLEM = JProblem()

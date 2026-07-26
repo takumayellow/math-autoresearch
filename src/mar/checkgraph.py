@@ -53,6 +53,17 @@ PUBLISHED_CONNECTED_CUBIC = {
     20: 510489, 22: 7319447,
 }
 
+#: 次数ごとの連結 r-正則グラフの個数。走査する範囲だけを OEIS から書き写す。
+#: 表に無い (n, r) は「検証器が公表値を持たない」として検査を落とす。
+PUBLISHED_CONNECTED_REGULAR = {
+    3: (PUBLISHED_CONNECTED_CUBIC, "OEIS A002851"),
+    4: ({5: 1, 6: 1, 7: 2, 8: 6, 9: 16, 10: 59, 11: 265, 12: 1544,
+         13: 10778, 14: 88168}, "OEIS A006820"),
+    5: ({6: 1, 8: 3, 10: 60, 12: 7848}, "OEIS A006821"),
+    6: ({7: 1, 8: 1, 9: 4, 10: 21, 11: 266}, "OEIS A006822"),
+    7: ({8: 1, 10: 5}, "OEIS A014377"),
+}
+
 _PUBLISHED = {
     "connected": (PUBLISHED_CONNECTED_GRAPHS, "OEIS A001349"),
     "trees": (PUBLISHED_TREES, "OEIS A000055"),
@@ -65,6 +76,15 @@ def published_count(kind: str, order: int) -> tuple[int | None, str]:
     if kind not in _PUBLISHED:
         raise ValueError(f"未知の種別: {kind}")
     table, source = _PUBLISHED[kind]
+    return table.get(order), source
+
+
+def published_regular_count(order: int, degree: int) -> tuple[int | None, str]:
+    """位数 order の連結 degree-正則グラフの (公表個数, 出典)."""
+    entry = PUBLISHED_CONNECTED_REGULAR.get(degree)
+    if entry is None:
+        return None, f"{degree}-正則の公表値は表にない"
+    table, source = entry
     return table.get(order), source
 
 
