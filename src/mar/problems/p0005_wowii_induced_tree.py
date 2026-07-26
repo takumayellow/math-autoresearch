@@ -128,19 +128,30 @@ class InducedTreeProblem(Problem):
             evidence=[
                 "E. DeLaVina, Written on the Wall II (Conjectures of "
                 "Graffiti.pc), Conjectures 142, 144, 146。"
-                "http://cms.dt.uh.edu/faculty/delavinae/research/wowII/",
+                "http://cms.dt.uh.edu/faculty/delavinae/research/wowII/。"
+                "2026-07-27 に同サイトを取り直したところ、予想 142・144 は "
+                "open.html に状態 O (未解決) で残っているが、"
+                "予想 146 は resolved.htm に移っており 2026-07-21 に "
+                "解決済みとなっていた (本問題の探索は 2026-07-26 実行)。"
+                "予想 146 についての本問題の寄与は未解決問題の検証ではなく、"
+                "独立な追試と等号グラフの完全分類である。",
                 "google-deepmind/formal-conjectures の "
                 "FormalConjectures/WrittenOnTheWallII/GraphConjecture{142,144,"
                 "146}.lean。2026-07-26 に取得した時点で 3 本とも属性が "
                 "@[category research open] (未解決) のままであり、証明は "
-                "sorry である。同リポジトリは解決済みの予想を research solved "
-                "に更新する運用をしている。",
+                "sorry である。2026-07-27 時点でも 146 は open のままで、"
+                "出題者本人のページより更新が遅れている。"
+                "**未解決性の一次情報源は formal-conjectures ではなく "
+                "DeLaVina の open.html / resolved.htm である。**",
                 "最大誘導木の位数はグラフの位数に対して一般には対数程度しか "
                 "保証されない (Erdős--Saks--Sós 1986) ので、距離量による "
                 "下界は自明ではない。",
             ],
             caveats=[
                 "本問題で行うのは有限範囲の網羅的検証であり、一般の証明ではない。",
+                "予想 146 は探索の 5 日前 (2026-07-21) に解決されていた。"
+                "本問題は 3 予想を 1 つの証人で同時に扱う設計なので走査結果は"
+                "そのまま有効だが、146 を「未解決予想の検証」と読んではならない。",
                 "$\\mathrm{tree}(G)$ の計算は NP 困難なので、反例でないことは"
                 "証人 (木を誘導する頂点集合) で片側に閉じる。等号の分類だけは"
                 "例外リストに載せたグラフを厳密に再計算する。",

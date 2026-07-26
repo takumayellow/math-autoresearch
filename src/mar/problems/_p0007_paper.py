@@ -229,7 +229,7 @@ $\\mathrm{{tree}}(G)$ の厳密値が要るが、必要なのは\\textbf{{モー
 
 \\subsection{{星の下界と、仮定の言い換え}}
 
-\\begin{{theorem}}[星の下界]\\label{{thm:star}}
+\\begin{{theorem}}[星の下界; WOWII 予想 140 \\cite{{wowii}}]\\label{{thm:star}}
 任意のグラフ $G$ に対し
 \\[ \\mathrm{{tree}}(G) \\ \\ge \\ 1 + \\ell_{{\\max}}(G)
    \\ \\ge \\ 1 + \\ell_{{\\mathrm{{avg}}}}(G), \\]
@@ -245,6 +245,12 @@ $\\mathrm{{tree}}(G) \\ge 1 + \\ell(v)$ が任意の $v$ で成り立ち、$v$ �
 $\\mathrm{{tree}}(G)$ は整数なので
 $\\mathrm{{tree}}(G) \\ge \\lceil 1 + \\ell_{{\\mathrm{{avg}}}}(G) \\rceil = t(G)$。
 \\end{{proof}}
+
+定理 \\ref{{thm:star}} の第 1 の不等式 $\\mathrm{{tree}}(G) \\ge 1 +
+\\ell_{{\\max}}(G)$ は、同じ Written on the Wall II の\\textbf{{予想 140}} その
+ものであり、DeLaViña のリスト \\cite{{wowii}} では状態 \\texttt{{E}} (容易に
+解決済み) とされている。本稿の寄与はこの不等式ではなく、それを $t(G)$ と
+つなげて予想 \\ref{{conj:200}} の仮定を等号成立条件として読み替える点にある。
 
 つまり予想 \\ref{{conj:200}} の仮定は、常に成り立つ不等式 $\\mathrm{{tree}} \\ge t$
 の\\textbf{{等号成立条件}}である。この見方から、仮定は次のように読み替えられる。

@@ -112,8 +112,10 @@ def build(cert) -> dict[str, str]:
             "実装を確認すること。")
 
     abstract = (
-        "DeLaViña の Graffiti.pc が生成した未解決予想 Written on the Wall II "
-        "Conjecture 142・144・146 を扱う。いずれも最大誘導木の位数 "
+        "DeLaViña の Graffiti.pc が生成した予想 Written on the Wall II "
+        "Conjecture 142・144・146 を扱う (142 と 144 は 2026 年 7 月 27 日時点で"
+        "未解決。146 は 7 月 21 日付で解決済みであることが走査後に判明した。"
+        "注意 \\ref{rem:146})。いずれも最大誘導木の位数 "
         "$\\mathrm{tree}(G)$ を距離量で下から抑える主張であり、"
         "それぞれ $\\frac{2}{3}\\mathrm{girth}(G) + \\mathrm{ecc}(B)$、"
         "$\\mathrm{girth}(G) - 1 + \\mathrm{ecc}^{\\circ}(C)$、"
@@ -176,6 +178,20 @@ $2\\,\\mathrm{{ecc}}(B) \\ \\le \\ \\mathrm{{tree}}(G) \\cdot \\mathrm{{rad}}(G^
 3 本とも Google DeepMind の \\texttt{{formal-conjectures}} \\cite{{formalconj}} に
 Lean 4 で形式化されており、2026 年 7 月 26 日に取得した時点で
 \\texttt{{@[category research open]}} (未解決) と分類されている。
+
+\\begin{{remark}}[予想 146 の状態について]\\label{{rem:146}}
+本稿の走査を実行した後、2026 年 7 月 27 日に出題者 DeLaViña 自身の公開ページ
+\\cite{{wowii}} を取り直したところ、\\textbf{{予想 \\ref{{conj:146}} は 2026 年 7 月
+21 日に解決済みとして解決済みリストに移されていた}}。予想 \\ref{{conj:142}} と
+\\ref{{conj:144}} は未解決リストに状態 \\texttt{{O}} で残っている。
+\\texttt{{formal-conjectures}} \\cite{{formalconj}} は 2026 年 7 月 27 日時点でも
+3 本とも \\texttt{{open}} のままであり、出題者本人のページより更新が遅れている。
+したがって未解決性の一次情報源は形式化リポジトリではなく出題者のページである。
+予想 \\ref{{conj:146}} に関する本稿の寄与は、未解決問題の検証ではなく
+\\textbf{{独立な追試と等号グラフの完全分類}}として読まれるべきである。
+3 予想を 1 個の証人で同時に閉じる設計上、走査結果そのものは影響を受けない。
+\\end{{remark}}
+
 本稿では分数を避けるため、予想 \\ref{{conj:142}} を
 $2\\,\\mathrm{{girth}}(G) + 3\\,\\mathrm{{ecc}}(B) \\le 3\\,\\mathrm{{tree}}(G)$ の
 形で扱う (予想 \\ref{{conj:146}} は元の形式化がすでに分母を払った形である)。
