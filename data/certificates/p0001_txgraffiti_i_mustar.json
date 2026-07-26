@@ -1,0 +1,699 @@
+{
+  "claim": "公開されている連結 r-正則グラフの完全リスト (155033 個) すべてで i(G) <= mu*(G) が成立し、うち 3651 個で等号が成立する。",
+  "data": {
+    "conjecture": "i(G) <= mu*(G) for r-regular G with r > 0",
+    "counterexamples": [],
+    "data_source": "M. Meringer, GENREG connected regular graphs (shortcode)",
+    "families": [
+      {
+        "count": 1,
+        "equality_count": 0,
+        "equality_examples": [],
+        "expected": 1,
+        "fully_rechecked": true,
+        "histogram": {
+          "1,2": 1
+        },
+        "min_slack": {
+          "g6": "C~",
+          "i": 1,
+          "mu_star": 2,
+          "slack": 1
+        },
+        "n": 4,
+        "r": 3
+      },
+      {
+        "count": 2,
+        "equality_count": 2,
+        "equality_examples": [
+          "E{Sw",
+          "Es\\o"
+        ],
+        "expected": 2,
+        "fully_rechecked": true,
+        "histogram": {
+          "2,2": 1,
+          "3,3": 1
+        },
+        "min_slack": {
+          "g6": "E{Sw",
+          "i": 2,
+          "mu_star": 2,
+          "slack": 0
+        },
+        "n": 6,
+        "r": 3
+      },
+      {
+        "count": 5,
+        "equality_count": 2,
+        "equality_examples": [
+          "G{O_ww",
+          "GsXPGs"
+        ],
+        "expected": 5,
+        "fully_rechecked": true,
+        "histogram": {
+          "2,3": 3,
+          "3,3": 2
+        },
+        "min_slack": {
+          "g6": "G{O_ww",
+          "i": 3,
+          "mu_star": 3,
+          "slack": 0
+        },
+        "n": 8,
+        "r": 3
+      },
+      {
+        "count": 19,
+        "equality_count": 10,
+        "equality_examples": [
+          "I}KGGGB?w",
+          "I}GWOGB?w",
+          "I}GOOSE@W",
+          "I{S_gOD?w",
+          "I{O_w_H@W",
+          "I{O_ogI@W"
+        ],
+        "expected": 19,
+        "fully_rechecked": true,
+        "histogram": {
+          "3,3": 9,
+          "3,4": 9,
+          "4,4": 1
+        },
+        "min_slack": {
+          "g6": "I}KGGGB?w",
+          "i": 3,
+          "mu_star": 3,
+          "slack": 0
+        },
+        "n": 10,
+        "r": 3
+      },
+      {
+        "count": 85,
+        "equality_count": 42,
+        "equality_examples": [
+          "K}KGGGA?gB?J",
+          "K}KGGGA?_B_M",
+          "K}GWOKA?O@_F",
+          "K}GWOGB?_A_F",
+          "K}GOWOC?_B_M",
+          "K}GOOSC@?D_M"
+        ],
+        "expected": 85,
+        "fully_rechecked": true,
+        "histogram": {
+          "3,4": 37,
+          "3,5": 3,
+          "4,4": 42,
+          "4,5": 3
+        },
+        "min_slack": {
+          "g6": "K}KGGGA?gB?J",
+          "i": 4,
+          "mu_star": 4,
+          "slack": 0
+        },
+        "n": 12,
+        "r": 3
+      },
+      {
+        "count": 509,
+        "equality_count": 18,
+        "equality_examples": [
+          "M}KGGGB?_A?C?F?F?",
+          "M}GOOOE@OC?H?I?D_",
+          "M{S_oGC?oA?D?I?D_",
+          "M{S__OC@GE?W?I?D_",
+          "M{O___IA?L?_?T?T?",
+          "Ms\\__GB?_A?C?F?F?"
+        ],
+        "expected": 509,
+        "fully_rechecked": true,
+        "histogram": {
+          "4,5": 491,
+          "5,5": 18
+        },
+        "min_slack": {
+          "g6": "M}KGGGB?_A?C?F?F?",
+          "i": 5,
+          "mu_star": 5,
+          "slack": 0
+        },
+        "n": 14,
+        "r": 3
+      },
+      {
+        "count": 4060,
+        "equality_count": 1470,
+        "equality_examples": [
+          "O}KGGKB?G?_A?A?A_?o?J",
+          "O}KGGKA?O@_C?D?A??g?F",
+          "O}KGGKA?O@?C?E?E??o?J",
+          "O}KGGGB?o@?B?A?@??W?F",
+          "O}KGGGB?o@?A?B?A??g?F",
+          "O}KGGGB?gA_@?@?@??W?F"
+        ],
+        "expected": 4060,
+        "fully_rechecked": true,
+        "histogram": {
+          "4,5": 563,
+          "4,6": 708,
+          "5,5": 1468,
+          "5,6": 1319,
+          "6,6": 2
+        },
+        "min_slack": {
+          "g6": "O}KGGKB?G?_A?A?A_?o?J",
+          "i": 5,
+          "mu_star": 5,
+          "slack": 0
+        },
+        "n": 16,
+        "r": 3
+      },
+      {
+        "count": 41301,
+        "equality_count": 1692,
+        "equality_examples": [
+          "Q}KGGKB?G?_A?B?A??_?C??[?@o",
+          "Q}KGGKA?O@_E?B??_?G?A??K??w",
+          "Q}KGGKA?O@?D?C?C?@??H??w?BO",
+          "Q}KGGKA?O@?C?E?D?@??H??g?@W",
+          "Q}KGGKA?O@?C?C?C?@_?X??o?BG",
+          "Q}KGGKA?O@?C?C?C?@_?W??w?BO"
+        ],
+        "expected": 41301,
+        "fully_rechecked": false,
+        "histogram": {
+          "5,6": 38353,
+          "5,7": 1113,
+          "6,6": 1692,
+          "6,7": 143
+        },
+        "min_slack": {
+          "g6": "Q}KGGKB?G?_A?B?A??_?C??[?@o",
+          "i": 6,
+          "mu_star": 6,
+          "slack": 0
+        },
+        "n": 18,
+        "r": 3
+      },
+      {
+        "count": 1,
+        "equality_count": 0,
+        "equality_examples": [],
+        "expected": 1,
+        "fully_rechecked": true,
+        "histogram": {
+          "1,2": 1
+        },
+        "min_slack": {
+          "g6": "D~{",
+          "i": 1,
+          "mu_star": 2,
+          "slack": 1
+        },
+        "n": 5,
+        "r": 4
+      },
+      {
+        "count": 1,
+        "equality_count": 1,
+        "equality_examples": [
+          "E}lw"
+        ],
+        "expected": 1,
+        "fully_rechecked": true,
+        "histogram": {
+          "2,2": 1
+        },
+        "min_slack": {
+          "g6": "E}lw",
+          "i": 2,
+          "mu_star": 2,
+          "slack": 0
+        },
+        "n": 6,
+        "r": 4
+      },
+      {
+        "count": 2,
+        "equality_count": 1,
+        "equality_examples": [
+          "F}oxw"
+        ],
+        "expected": 2,
+        "fully_rechecked": true,
+        "histogram": {
+          "2,2": 1,
+          "2,3": 1
+        },
+        "min_slack": {
+          "g6": "F}oxw",
+          "i": 2,
+          "mu_star": 2,
+          "slack": 0
+        },
+        "n": 7,
+        "r": 4
+      },
+      {
+        "count": 6,
+        "equality_count": 1,
+        "equality_examples": [
+          "Gs`zro"
+        ],
+        "expected": 6,
+        "fully_rechecked": true,
+        "histogram": {
+          "2,3": 5,
+          "4,4": 1
+        },
+        "min_slack": {
+          "g6": "Gs`zro",
+          "i": 4,
+          "mu_star": 4,
+          "slack": 0
+        },
+        "n": 8,
+        "r": 4
+      },
+      {
+        "count": 16,
+        "equality_count": 3,
+        "equality_examples": [
+          "H{dQXgj",
+          "H{dQXcl",
+          "H{`Y`sm"
+        ],
+        "expected": 16,
+        "fully_rechecked": true,
+        "histogram": {
+          "2,3": 11,
+          "2,4": 2,
+          "3,3": 3
+        },
+        "min_slack": {
+          "g6": "H{dQXgj",
+          "i": 3,
+          "mu_star": 3,
+          "slack": 0
+        },
+        "n": 9,
+        "r": 4
+      },
+      {
+        "count": 59,
+        "equality_count": 5,
+        "equality_examples": [
+          "I}hP?cNBo",
+          "I}`H`STBg",
+          "I}`@XWYDW",
+          "I}`@XO\\Do",
+          "Is`zB?ZEo"
+        ],
+        "expected": 59,
+        "fully_rechecked": true,
+        "histogram": {
+          "2,3": 6,
+          "2,4": 29,
+          "3,3": 4,
+          "3,4": 19,
+          "4,4": 1
+        },
+        "min_slack": {
+          "g6": "I}hP?cNBo",
+          "i": 3,
+          "mu_star": 3,
+          "slack": 0
+        },
+        "n": 10,
+        "r": 4
+      },
+      {
+        "count": 265,
+        "equality_count": 2,
+        "equality_examples": [
+          "J~`@?_NBo]?",
+          "Js`rQ_hCgY_"
+        ],
+        "expected": 265,
+        "fully_rechecked": true,
+        "histogram": {
+          "3,4": 263,
+          "4,4": 2
+        },
+        "min_slack": {
+          "g6": "J~`@?_NBo]?",
+          "i": 4,
+          "mu_star": 4,
+          "slack": 0
+        },
+        "n": 11,
+        "r": 4
+      },
+      {
+        "count": 1544,
+        "equality_count": 25,
+        "equality_examples": [
+          "K}ox?cI@_B_N",
+          "K}op?_JAoM?f",
+          "K}lH_GC?wF?N",
+          "K}l@?_G@wN?{",
+          "K}`Hp_G@WJ?V",
+          "K}`H`cKB?D_N"
+        ],
+        "expected": 1544,
+        "fully_rechecked": true,
+        "histogram": {
+          "3,4": 1455,
+          "3,5": 63,
+          "4,4": 25,
+          "4,5": 1
+        },
+        "min_slack": {
+          "g6": "K}ox?cI@_B_N",
+          "i": 4,
+          "mu_star": 4,
+          "slack": 0
+        },
+        "n": 12,
+        "r": 4
+      },
+      {
+        "count": 10778,
+        "equality_count": 142,
+        "equality_examples": [
+          "L}op_WG@OD_U?Z",
+          "L}op_OH@_K?N?]",
+          "L}oxG_H?oD?J?N",
+          "L}ox?cG@?F_U?\\",
+          "L}opW_H@?C_N?]",
+          "L}opOcK@?C_N?]"
+        ],
+        "expected": 10778,
+        "fully_rechecked": true,
+        "histogram": {
+          "3,4": 3875,
+          "3,5": 6509,
+          "4,4": 141,
+          "4,5": 252,
+          "5,5": 1
+        },
+        "min_slack": {
+          "g6": "L}op_WG@OD_U?Z",
+          "i": 4,
+          "mu_star": 4,
+          "slack": 0
+        },
+        "n": 13,
+        "r": 4
+      },
+      {
+        "count": 88168,
+        "equality_count": 229,
+        "equality_examples": [
+          "M}oxoGA?WB?K?F?F_",
+          "M}oxgOA?WA_I?J?J_",
+          "M}ox_SC?gB?K?F?F_",
+          "M}ox_OC?gC_L?Y?T_",
+          "M}opgOG@_B?K?V?N?",
+          "M}opgOG@OD?K?V?N?"
+        ],
+        "expected": 88168,
+        "fully_rechecked": false,
+        "histogram": {
+          "3,4": 156,
+          "3,5": 60006,
+          "3,6": 13,
+          "4,4": 228,
+          "4,5": 27754,
+          "4,6": 10,
+          "6,6": 1
+        },
+        "min_slack": {
+          "g6": "M}oxoGA?WB?K?F?F_",
+          "i": 4,
+          "mu_star": 4,
+          "slack": 0
+        },
+        "n": 14,
+        "r": 4
+      },
+      {
+        "count": 1,
+        "equality_count": 0,
+        "equality_examples": [],
+        "expected": 1,
+        "fully_rechecked": true,
+        "histogram": {
+          "1,3": 1
+        },
+        "min_slack": {
+          "g6": "E~~w",
+          "i": 1,
+          "mu_star": 3,
+          "slack": 2
+        },
+        "n": 6,
+        "r": 5
+      },
+      {
+        "count": 3,
+        "equality_count": 0,
+        "equality_examples": [],
+        "expected": 3,
+        "fully_rechecked": true,
+        "histogram": {
+          "2,3": 3
+        },
+        "min_slack": {
+          "g6": "G~rHx{",
+          "i": 2,
+          "mu_star": 3,
+          "slack": 1
+        },
+        "n": 8,
+        "r": 5
+      },
+      {
+        "count": 60,
+        "equality_count": 1,
+        "equality_examples": [
+          "IsaBzx{^?"
+        ],
+        "expected": 60,
+        "fully_rechecked": true,
+        "histogram": {
+          "2,3": 4,
+          "2,4": 52,
+          "3,4": 3,
+          "5,5": 1
+        },
+        "min_slack": {
+          "g6": "IsaBzx{^?",
+          "i": 5,
+          "mu_star": 5,
+          "slack": 0
+        },
+        "n": 10,
+        "r": 5
+      },
+      {
+        "count": 7848,
+        "equality_count": 3,
+        "equality_examples": [
+          "K}r@`_oBw^@{",
+          "K~aIQKhHgqat",
+          "K{aAypONHZC{"
+        ],
+        "expected": 7848,
+        "fully_rechecked": true,
+        "histogram": {
+          "2,4": 2128,
+          "2,5": 263,
+          "3,4": 5021,
+          "3,5": 433,
+          "4,4": 3
+        },
+        "min_slack": {
+          "g6": "K}r@`_oBw^@{",
+          "i": 4,
+          "mu_star": 4,
+          "slack": 0
+        },
+        "n": 12,
+        "r": 5
+      },
+      {
+        "count": 1,
+        "equality_count": 0,
+        "equality_examples": [],
+        "expected": 1,
+        "fully_rechecked": true,
+        "histogram": {
+          "1,3": 1
+        },
+        "min_slack": {
+          "g6": "F~~~w",
+          "i": 1,
+          "mu_star": 3,
+          "slack": 2
+        },
+        "n": 7,
+        "r": 6
+      },
+      {
+        "count": 1,
+        "equality_count": 0,
+        "equality_examples": [],
+        "expected": 1,
+        "fully_rechecked": true,
+        "histogram": {
+          "2,3": 1
+        },
+        "min_slack": {
+          "g6": "G~z\\z{",
+          "i": 2,
+          "mu_star": 3,
+          "slack": 1
+        },
+        "n": 8,
+        "r": 6
+      },
+      {
+        "count": 4,
+        "equality_count": 1,
+        "equality_examples": [
+          "H}q|r|}"
+        ],
+        "expected": 4,
+        "fully_rechecked": true,
+        "histogram": {
+          "2,3": 1,
+          "2,4": 2,
+          "3,3": 1
+        },
+        "min_slack": {
+          "g6": "H}q|r|}",
+          "i": 3,
+          "mu_star": 3,
+          "slack": 0
+        },
+        "n": 9,
+        "r": 6
+      },
+      {
+        "count": 21,
+        "equality_count": 0,
+        "equality_examples": [],
+        "expected": 21,
+        "fully_rechecked": true,
+        "histogram": {
+          "2,3": 1,
+          "2,4": 20
+        },
+        "min_slack": {
+          "g6": "I}rDzw}NW",
+          "i": 2,
+          "mu_star": 3,
+          "slack": 1
+        },
+        "n": 10,
+        "r": 6
+      },
+      {
+        "count": 266,
+        "equality_count": 1,
+        "equality_examples": [
+          "J}rE@{~N`{_"
+        ],
+        "expected": 266,
+        "fully_rechecked": true,
+        "histogram": {
+          "2,4": 259,
+          "2,5": 2,
+          "3,3": 1,
+          "3,4": 4
+        },
+        "min_slack": {
+          "g6": "J}rE@{~N`{_",
+          "i": 3,
+          "mu_star": 3,
+          "slack": 0
+        },
+        "n": 11,
+        "r": 6
+      },
+      {
+        "count": 1,
+        "equality_count": 0,
+        "equality_examples": [],
+        "expected": 1,
+        "fully_rechecked": true,
+        "histogram": {
+          "1,4": 1
+        },
+        "min_slack": {
+          "g6": "G~~~~{",
+          "i": 1,
+          "mu_star": 4,
+          "slack": 3
+        },
+        "n": 8,
+        "r": 7
+      },
+      {
+        "count": 5,
+        "equality_count": 0,
+        "equality_examples": [],
+        "expected": 5,
+        "fully_rechecked": true,
+        "histogram": {
+          "2,4": 5
+        },
+        "min_slack": {
+          "g6": "I~~em[~Nw",
+          "i": 2,
+          "mu_star": 4,
+          "slack": 2
+        },
+        "n": 10,
+        "r": 7
+      }
+    ],
+    "nonregular_witness": {
+      "g6": "Ch",
+      "i": 2,
+      "mu_star": 1,
+      "name": "P_4"
+    },
+    "recheck_threshold": 12000,
+    "source": "arXiv:2507.17780 Conjecture 3",
+    "totals": {
+      "counterexamples": 0,
+      "equality": 3651,
+      "families": 29,
+      "graphs": 155033
+    }
+  },
+  "digest": "b9488babb31c4202",
+  "kind": "exhaustive-check",
+  "problem_id": "p0001_txgraffiti_i_mustar",
+  "provenance": {
+    "created_at": "2026-07-26T10:21:32+00:00",
+    "git_rev": "0d71f29",
+    "notes": "連結 r-正則グラフの完全リストを GENREG shortcode から読み、分枝限定で i と mu* を厳密計算した。",
+    "platform": "Windows 10",
+    "python": "3.10.11",
+    "search_seconds": 76.83303952217102,
+    "search_seed": 0
+  }
+}

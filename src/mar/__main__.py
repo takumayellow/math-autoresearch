@@ -84,7 +84,11 @@ def cmd_verify(args: argparse.Namespace) -> int:
             print(f"[FAIL] {pid}: 証明書の problem_id 不一致", file=sys.stderr)
             failed += 1
             continue
-        report = load(pid).verify(cert)
+        prob = load(pid)
+        try:
+            report = prob.verify(cert, deep=getattr(args, "deep", False))
+        except TypeError:
+            report = prob.verify(cert)
         print(f"# {pid}  digest={cert.digest()}")
         print(f"  主張: {cert.claim}")
         print(report.render())
@@ -133,11 +137,14 @@ def main(argv: list[str] | None = None) -> int:
         sp.add_argument("problem_id")
         sp.add_argument("--budget", type=float, default=60.0)
         sp.add_argument("--seed", type=int, default=0)
+        sp.add_argument("--deep", action="store_true")
         sp.set_defaults(func=func, all=False)
 
     sp = sub.add_parser("verify")
     sp.add_argument("problem_id", nargs="?")
     sp.add_argument("--all", action="store_true")
+    sp.add_argument("--deep", action="store_true",
+                    help="大きい族も含めて全数を独立実装で再計算する (遅い)")
     sp.set_defaults(func=cmd_verify)
 
     args = ap.parse_args(argv)

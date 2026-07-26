@@ -6,3 +6,7 @@ papers/**/*.out
 papers/**/*.toc
 papers/**/preview/
 data/scratch/
+
+# 外部データ (McKay / GENREG / arXiv ソース) は再取得可能なので追跡しない
+data/graphs/
+data/refs/
