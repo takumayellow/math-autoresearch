@@ -1,0 +1,42 @@
+{
+  "certificate_digest": "3588557963d25d98",
+  "checks": [
+    {
+      "detail": "",
+      "name": "証人ファイルの SHA-256 と長さが証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "13335441 個すべてで M が極大マッチングかつ |M| <= H",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "走査したグラフ数が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "元データの総数が検証器の持つ公表値 (OEIS A001349 / A000055) と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "145 個の反例すべてで mu^* と H を独立に再計算し一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "19 族の最大比を上下から閉じた (証人による上界 = 厳密再計算による下界)",
+      "passed": true
+    }
+  ],
+  "ok": true,
+  "platform": "Windows 10",
+  "problem_id": "p0003_saturation_harmonic",
+  "python": "3.10.11",
+  "seconds": 732.2,
+  "verified_at": "2026-07-26T13:43:58+00:00",
+  "verifier_hash": "99bbb17d354787ed"
+}
