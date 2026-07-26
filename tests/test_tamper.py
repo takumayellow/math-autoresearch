@@ -31,6 +31,7 @@ P0003 = "p0003_saturation_harmonic"
 P0004 = "p0004_wowii61_induced_forest"
 P0005 = "p0005_wowii_induced_tree"
 P0006 = "p0006_wowii194_hamiltonian"
+P0007 = "p0007_wowii200_star_tree"
 #: 元データの走査が軽く、かつ等号グラフを含む族。
 P0002_FAMILIES = ("subcubic_06", "subcubic_08")
 #: 反例は $n \ge 9$ にしか無いので、ここで検査するのは比と証人の側。
@@ -42,6 +43,8 @@ P0005_FAMILIES = ("graphs_06", "graphs_07")
 #: 2 種類の証人 (路と独立集合) と等号がどちらも現れ、かつ数秒で走る族。
 #: reg3_12 は正則族の読み口 (shortcode + 次数の検査) を通すために足してある。
 P0006_FAMILIES = ("graphs_06", "graphs_07", "reg3_12")
+#: 2 種類の証人 (路と誘導木) と仮定成立グラフがどちらも現れる軽い族。
+P0007_FAMILIES = ("graphs_06", "graphs_07", "reg3_12")
 
 
 def _prepare(pid: str, keep, tmp_path, monkeypatch):
@@ -1115,3 +1118,424 @@ def test_p0006_relabelled_mask_with_real_path_is_detected(ham):
     assert not report.ok
     assert "仮定を満たさないのに仮定成立として数えられている" in \
         _detail(report, "分類する族")
+
+
+# ----------------------------------------------------------------- p0007
+
+
+@pytest.fixture()
+def star(tmp_path, monkeypatch):
+    cert, prob, wdir = _prepare(P0007, P0007_FAMILIES, tmp_path, monkeypatch)
+    fams = cert.data["families"]
+    cert.data["totals"] = {
+        "graphs": sum(f["count"] for f in fams),
+        "families": len(fams),
+        "paths": sum(f["path_records"] for f in fams),
+        "masks": sum(f["mask_records"] for f in fams),
+        "hypothesis": sum(f["hypothesis_count"] for f in fams),
+        "deep": sum(f["deep_hypothesis_count"] for f in fams),
+        "also194": sum(f["also194_count"] for f in fams),
+        "counterexamples": len(cert.data["counterexamples"]),
+    }
+    return cert, prob, wdir
+
+
+def _p0007_blob(wdir, fam: dict) -> bytearray:
+    return bytearray(gzip.decompress((wdir / fam["witness_file"]).read_bytes()))
+
+
+def _p0007_rewrite(wdir, fam: dict, blob: bytearray) -> None:
+    import hashlib
+
+    raw = gzip.compress(bytes(blob))
+    (wdir / fam["witness_file"]).write_bytes(raw)
+    fam["witness_sha256"] = hashlib.sha256(raw).hexdigest()
+
+
+def _p0007_graphs(fam: dict):
+    """検証器が読むのと同じ順序で族のグラフを返す."""
+    import mar.checkgraph as ck
+    from mar.problems.p0007_wowii200_star_tree import _verifier_source
+
+    return list(_verifier_source(ck, fam))
+
+
+def _p0007_split(blob: bytearray, fam: dict):
+    """証人を (モードビット列, 路のリスト, マスクのリスト) にほどく."""
+    from mar.problems.p0007_wowii200_star_tree import _BitReader
+
+    n, mb = fam["n"], fam["mask_bytes"]
+    head = fam["mode_bytes"]
+    reader = _BitReader(bytes(blob[head:head + fam["path_bytes"]]),
+                        fam["path_bits"])
+    paths = [[reader.get() for _ in range(n)]
+             for _ in range(fam["path_records"])]
+    at = head + fam["path_bytes"]
+    masks = [bytes(blob[at + k * mb:at + (k + 1) * mb])
+             for k in range(fam["mask_records"])]
+    return bytearray(blob[:head]), paths, masks
+
+
+def _p0007_join(fam: dict, modes, paths, masks) -> bytearray:
+    """:func:`_p0007_split` の逆 (証人を組み直す)."""
+    from mar.problems.p0007_wowii200_star_tree import _BitWriter
+
+    writer = _BitWriter(fam["path_bits"])
+    for seq in paths:
+        for v in seq:
+            writer.put(v)
+    return bytearray(bytes(modes) + writer.getvalue() + b"".join(masks))
+
+
+def _p0007_first_path_index(blob: bytearray, fam: dict) -> int:
+    """路の証人が付いている (= 仮定が成り立つ) 最初のグラフの番号."""
+    return next(i for i in range(fam["count"])
+                if not ((blob[i >> 3] >> (7 - (i & 7))) & 1))
+
+
+def test_p0007_clean_certificate_verifies(star):
+    cert, prob, _ = star
+    report = prob.verify(cert)
+    assert report.ok, _failed(report)
+
+
+def test_p0007_bit_flip_in_witness_is_detected(star):
+    cert, prob, wdir = star
+    _flip_first_byte(wdir / _fam(cert, "graphs_06")["witness_file"])
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "SHA-256" in _failed(report)
+
+
+def test_p0007_mode_bit_flipped_to_tree_is_detected(star):
+    r"""路の証人が付いたグラフを「仮定が破れる側」と偽ると落ちる.
+
+    モード 0 のグラフは $\mathrm{tree}(G) = t$ なので、位数 $t+1$ の誘導木は
+    **そもそも存在しない**。どんなマスクを充てても検査は通らない。
+    """
+    cert, prob, wdir = star
+    fam = _fam(cert, "graphs_06")
+    blob = _p0007_blob(wdir, fam)
+    index = _p0007_first_path_index(blob, fam)
+    blob[index >> 3] |= 1 << (7 - (index & 7))
+    _p0007_rewrite(wdir, fam, blob)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "誘導木の証人が閾値を超えない" in _detail(report, "路の証人")
+
+
+def test_p0007_empty_tree_witness_is_detected(star):
+    """空集合を誘導木の証人と称しても、位数が閾値を超えないので落ちる."""
+    cert, prob, wdir = star
+    fam = _fam(cert, "graphs_06")
+    blob = _p0007_blob(wdir, fam)
+    at = fam["mode_bytes"] + fam["path_bytes"]
+    blob[at:at + fam["mask_bytes"]] = bytes(fam["mask_bytes"])
+    _p0007_rewrite(wdir, fam, blob)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "誘導木の証人が閾値を超えない" in _detail(report, "路の証人")
+
+
+def test_p0007_cyclic_witness_is_detected(star):
+    """閾値を超える大きさでも、木でない (閉路をもつ) 集合は落ちる.
+
+    位数だけを見る検証器はこれを通してしまう。誘導木性の検査が効いている
+    ことの確認。
+    """
+    cert, prob, wdir = star
+    fam = _fam(cert, "graphs_06")
+    blob = _p0007_blob(wdir, fam)
+    # 閉路をもつ (= 木でない) モード 1 のグラフを 1 つ選び、その証人を
+    # 全頂点集合に差し替える。位数 n > t は満たすが誘導部分グラフは G 自身で、
+    # 閉路をもつので木ではない。
+    graphs = _p0007_graphs(fam)
+    rank = 0
+    for i, g in enumerate(graphs):
+        if not ((blob[i >> 3] >> (7 - (i & 7))) & 1):
+            continue
+        if sum(len(s) for s in g[1]) // 2 > fam["n"] - 1:
+            break
+        rank += 1
+    else:                                    # pragma: no cover - 族の選び方の前提
+        pytest.skip("閉路をもつモード 1 のグラフが族にない")
+    at = fam["mode_bytes"] + fam["path_bytes"] + rank * fam["mask_bytes"]
+    blob[at:at + fam["mask_bytes"]] = (
+        ((1 << fam["n"]) - 1).to_bytes(fam["mask_bytes"], "little"))
+    _p0007_rewrite(wdir, fam, blob)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "誘導木の証人が閾値を超えない" in _detail(report, "路の証人")
+
+
+def test_p0007_scrambled_path_is_detected(star):
+    cert, prob, wdir = star
+    fam = _fam(cert, "graphs_06")
+    blob = _p0007_blob(wdir, fam)
+    at = fam["mode_bytes"]
+    blob[at:at + fam["path_bytes"]] = bytes(fam["path_bytes"])
+    _p0007_rewrite(wdir, fam, blob)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "証人がハミルトン路でない" in _detail(report, "路の証人")
+
+
+def test_p0007_inflated_also194_count_is_detected(star):
+    """予想 194 との比較に使う内数を水増しすると落ちる."""
+    cert, prob, _ = star
+    _fam(cert, "graphs_06")["also194_count"] += 1
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "予想 194 の仮定も満たす個数" in _detail(report, "走査したグラフ数")
+
+
+def test_p0007_missing_hypothesis_graph_is_detected(star):
+    """仮定を満たすグラフをリストから隠すと、分類が閉じない."""
+    cert, prob, _ = star
+    fam = _fam(cert, "graphs_06")
+    examples = set(fam.get("hypothesis_examples", []))
+    hidden = next(g6 for g6 in fam["hypothesis_graphs"] if g6 not in examples)
+    fam["hypothesis_graphs"] = [g6 for g6 in fam["hypothesis_graphs"]
+                                if g6 != hidden]
+    fam["hypothesis_count"] -= 1
+    cert.data["totals"]["hypothesis"] -= 1
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "が仮定リストに無い" in _detail(report, "モード 0 のグラフ")
+
+
+def test_p0007_bogus_hypothesis_example_is_detected(star):
+    """論文に載る例が仮定リスト外なら不合格になる."""
+    cert, prob, _ = star
+    fam = _fam(cert, "graphs_06")
+    fam["hypothesis_examples"] = ["E????"] + fam["hypothesis_examples"]
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "仮定リストに無いグラフが例に載っている" in _detail(
+        report, "モード 0 のグラフ")
+
+
+def test_p0007_wrong_published_count_is_detected(star):
+    """証明書が主張する公表値を書き換えると、検証器の表と食い違って落ちる."""
+    cert, prob, _ = star
+    _fam(cert, "graphs_07")["source_expected"] = 999
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "公表値" in _failed(report)
+
+
+def test_p0007_truncated_witness_file_is_detected(star):
+    """証人を後ろから削るだけなら、長さの検査で先に落ちる."""
+    cert, prob, wdir = star
+    fam = _fam(cert, "graphs_06")
+    _p0007_rewrite(wdir, fam, _p0007_blob(wdir, fam)[:-1])
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "証人の長さが証明書と合わない" in _detail(report, "SHA-256")
+
+
+def test_p0007_wrong_graph_count_is_detected(star):
+    """走査個数を水増しすると、走査側と証人の総数の両方で辻褄が合わなくなる.
+
+    graphs_07 を選ぶのは 853 % 8 == 5 なので、1 増やしても ``mode_bytes`` が
+    変わらないから。長さ検査が先に発火すると本命の照合を試せない。
+    """
+    cert, prob, _ = star
+    _fam(cert, "graphs_07")["count"] += 1
+    cert.data["totals"]["graphs"] += 1
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "グラフ数" in _detail(report, "走査したグラフ数")
+    assert "証人の総数が走査個数に合わない" in _detail(report, "証明書の合計")
+
+
+def test_p0007_inflated_totals_are_detected(star):
+    """族ごとの集計と合わない合計 (論文の見出し数) は落とす."""
+    cert, prob, _ = star
+    cert.data["totals"]["masks"] += 3
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "masks" in _detail(report, "証明書の合計")
+
+
+def test_p0007_inflated_hypothesis_count_is_detected(star):
+    """仮定を満たす個数を水増しすると、モード 0 の実数と合わない."""
+    cert, prob, _ = star
+    _fam(cert, "graphs_06")["hypothesis_count"] += 1
+    cert.data["totals"]["hypothesis"] += 1
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "仮定成立数" in _detail(report, "走査したグラフ数")
+
+
+def test_p0007_inflated_deep_count_is_detected(star):
+    """完全グラフでない内数も検証器が数え直している."""
+    cert, prob, _ = star
+    _fam(cert, "graphs_06")["deep_hypothesis_count"] += 1
+    cert.data["totals"]["deep"] += 1
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "完全グラフでない個数" in _detail(report, "走査したグラフ数")
+
+
+def test_p0007_hypothesis_list_marked_incomplete_is_detected(star):
+    """上限に達していない族で全リストを省くと、分類が閉じたと主張できない."""
+    cert, prob, _ = star
+    fam = _fam(cert, "graphs_06")
+    assert fam["hypothesis_count"] <= 200000, "上限未満の族でないと意味がない"
+    fam["hypothesis_complete"] = False
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "上限に達していないのに" in _detail(report, "モード 0 のグラフ")
+
+
+def test_p0007_fabricated_counterexample_is_detected(star):
+    """反例を捏造すると、リストの非空検査だけでなく主張の再現でも落ちる."""
+    import mar.checkgraph as ck
+
+    from mar.problems.p0007_wowii200_star_tree import threshold
+
+    cert, prob, wdir = star
+    fam = _fam(cert, "graphs_06")
+    blob = _p0007_blob(wdir, fam)
+    index = _p0007_first_path_index(blob, fam)
+    g = _p0007_graphs(fam)[index]
+    t = threshold(fam["n"], ck.indep_neighbors_sum(g))
+    cert.data["counterexamples"].append(
+        {"g6": ck.sets_to_graph6(g), "n": fam["n"], "family": fam["tag"],
+         "tree": t, "threshold": t})
+    cert.data["totals"]["counterexamples"] += 1
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "反例の主張が再現しない" in _detail(report, "路の証人")
+
+
+def test_p0007_borrowed_mask_from_another_graph_is_detected(star):
+    """別のグラフの (それ自体は妥当な) 誘導木マスクを流用しても通らない.
+
+    長さもレコード数も変わらないので、形式的な検査はすべて素通りする。
+    止めているのは「そのグラフでちゃんと木を誘導しているか」の再計算だけ。
+    """
+    import mar.checkgraph as ck
+
+    from mar.problems.p0007_wowii200_star_tree import threshold
+
+    cert, prob, wdir = star
+    fam = _fam(cert, "graphs_06")
+    n = fam["n"]
+    blob = _p0007_blob(wdir, fam)
+    graphs = _p0007_graphs(fam)
+    modes, paths, masks = _p0007_split(blob, fam)
+    mode1 = [i for i in range(fam["count"])
+             if (modes[i >> 3] >> (7 - (i & 7))) & 1]
+
+    target = donor = None
+    for rank, i in enumerate(mode1):
+        g = graphs[i]
+        t = threshold(n, ck.indep_neighbors_sum(g))
+        for other, raw in enumerate(masks):
+            if other == rank:
+                continue
+            subset = ck.mask_to_set(int.from_bytes(raw, "little"))
+            if (max(subset, default=-1) >= n or len(subset) <= t
+                    or not ck.induces_tree(g, subset)):
+                target, donor = rank, other
+                break
+        if target is not None:
+            break
+    assert target is not None, "流用できないマスクが族に無いとテストにならない"
+
+    masks[target] = masks[donor]
+    _p0007_rewrite(wdir, fam, _p0007_join(fam, modes, paths, masks))
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "誘導木の証人が閾値を超えない" in _detail(report, "路の証人")
+
+
+def test_p0007_out_of_range_mask_bit_is_detected(star):
+    """位数を超える頂点番号を立てたマスクは受け付けない."""
+    cert, prob, wdir = star
+    fam = _fam(cert, "graphs_06")
+    blob = _p0007_blob(wdir, fam)
+    modes, paths, masks = _p0007_split(blob, fam)
+    masks[0] = b"\xff" * fam["mask_bytes"]
+    _p0007_rewrite(wdir, fam, _p0007_join(fam, modes, paths, masks))
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "誘導木の証人が閾値を超えない" in _detail(report, "路の証人")
+
+
+def test_p0007_valid_permutation_that_is_not_a_path_is_detected(star):
+    """頂点の置換としては正しいが辺を辿っていない列は落とす."""
+    import itertools
+
+    import mar.checkgraph as ck
+
+    cert, prob, wdir = star
+    fam = _fam(cert, "graphs_06")
+    n = fam["n"]
+    blob = _p0007_blob(wdir, fam)
+    g = _p0007_graphs(fam)[_p0007_first_path_index(blob, fam)]
+    modes, paths, masks = _p0007_split(blob, fam)
+    bogus = next(list(p) for p in itertools.permutations(range(n))
+                 if not ck.is_hamiltonian_path(g, list(p)))
+
+    paths[0] = bogus
+    _p0007_rewrite(wdir, fam, _p0007_join(fam, modes, paths, masks))
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "証人がハミルトン路でない" in _detail(report, "路の証人")
+
+
+def test_p0007_mask_swapped_for_real_path_is_detected(star):
+    """仮定が成り立たないグラフに本物のハミルトン路を付けても見破られる.
+
+    モードビットを 1 -> 0 に倒し、誘導木の証人を捨てて実在するハミルトン路を
+    差し込む。長さもレコード数も辻褄が合うので、止めているのは「モード 0 の
+    グラフでは検証器が tree(G) を厳密に解き直す」という一点だけである。
+    """
+    import itertools
+
+    import mar.checkgraph as ck
+
+    from mar.problems.p0007_wowii200_star_tree import _stream_bytes
+
+    cert, prob, wdir = star
+    fam = _fam(cert, "graphs_06")
+    n = fam["n"]
+    blob = _p0007_blob(wdir, fam)
+    graphs = _p0007_graphs(fam)
+    modes, paths, masks = _p0007_split(blob, fam)
+
+    target = seq = None
+    for i, g in enumerate(graphs):
+        if not (modes[i >> 3] >> (7 - (i & 7))) & 1:
+            continue
+        hit = next((p for p in itertools.permutations(range(n))
+                    if ck.is_hamiltonian_path(g, list(p))), None)
+        if hit is not None:
+            target, seq = i, list(hit)
+            break
+    assert target is not None, "路をもつ反証グラフが族に無いとテストにならない"
+
+    pos = sum(1 for j in range(target)
+              if not (modes[j >> 3] >> (7 - (j & 7))) & 1)
+    rank = sum(1 for j in range(target) if (modes[j >> 3] >> (7 - (j & 7))) & 1)
+    paths.insert(pos, seq)
+    del masks[rank]
+    modes[target >> 3] &= ~(1 << (7 - (target & 7)))
+
+    fam["path_records"] += 1
+    fam["mask_records"] -= 1
+    fam["hypothesis_count"] += 1
+    fam["path_bytes"] = _stream_bytes(fam["path_records"] * n, fam["path_bits"])
+    tot = cert.data["totals"]
+    tot["paths"] += 1
+    tot["masks"] -= 1
+    tot["hypothesis"] += 1
+    _p0007_rewrite(wdir, fam, _p0007_join(fam, modes, paths, masks))
+
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "仮定を満たさないのに仮定成立として数えられている" in \
+        _detail(report, "モード 0 のグラフ")

@@ -1,0 +1,47 @@
+{
+  "certificate_digest": "7811a6d52b4561e6",
+  "checks": [
+    {
+      "detail": "0 件",
+      "name": "反例リストは空",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証人ファイルの SHA-256 と長さが証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "路の証人 55258 個がハミルトン路であり、誘導木の証人 13346984 個が閾値 t を超える誘導木である",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "走査したグラフ数・証人の内訳・仮定を満たす個数 (完全グラフでない内数と、予想 194 の仮定も満たす内数を含む) が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "列挙個数が検証器の持つ公表値 (OEIS A001349 / A000055 / A002851 / A006820-A006822) と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "モード 0 のグラフ 55258 個で tree(G) を厳密に解き直し、仮定 tree(G) = t が成り立つことを確認",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証明書の合計 (論文の見出し数) が族ごとの集計と一致",
+      "passed": true
+    }
+  ],
+  "ok": true,
+  "platform": "Windows 11 (build 26200)",
+  "problem_id": "p0007_wowii200_star_tree",
+  "python": "3.10.11",
+  "seconds": 2318.9,
+  "verified_at": "2026-07-26T21:45:41+00:00",
+  "verifier_hash": "660bf14a9b14055f"
+}

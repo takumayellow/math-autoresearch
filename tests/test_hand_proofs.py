@@ -142,3 +142,166 @@ def test_pendant_clique_is_sharp(k: int):
     assert ck.has_hamiltonian_path(g)
     assert not any(ck.is_hamiltonian_path(g, list(p)) and p[-1] in nbr[p[0]]
                    for p in itertools.permutations(range(n)))
+
+
+# ----------------------------------------------------------------------
+# p0007 (WOWII 予想 200)。仮定は tree(G) = t、t = 1 + ceil(S/n)。
+# ----------------------------------------------------------------------
+
+
+def _ell(g):
+    """局所独立数の列 [alpha(G[N(v)])] を返す."""
+    n, nbr = g
+    return [ck.independence_number_on(g, nbr[v]) for v in range(n)]
+
+
+def _t200(n: int, s: int) -> int:
+    """閾値 t = 1 + ceil(S/n)。整数演算だけで書く."""
+    return 1 + -(-s // n)
+
+
+def _tree_graphs(n: int):
+    """位数 n の木を、連結グラフのリストから辺数で絞って流す."""
+    for g in _graphs(n):
+        if sum(len(s) for s in g[1]) // 2 == n - 1:
+            yield g
+
+
+def test_star_bound_holds_for_every_connected_graph():
+    """定理 3.1: tree(G) >= 1 + l_max >= t が常に成り立つ.
+
+    仮定 tree(G) = t が下界の等号成立条件であるという読み替えの土台。
+    """
+    seen = 0
+    for n in range(2, MAX_N + 1):
+        for g in _graphs(n):
+            ell = _ell(g)
+            s = sum(ell)
+            assert s == ck.indep_neighbors_sum(g)
+            tree = ck.max_induced_tree_size(g)
+            assert tree >= 1 + max(ell), ck.sets_to_graph6(g)
+            assert 1 + max(ell) >= _t200(n, s), ck.sets_to_graph6(g)
+            seen += 1
+    assert seen > 0
+
+
+def test_hypothesis_200_is_the_equality_case_of_the_star_bound():
+    """定理 3.2: tree = t <=> (tree = 1 + l_max かつ l_max = ceil(l_avg))."""
+    hits = 0
+    for n in range(2, MAX_N + 1):
+        for g in _graphs(n):
+            ell = _ell(g)
+            s = sum(ell)
+            tree = ck.max_induced_tree_size(g)
+            lhs = tree == _t200(n, s)
+            # ceil(S/n) を Fraction で書き直し、整数演算版と食い違わないか見る。
+            ceil_avg = -(-Fraction(s, n).numerator // Fraction(s, n).denominator)
+            rhs = tree == 1 + max(ell) and max(ell) == ceil_avg
+            assert lhs == rhs, ck.sets_to_graph6(g)
+            hits += lhs
+    # 仮定が空虚でないことも同時に確かめる (空虚なら同値は無内容)。
+    assert hits > 0
+
+
+def test_trees_of_order_at_least_four_never_satisfy_hypothesis_200():
+    """系 3.3: n >= 4 の木は仮定を満たさない (モード 1 の証人が常に取れる)."""
+    seen = 0
+    for n in range(4, MAX_N + 1):
+        for g in _tree_graphs(n):
+            s = ck.indep_neighbors_sum(g)
+            assert s == 2 * (n - 1), ck.sets_to_graph6(g)
+            assert _t200(n, s) == 3, ck.sets_to_graph6(g)
+            assert ck.max_induced_tree_size(g) == n
+            seen += 1
+    assert seen > 0
+
+
+def test_tree_number_two_characterises_complete_graphs():
+    """定理 3.4: tree(G) = 2 <=> G は完全グラフ。完全グラフは仮定を満たす."""
+    for n in range(2, MAX_N + 1):
+        complete = 0
+        for g in _graphs(n):
+            m = sum(len(s) for s in g[1]) // 2
+            is_complete = m == n * (n - 1) // 2
+            assert (ck.max_induced_tree_size(g) == 2) == is_complete, \
+                ck.sets_to_graph6(g)
+            if is_complete:
+                complete += 1
+                s = ck.indep_neighbors_sum(g)
+                assert s == n
+                assert _t200(n, s) == 2
+                assert ck.has_hamiltonian_path(g)
+        # 各位数に完全グラフはちょうど 1 個 (論文の「非完全」内訳の根拠)。
+        assert complete == 1
+
+
+def test_hypothesis_200_bounds_the_girth():
+    """命題 3.5: 仮定を満たし閉路をもつグラフは girth <= t + 1."""
+    seen = 0
+    for n in range(3, MAX_N + 1):
+        for g in _graphs(n):
+            s = ck.indep_neighbors_sum(g)
+            t = _t200(n, s)
+            if ck.max_induced_tree_size(g) != t:
+                continue
+            girth = ck.girth(g)
+            if girth == 0:      # 森 (系 3.3 より n <= 3 でしか起きない)
+                continue
+            assert girth <= t + 1, ck.sets_to_graph6(g)
+            seen += 1
+    assert seen > 0
+
+
+@pytest.mark.parametrize("k", range(1, 5))
+def test_balanced_complete_bipartite_is_sharp_for_200(k: int):
+    """命題 3.6: K_{k,k+1} は仮定を満たす traceable な非ハミルトングラフ.
+
+    結論を「ハミルトン閉路をもつ」に強化できないことを示す族。
+    """
+    n = 2 * k + 1
+    nbr = [set() for _ in range(n)]
+    for x in range(k):
+        for y in range(k, n):
+            nbr[x].add(y)
+            nbr[y].add(x)
+    g = (n, nbr)
+    s = ck.indep_neighbors_sum(g)
+
+    assert s == 2 * k * (k + 1)
+    assert _t200(n, s) == k + 2
+    assert ck.max_induced_tree_size(g) == k + 2
+    assert ck.has_hamiltonian_path(g)
+    assert not any(ck.is_hamiltonian_path(g, list(p)) and p[-1] in nbr[p[0]]
+                   for p in itertools.permutations(range(n)))
+
+
+def test_p4_separates_the_two_hypothesis_classes():
+    """命題 5.1: P_4 は予想 194 の仮定を満たすが予想 200 の仮定を満たさない."""
+    nbr = [{1}, {0, 2}, {1, 3}, {2}]
+    g = (4, nbr)
+    alpha = ck.alpha_and_i(g)[0]
+    s = ck.indep_neighbors_sum(g)
+
+    assert s == 6
+    assert Fraction(s, 4) == Fraction(3, 2)
+    assert 4 * alpha <= 4 + s            # 予想 194 の仮定 (整数形)
+    assert _t200(4, s) == 3
+    assert ck.max_induced_tree_size(g) == 4   # != t なので仮定 200 は破れる
+
+
+def test_alpha_is_not_bounded_by_the_induced_tree_number():
+    """本文 §5 の注: $\\alpha \\le \\mathrm{tree}$ は偽で、その最小反例を押さえる.
+
+    この不等式が成り立てば「$n \\mid S$ のとき予想 194 $\\Rightarrow$ 予想 200」
+    が言えたので、**偽であること**自体が本文の主張になっている。位数 7 まで
+    反例がなく、位数 8 でちょうど 1 個 (``G?Bem[``) だけ現れることを確かめる。
+    """
+    for n in range(2, 8):
+        for g in _graphs(n):
+            assert ck.alpha_and_i(g)[0] <= ck.max_induced_tree_size(g)
+
+    bad = [(ck.sets_to_graph6(g), ck.alpha_and_i(g)[0],
+            ck.max_induced_tree_size(g))
+           for g in _graphs(8)
+           if ck.alpha_and_i(g)[0] > ck.max_induced_tree_size(g)]
+    assert bad == [("G?Bem[", 5, 4)]
