@@ -39,7 +39,7 @@
 
 \title{Written on the Wall II の予想 172 は偽である: 葉数下界 11 本に対する境界補題・3 本の証明・還元と一括検証}
 \author{自動研究パイプライン \texttt{mar}（Claude Opus 5 + 検証器）}
-\date{2026年07月27日}
+\date{2026年07月28日}
 
 \begin{document}
 \maketitle
@@ -324,11 +324,11 @@ $k$ & $n$ & $L_s(T_k)$ & 右辺 ($G$) & 判定 & 右辺 ($G^2$) & 判定 \\
 \item $G$ 読み: 証人が届かなかったのが 1,110 個、うち厳密に反例と
   確認したのが \textbf{891 個}。走査範囲での最小の例は \texttt{GCOf?w} ($n = 8$) で、$\Delta(B) = 3$、$M_2$ の 2 点間の $G$ での最小距離は 3 だから右辺は $-1 + 3 + 3 = 5$ である。一方このグラフの葉数は厳密に $L_s = 4$ しかない。
 \item $G^2$ 読み: 証人が届かなかったのが 25 個、うち厳密に反例と
-  確認したのが \textbf{16 個}。
+  確認したのが \textbf{16 個}。走査範囲での最小の例は \texttt{O??????\_E?K?K?E?@o?B\_} ($n = 16$) で、$\Delta(B) = 1$、$M_2$ の 2 点間の $G^2$ での最小距離は 5 だから右辺は $-1 + 1 + 5 = 5$ である。一方このグラフの葉数は厳密に $L_s = 4$ しかない。
 \end{itemize}
 
 \noindent
-である。$G$ 読みの反例 891 個の内訳は連結グラフ 59 個・木 831 個・正則グラフ 1 個、$G^2$ 読みの 16 個の内訳は木 16 個である。$\mathrm{dist}_{G^2}(x,y) = \lceil \mathrm{dist}_G(x,y)/2 \rceil \le \mathrm{dist}_G(x,y)$ より $G^2$ 読みの右辺は $G$ 読みの右辺以下なので、後者の反例は前者の反例でもある (両者を足すと同じグラフを二重に数えることになる)。証明書には走査順の先頭 64 例だけを graph6 で記録し、
+である。$G$ 読みの反例 891 個の内訳は連結グラフ 59 個・木 831 個・正則グラフ 1 個、$G^2$ 読みの 16 個の内訳は木 16 個である。$\mathrm{dist}_{G^2}(x,y) = \lceil \mathrm{dist}_G(x,y)/2 \rceil \le \mathrm{dist}_G(x,y)$ より $G^2$ 読みの右辺は $G$ 読みの右辺以下なので、後者の反例は前者の反例でもある (両者を足すと同じグラフを二重に数えることになる)。証明書には走査順の先頭 80 例だけを graph6 で記録し、
 検証器は反例の\emph{個数}を族ごとに数え直して突き合わせる。
 
 \section{道具: 2 本の補題}\label{sec:lemmas}
@@ -621,13 +621,13 @@ $\mathrm{dist}_{\min}(M_2)$ の寄与を対数などで抑えた修正版が考�
 \begin{center}\texttt{python -m mar verify p0010\_wowii\_ls\_lower\_bounds}\end{center}
 
 \begin{center}\begin{tabular}{ll}\toprule
-証明書ダイジェスト & \texttt{7f07e4c78df9772d} \\
-生成日時 (UTC) & 2026-07-27T11:06:48+00:00 \\
+証明書ダイジェスト & \texttt{df886917931c3fb8} \\
+生成日時 (UTC) & 2026-07-27T13:57:56+00:00 \\
 Python & 3.10.11 \\
 実行環境 & Windows 11 (build 26200) \\
-リポジトリ版 & \texttt{3716361} \\
+リポジトリ版 & \texttt{66085f0} \\
 乱数種 & 0 \\
-探索時間 & 2684.8 秒 \\
+探索時間 & 2913.0 秒 \\
 \bottomrule\end{tabular}\end{center}
 
 

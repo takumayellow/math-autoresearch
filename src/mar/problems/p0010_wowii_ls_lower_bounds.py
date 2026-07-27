@@ -354,6 +354,7 @@ class LsLowerBoundsProblem(Problem):
         families = []
         counterexamples: list[dict] = []
         ref_examples: list[dict] = []
+        ref_examples_n: Counter[str] = Counter()
         ref_fail: Counter[str] = Counter()
         ref_conf: Counter[str] = Counter()
         totals: Counter[str] = Counter()
@@ -418,7 +419,11 @@ class LsLowerBoundsProblem(Problem):
                                 continue
                             fam_conf[k] += 1
                             ref_conf[k] += 1
-                            if len(ref_examples) < EXAMPLE_CAP:
+                            # 上限は読みごとに数える。全体で数えると、先に
+                            # 走査される G 読みの例だけで枠を使い切り、
+                            # G^2 読みの例が 1 つも残らない。
+                            if ref_examples_n[k] < EXAMPLE_CAP:
+                                ref_examples_n[k] += 1
                                 ref_examples.append(
                                     {"key": k, "g6": g6 or G.encode_graph6(g),
                                      "n": n, "family": tag, "leaves": size,
@@ -588,6 +593,9 @@ class LsLowerBoundsProblem(Problem):
         bad: list[str] = []
         eg_by_g6 = {(e["key"], e["g6"]): e
                     for e in data.get("refuted_examples", [])}
+        #: 走査中に反例として実際に突き当たった記録。論文はここに載った例を
+        #: そのまま印字するので、走査対象に対応しない記録 (孤児) を残さない。
+        eg_hit: set[tuple[str, str]] = set()
 
         for fam in data["families"]:
             n = fam["n"]
@@ -690,10 +698,15 @@ class LsLowerBoundsProblem(Problem):
                     if not _ls_at_least(g, need[k]):
                         fam_conf[k] += 1
                         conf_seen[k] += 1
+                        if want is not None:
+                            eg_hit.add((k, g6))
                         if want is not None and (
                                 want["need"] != need[k]
                                 or want["leaves"] != size
                                 or want["ls_exact"] != _ls_exact(g)
+                                or want["n"] != n
+                                or want["family"] != fam["tag"]
+                                or want["deg_b"] != d["degB"]
                                 or want["dist_min_g"] != d["dmin_m2_g"]
                                 or want["dist_min_g2"] != d["dmin_m2"]):
                             stats_ok = False
@@ -790,6 +803,11 @@ class LsLowerBoundsProblem(Problem):
                     f"真の反例 ({reading} 読み、証明書の主張 "
                     f"{claim.get('confirmed')} と一致)", ok_c,
                     "" if ok_c else f"{conf_seen[k]} != {claim.get('confirmed')}")
+        orphan = sorted(set(eg_by_g6) - eg_hit)
+        rep.add(f"証明書に載る反例の実例 {len(eg_by_g6)} 件がすべて走査中に"
+                f"反例として現れた (論文が印字する例に走査対象外のものを"
+                f"混ぜない)", not orphan,
+                "; ".join(f"{k}: {g6}" for k, g6 in orphan[:3]))
         fam_bad = _family_check(ck, data.get("family", []))
         rep.add(f"反例定理の反例族 T_k を k = {min(FAMILY_K)}..{max(FAMILY_K)} "
                 f"で再構成し、L_s = 4 と右辺の値を厳密に照合", not fam_bad,
