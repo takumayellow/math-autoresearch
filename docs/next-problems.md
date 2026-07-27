@@ -147,6 +147,14 @@ $|X| \le 1 + \Delta \le 1 + |Y|$ から均衡性が従うが、この補題は�
 証人は「ある全域木の葉集合」1 個 (32 bit マスク)。検証器は補集合が
 **連結支配集合**であることだけを見る (それで $L_s \ge |L|$ が従う)。
 
+**一次資料の確認 (2026-07-27)**: WOWII の未解決リスト
+`.../research/wowII/open.html` に `O 2. If G is a simple connected graph,
+then L_s(G) >= 2(average of l(v) - 1)` として掲載されており、解決済みリスト
+`resolved.htm` (項目は `T`/`F` 印) には $L_s$ のこの下界は無い。取得した
+スナップショットは `data/refs/wowii_{open,resolved,all,list,menu}.html`
+(外部データなので git 追跡外。sha256 先頭 16 桁: open `6348a7e3f007d60c`、
+resolved `1eafeae043537646`、all `9a364164f397c2f0`)。
+
 * **命題 2.1**: $n \ge 3$ で $L_s(G) = n - \gamma_c(G)$。$K_2$ だけが例外
   ($L_s = 2$, $\gamma_c = 1$)。
 * **定理 3.2 (二重星定理)**: **任意の辺** $uv$ で
