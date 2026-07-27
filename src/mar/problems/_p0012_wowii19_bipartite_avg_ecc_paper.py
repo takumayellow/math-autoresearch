@@ -115,7 +115,7 @@ def build(cert) -> dict[str, str]:
         "DeLaViña の Graffiti.pc が生成した予想集 Written on the Wall II "
         "(WOWII) には、二部数 $b(G)$ (誘導部分グラフが二部になるものの最大位数) "
         "の下界を与える予想が 13--30 の 18 本ある。本稿の主定理は、"
-        "そのうち 2026 年 7 月 28 日時点で唯一未解決として残っている "
+        "そのうち 2026 年 7 月 27 日時点で唯一未解決として残っている "
         "\\textbf{Conjecture 19} \\cite{wowii}\n"
         "\\[ b(G) \\ \\ge \\ \\Bigl\\lfloor \\frac{1}{n}\\sum_{v} "
         "\\mathrm{ecc}(v) + \\ell_{\\max} \\Bigr\\rfloor \\]\n"
