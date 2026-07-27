@@ -293,7 +293,42 @@ $L_s = 5 = 1 + m$ で L1 の等号ケース)。次の一手の候補:
 * $|R(v)| = 1$ という仮定から $L_{r-1}(v)$ の点が $z$ を介して繋がることを使い、
   $T_S$ の葉を 1 枚ではなく 2 枚残す ($|X| + 2$ 版)。
 
-## 他の有望な候補 (p0010 以降)
+## p0011 の第一候補: WOWII 72 / 76 / 84 / 85 (tree(G) の下界 4 本)
+
+`data/refs/wowii_open_items.txt` で状態 `O` のまま残っている
+$\mathrm{tree}(G)$ (最大誘導木の位数) の下界のうち、**右辺がすべて
+多項式時間で厳密に計算でき、証人が 1 個の誘導木で足りる** 4 本:
+
+| # | 主張 |
+|---|------|
+| 72 | $\mathrm{tree}(G) \ge \lceil \overline{\mathrm{ecc}} + \max_v \ell(v) / 3 \rceil$ |
+| 76 | $\mathrm{tree}(G) \ge \mathrm{freq}[T_{\max}(v)] / \lfloor \overline{\deg} \rfloor$ |
+| 84 | $\mathrm{tree}(G) \ge 2\,\mathrm{rad}(G) / \delta(G)$ |
+| 85 | $\mathrm{tree}(G) \ge \lceil \sqrt{1 + 2 \min_v \mathrm{dist}_{\mathrm{even}}(v)} \rceil$ |
+
+`wowIIdefs.js` で確認した定義 (2026-07-27): $T(v)$ = $v$ を含む三角形の数、
+$\mathrm{freq}[T_{\max}(v)]$ = 最大値 $T_{\max}(v)$ を取る頂点の個数、
+$d(G) = \delta$ (最小次数、$D(G)$ が最大次数)、
+$\mathrm{dist}_{\mathrm{even}}(v)$ = $v$ からの距離が偶数の頂点の個数
+($v$ 自身を含むので $\ge 1$)。
+
+この批が p0011 に向く理由:
+
+* **証人は p0005 と同型**: $T$ が木を誘導すれば $\mathrm{tree}(G) \ge |T|$。
+  グラフ 1 個につき頂点集合 1 個を渡せば 4 本すべてが線形時間で閉じる。
+  NP 困難な $\mathrm{tree}$ を検証器が解き直す必要がない
+  (等号の分類だけ p0005 と同じ例外リスト方式)。
+* **手証明が付きそうなものが混じっている**: 最短路は誘導路なので
+  $\mathrm{tree}(G) \ge \mathrm{diam}(G) + 1 \ge \mathrm{rad}(G) + 1$。
+  $\delta \ge 2$ なら $2\,\mathrm{rad}/\delta \le \mathrm{rad} \le \mathrm{tree}$
+  で 84 は即座に従うので、残るのは $\delta = 1$ の場合だけ。
+* **72 は p0010 の予想 172 と同じ読み方の曖昧さ**をもつ
+  (`CEIL[average of ecc(v) + maximum of l(v) /3]` は
+  $\lceil (\overline{\mathrm{ecc}} + \max \ell)/3 \rceil$ とも
+  $\lceil \overline{\mathrm{ecc}} + \max \ell / 3 \rceil$ とも読める)。
+  p0010 と同じく**両方の読みで走査**して、反証なら両方で反証する。
+
+## 他の有望な候補 (p0011 以降)
 
 * **予想 198a**: `b(G) <= 2 + averageEccentricity(G)` ならば traceable。
   予想 194・200 と同じ「含意 + ハミルトン路」型なので同じ 2 モード証人が使える。
