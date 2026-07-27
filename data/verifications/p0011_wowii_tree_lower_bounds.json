@@ -1,0 +1,67 @@
+{
+  "certificate_digest": "3da23133ad0bba7a",
+  "checks": [
+    {
+      "detail": "",
+      "name": "反例リストは空",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証明書の族がモジュールの宣言する走査範囲と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証人ファイルの SHA-256 と長さが証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "13402242 個すべてで T が木を誘導する",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "走査したグラフ数が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "列挙個数が検証器の持つ公表値 (OEIS A001349 / A000055 / A002851 / A006820-A006822) と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証人で狭義に閉じない 1353138 個を厳密に再計算し、5 本の狭義・tight・反例の件数が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "上限超過につき一覧を省いた族: 8 (分類は件数照合で閉じる)",
+      "name": "tight なグラフの graph6 全リストが、tight 2,000 個を超えない族すべてに入っている",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証明した 5 つの主張 (72a の左辺は tree(G)-1 以下 / l_max<=3 または 3diam<=2l_max+3 なら 72b / delta>=2 の 84 は狭義 / delta=1 でも diam>=2rad-1 か l_max>=2rad-1 なら 84 / 木では 76 が tight) が走査した全グラフで破れない",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "定理が届かない残余ケース (72b: l_max>=4 かつ 3diam>2l_max+3 / 84: delta=1 かつ diam<2rad-1 かつ l_max<2rad-1) の件数が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証明書の合計 (論文の見出し数) が族ごとの集計と一致",
+      "passed": true
+    }
+  ],
+  "ok": true,
+  "platform": "Windows 11 (build 26200)",
+  "problem_id": "p0011_wowii_tree_lower_bounds",
+  "python": "3.10.11",
+  "seconds": 3468.7,
+  "verified_at": "2026-07-27T17:33:34+00:00",
+  "verifier_hash": "03796c0fa2587cbe"
+}
