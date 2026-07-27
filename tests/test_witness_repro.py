@@ -5,6 +5,10 @@ gzip ヘッダに書き込み時刻を埋めるので、中身が同一でも走
 ハッシュが変わってしまう (p0008 で実際に踏んだ: 走査後に小さいテスト用の
 探索が同じ族の証人を上書きし、中身は同一なのに検証が SHA-256 不一致で
 FAIL した)。`mar.search.witness.open_witness` は MTIME を 0 に固定する。
+
+あわせて書き込みの原子性も見る。証人は一時ファイルに書いてから
+`os.replace` で差し替えるので、走査中のファイルを別プロセスが開き直しても
+中身が混ざらない (p0010 で 291,176 バイトのゼロ穴が空いた事故の回帰)。
 """
 from __future__ import annotations
 
@@ -67,3 +71,32 @@ def test_stream_closed_after_block(tmp_path):
     assert out.closed
     size = path.stat().st_size
     assert size > 0 and path.read_bytes()[:2] == b"\x1f\x8b"
+
+
+def test_writes_through_a_private_temp_file(tmp_path):
+    """書いている最中の中身は最終パスに現れない (別プロセスが踏めない)."""
+    path = tmp_path / "w.bin.gz"
+    old = _write(path)
+    seen = []
+    with open_witness(path) as out:
+        out.write(b"y" * 4096)
+        seen.append(hashlib.sha256(path.read_bytes()).hexdigest())
+        parts = [p.name for p in tmp_path.iterdir() if p.name.endswith(".part")]
+        assert parts, "一時ファイルが作られていない"
+    assert seen == [old]                       # 途中では古い内容のまま
+    assert hashlib.sha256(path.read_bytes()).hexdigest() != old
+    assert not [p for p in tmp_path.iterdir() if p.name.endswith(".part")]
+
+
+def test_failed_write_leaves_the_old_file_intact(tmp_path):
+    """途中で落ちたら差し替えない。一時ファイルも残さない."""
+    path = tmp_path / "w.bin.gz"
+    old = _write(path)
+    try:
+        with open_witness(path) as out:
+            out.write(b"z" * 4096)
+            raise RuntimeError("走査が途中で落ちた")
+    except RuntimeError:
+        pass
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == old
+    assert not [p for p in tmp_path.iterdir() if p.name.endswith(".part")]
