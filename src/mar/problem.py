@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import importlib
 import pkgutil
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -26,6 +27,13 @@ from typing import Any, Iterable
 from .certificate import Certificate, VerificationReport
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+#: 文献本文に素で現れると LaTeX が壊れる文字 (``#`` はマクロ引数、``%`` は
+#: 行末までのコメント)。``\#`` のように既にエスケープ済みのものは触らない。
+#: 直前のバックスラッシュは偶数個なら「エスケープ済みのバックスラッシュ」
+#: なので、その後ろの ``#`` は素である (``\\#`` → ``\\\#``)。
+_BARE_TEX_SPECIAL = re.compile(r"(?<!\\)((?:\\\\)*)([#%])")
 
 
 @dataclass(frozen=True)
@@ -38,7 +46,11 @@ class Reference:
 
     def bibitem(self) -> str:
         tail = f" \\url{{{self.url}}}" if self.url else ""
-        return f"\\bibitem{{{self.key}}} {self.text}{tail}"
+        # text は LaTeX 片 ($L_s$ や \emph{}) を許すので全体はエスケープしない。
+        # ただし # と % だけは、素で書かれていれば必ず事故になるので直す
+        # (EJC の巻号 "#R33" で実際にコンパイルが落ちた)。
+        text = _BARE_TEX_SPECIAL.sub(r"\1\\\2", self.text)
+        return f"\\bibitem{{{self.key}}} {text}{tail}"
 
 
 @dataclass(frozen=True)
