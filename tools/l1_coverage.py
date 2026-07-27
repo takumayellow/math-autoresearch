@@ -176,8 +176,32 @@ def double_star(n: int, adj: list[int], need: int) -> bool:
     return False
 
 
+def r2_proof_steps(n: int, adj: list[int], centers: list[int],
+                   circles: dict[int, list[int]], v: int) -> bool:
+    r"""$r = 2$ の手証明の各段を機械照合する.
+
+    (i) $\deg(v) = n - 2$、(ii) $w \in N(v) \cap N(z)$ が取れる、
+    (iii) $S = \{v, w\}$ で $|N(S) \setminus S| = n - 2$、
+    (iv) どの中心も次数 2 以上、(v) $m \le n - 3$。
+    """
+    z = circles[v][0]
+    if popcount(adj[v]) != n - 2:
+        return False
+    common = adj[v] & adj[z]
+    if common == 0:
+        return False
+    w = (common & -common).bit_length() - 1
+    s = (1 << v) | (1 << w)
+    if popcount((adj[v] | adj[w]) & ~s) != n - 2:
+        return False
+    if any(popcount(adj[u]) < 2 for u in centers):
+        return False
+    return max(len(circles[u]) for u in centers) <= n - 3
+
+
 def main(nmax: int) -> None:
-    stats = {"graphs": 0, "hyp": 0, "A": 0, "B": 0, "C": 0, "neither": 0,
+    stats = {"graphs": 0, "hyp": 0, "r<=2": 0, "r2_proof_broken": 0,
+             "r>=3": 0, "A": 0, "B": 0, "C": 0, "neither": 0,
              "exact_checked": 0, "l1_violation": 0}
     table: Counter[tuple[bool, bool, bool]] = Counter()
     #: 1 つの場合でしか閉じないグラフの例 (どの場合も落とせないことの証拠)。
@@ -202,6 +226,18 @@ def main(nmax: int) -> None:
                     if leaf_number(nn, adj) < 1 + m:
                         stats["l1_violation"] += 1
                         print(f"L1 の反例!? {line} n={nn} r={r} m={m}")
+                if r <= 2:
+                    #: $r \le 2$ は手証明が付いているので、場合分けの
+                    #: 統計からは外し、証明の各段だけ照合する
+                    #: ($r = 1$ では仮定を満たす中心が存在しないはず)。
+                    stats["r<=2"] += 1
+                    if r < 2 or not all(
+                            r2_proof_steps(nn, adj, centers, circles, v)
+                            for v in uniq):
+                        stats["r2_proof_broken"] += 1
+                        print(f"r<=2 の証明が破れた!? {line} r={r}")
+                    continue
+                stats["r>=3"] += 1
                 a = any(refined_bound(nn, adj, ball_mask(nn, dist, u, r - 1))
                         >= m + 1
                         for u in centers if len(circles[u]) == m)
