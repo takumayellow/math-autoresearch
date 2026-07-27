@@ -571,6 +571,27 @@ def _best_edge_union(g) -> int:
     return max(len(nbr[u] | nbr[v]) for u, v in ck.edge_list(g))
 
 
+def _edge_union_sum(g) -> int:
+    """sum_{uv in E} |N(u) 合併 N(v)| (予想 A = 予想 4.4 の左辺)."""
+    _, nbr = g
+    return sum(len(nbr[u] | nbr[v]) for u, v in ck.edge_list(g))
+
+
+def _ells(g) -> list[int]:
+    """各頂点の局所独立数 l(v) = alpha(G[N(v)])."""
+    n, nbr = g
+    return [ck.independence_number_on(g, nbr[v]) for v in range(n)]
+
+
+def _zone_args(g):
+    """zone_of に渡す 6 引数 (n, S, Delta, delta, m, sum_v d(v)l(v))."""
+    n, nbr = g
+    ells = _ells(g)
+    degs = [len(s) for s in nbr]
+    return (n, sum(ells), max(degs), min(degs), sum(degs) // 2,
+            sum(d * e for d, e in zip(degs, ells)))
+
+
 def _p9_graphs(max_n=P9_MAX_N):
     for n in range(3, max_n + 1):
         for g in _graphs(n):
@@ -647,14 +668,23 @@ def test_p0009_leaf_number_is_at_least_max_degree():
 def test_p0009_zones_close_the_conjecture():
     """定理 5.1: 自明帯と Delta 帯では予想 2 が成り立つ (帯の判定も突き合わせる)."""
     from mar.problems.p0009_wowii2_leaf_local_indep import zone_of
-    counts = {"trivial": 0, "delta": 0, "hard": 0}
+    counts = {"trivial": 0, "delta": 0, "cov": 0,
+              "mindeg4": 0, "mindeg3": 0, "hard": 0}
     for g in _p9_graphs():
         n, nbr = g
         s = ck.indep_neighbors_sum(g)
-        delta = max(len(x) for x in nbr)
-        zone = zone_of(n, s, delta)
+        assert s == sum(_ells(g))            # 2 実装が一致する見張り
+        degs = [len(x) for x in nbr]
+        delta, dmin = max(degs), min(degs)
+        args = _zone_args(g)
+        m, dl = args[4], args[5]
+        zone = zone_of(*args)
         assert zone == ("trivial" if 2 * s <= 4 * n else
-                        "delta" if 2 * s <= n * (delta + 2) else "hard")
+                        "delta" if 2 * s <= n * (delta + 2) else
+                        "cov" if n * dl >= 2 * m * s else
+                        "mindeg4" if dmin >= 4 and 5 * s <= n * (n + 9) else
+                        "mindeg3" if dmin >= 3 and 8 * s <= n * (n + 16) else
+                        "hard")
         counts[zone] += 1
         leaves = _leaf_number_via_cds(g)
         if zone == "trivial":
@@ -662,11 +692,172 @@ def test_p0009_zones_close_the_conjecture():
         elif zone == "delta":
             assert leaves >= delta >= 2 * Fraction(s, n) - 2
     assert counts["trivial"] > 0 and counts["delta"] > 0
-    assert counts["hard"] > 0          # 帯だけでは閉じない層が実在する
+    assert counts["cov"] > 0           # 共分散帯にも実在のグラフが落ちる
+
+
+def test_p0009_mindeg_zones_follow_from_the_cited_bounds():
+    """定理 5.2: 引用した下界から帯の判定式が本当に従うことを確かめる.
+
+    l(n,3) >= n/4 + 2 (最小次数 3) と l(n,4) >= (2n+8)/5 (最小次数 4) を
+    仮定として与え、帯の判定式を満たすなら 2*lbar - 2 がその下界以下に
+    収まることを有理数のまま検算する。下界そのものは文献の主張なので
+    ここでは検証しない (論文の限界節に明記)。
+
+    走査範囲では n <= 8 のグラフがすべて自明帯・Delta 帯・共分散帯で
+    閉じてしまう (この 2 帯に落ちる実例は n >= 9 から現れる) ので、
+    (a) 判定式そのものの含意を (n, S) 上で総当たりし、
+    (b) 判定式を満たす実グラフでは結論が実物でも成り立つことを見る、
+    の 2 段に分ける。帯の**順序**まで込みの照合は
+    ``test_p0009_zones_close_the_conjecture`` が担当する。
+    """
+    # (a) 判定式 => 結論。S は判定式の上限まで動かせば十分 (need は S に単調)。
+    for n in range(3, 61):
+        s4 = n * (n + 9) // 5                       # 5S <= n(n+9) の最大 S
+        assert 2 * Fraction(s4, n) - 2 <= Fraction(2 * n + 8, 5), n
+        s3 = n * (n + 16) // 8                      # 8S <= n(n+16) の最大 S
+        assert 2 * Fraction(s3, n) - 2 <= Fraction(n, 4) + 2, n
+
+    # (b) 判定式を満たす実グラフでは、引用した下界を経由した結論が実物でも真。
+    seen = {"mindeg4": 0, "mindeg3": 0}
+    for g in _p9_graphs(7):
+        n, nbr = g
+        s = ck.indep_neighbors_sum(g)
+        dmin = min(len(x) for x in nbr)
+        if dmin >= 4 and 5 * s <= n * (n + 9):
+            key, bound = "mindeg4", Fraction(2 * n + 8, 5)
+        elif dmin >= 3 and 8 * s <= n * (n + 16):
+            key, bound = "mindeg3", Fraction(n, 4) + 2
+        else:
+            continue
+        seen[key] += 1
+        need = 2 * Fraction(s, n) - 2
+        assert need <= bound, (ck.sets_to_graph6(g), key, need, bound)
+        assert _leaf_number_via_cds(g) >= need, ck.sets_to_graph6(g)
+    assert seen["mindeg4"] > 0 and seen["mindeg3"] > 0
+
+
+def test_p0009_cubic_graphs_are_all_closed_by_the_cited_bound():
+    """立方体グラフは n >= 8 ならつねに定理 5.2 の帯に入る.
+
+    Delta = 3 なので lbar <= 3、したがって 2*lbar - 2 <= 4 <= n/4 + 2。
+    n <= 8 の連結グラフに含まれる立方体グラフ (K_4, n = 6 の 2 個, n = 8 の
+    5 個) で実際にそうなることを確かめる。GENREG の族 (n = 12..18) は
+    ここでは読まない (走査本体が証明書で照合している)。
+    """
+    from mar.problems.p0009_wowii2_leaf_local_indep import zone_of
+    seen = 0
+    for g in _p9_graphs(8):
+        n, nbr = g
+        degs = [len(x) for x in nbr]
+        if min(degs) != 3 or max(degs) != 3 or n < 8:
+            continue
+        s = ck.indep_neighbors_sum(g)
+        assert zone_of(*_zone_args(g)) != "hard", ck.sets_to_graph6(g)
+        assert 2 * Fraction(s, n) - 2 <= 4 <= Fraction(n, 4) + 2
+        seen += 1
+    assert seen > 0
+
+
+def test_p0009_edge_union_sum_equals_degree_squares_minus_triangles():
+    """補題 4.3 の骨: sum_{uv in E}|N(u) 合併 N(v)| = sum_v d(v)^2 - 3T.
+
+    包除で |N(u) 合併 N(v)| = d(u) + d(v) - |N(u) 交差 N(v)| であり、
+    共通近傍の総和は三角形を 3 辺それぞれで数えるので 3T になる。
+    """
+    seen = 0
+    for g in _p9_graphs(8):
+        _, nbr = g
+        edges = ck.edge_list(g)
+        deg = [len(s) for s in nbr]
+        tri = sum(1 for a, b, c in itertools.combinations(range(len(nbr)), 3)
+                  if b in nbr[a] and c in nbr[a] and c in nbr[b])
+        assert sum(len(nbr[u] & nbr[v]) for u, v in edges) == 3 * tri, \
+            ck.sets_to_graph6(g)
+        assert _edge_union_sum(g) == sum(d * d for d in deg) - 3 * tri, \
+            ck.sets_to_graph6(g)
+        seen += 1
+    assert seen > 0
+
+
+def test_p0009_sumbound_lemma_holds_with_equality_iff_triangle_free():
+    """補題 4.3: sum_{uv in E}|N(u) 合併 N(v)| >= sum_v d(v)l(v)。
+
+    等号は三角形がないときに限る。証明の要である頂点ごとの不等式
+    d(v) * tau_v >= e_v (tau_v = d(v) - l(v) は N(v) の頂点被覆数、
+    e_v = |E(G[N(v)])|) も各点で確かめる。
+    """
+    seen = tf = 0
+    for g in _p9_graphs(8):
+        n, nbr = g
+        ells = _ells(g)
+        deg = [len(s) for s in nbr]
+        e_v = [sum(1 for a, b in itertools.combinations(sorted(nbr[v]), 2)
+                   if b in nbr[a]) for v in range(n)]
+        triangle_free = sum(e_v) == 0
+        for v in range(n):
+            tau = deg[v] - ells[v]                    # Gallai: tau = d - alpha
+            assert tau >= 0
+            if tau == 0:
+                assert e_v[v] == 0, (ck.sets_to_graph6(g), v)
+            else:
+                assert e_v[v] <= tau * (deg[v] - 1) < deg[v] * tau, \
+                    (ck.sets_to_graph6(g), v)
+            assert deg[v] * tau >= e_v[v], (ck.sets_to_graph6(g), v)
+        lhs = _edge_union_sum(g)
+        rhs = sum(d * e for d, e in zip(deg, ells))
+        assert lhs >= rhs, ck.sets_to_graph6(g)
+        assert (lhs == rhs) == triangle_free, ck.sets_to_graph6(g)
+        tf += triangle_free
+        seen += 1
+    assert seen > 0 and tf > 0
+
+
+def test_p0009_covariance_theorem_gives_the_average_conjecture():
+    """定理 4.6: Cov(d, l) >= 0 (共分散帯) ならば予想 A、したがって B'。
+
+    共分散帯 n*sum_v d(v)l(v) >= 2mS に入るグラフで
+    n*sum_{uv}|N(u) 合併 N(v)| >= 2mS (= 予想 A) と
+    n*max_{uv}|N(u) 合併 N(v)| >= 2S (= B') を実際に確かめる。
+    """
+    from mar.problems.p0009_wowii2_leaf_local_indep import zone_of
+    seen = 0
+    for g in _p9_graphs(8):
+        n, nbr = g
+        ells = _ells(g)
+        deg = [len(s) for s in nbr]
+        s, m = sum(ells), sum(deg) // 2
+        dl = sum(d * e for d, e in zip(deg, ells))
+        if n * dl < 2 * m * s:
+            continue                                  # 共分散帯の外
+        assert zone_of(*_zone_args(g)) in {"trivial", "delta", "cov"}
+        assert n * _edge_union_sum(g) >= 2 * m * s, ck.sets_to_graph6(g)
+        assert n * _best_edge_union(g) >= 2 * s, ck.sets_to_graph6(g)
+        seen += 1
+    assert seen > 0
+
+
+def test_p0009_average_conjecture_implies_bprime():
+    """予想 A は B' より強い: 平均が閾値以上なら最大値も閾値以上."""
+    seen = strict = 0
+    for g in _p9_graphs():
+        n, nbr = g
+        s = ck.indep_neighbors_sum(g)
+        m = sum(len(x) for x in nbr) // 2
+        if n * _edge_union_sum(g) < 2 * m * s:
+            continue                                  # A の反例 (無いはず)
+        assert n * _best_edge_union(g) >= 2 * s, ck.sets_to_graph6(g)
+        if n * _best_edge_union(g) > 2 * s:
+            strict += 1
+        seen += 1
+    assert seen > 0 and strict > 0
 
 
 def test_p0009_triangle_free_graphs_satisfy_bprime():
-    """定理 4.3: 三角形がなければ B' が Cauchy--Schwarz で出る (各段を確認)."""
+    """系 4.7: 三角形がなければ l = d なので Cov(d, l) = Var(d) >= 0.
+
+    共分散定理 (定理 4.6) の系として B' が出る。l(v) = d(v) から
+    共分散が分散に化ける各段を確かめる。
+    """
     seen = 0
     for n in range(3, MAX_N + 1):
         for g in _graphs(n):
@@ -678,11 +869,14 @@ def test_p0009_triangle_free_graphs_satisfy_bprime():
             m = len(edges)
             s = ck.indep_neighbors_sum(g)
             assert s == sum(deg)                          # l(v) = deg(v)
+            assert _ells(g) == deg
             assert all(len(nbr[u] | nbr[v]) == deg[u] + deg[v]
                        for u, v in edges)                 # 共通近傍がない
-            assert sum(deg[u] + deg[v] for u, v in edges) == sum(d * d
-                                                                 for d in deg)
-            assert Fraction(sum(d * d for d in deg)) >= Fraction(4 * m * m, n)
+            # 共分散が分散になる: sum(d - dbar)*l = sum(d - dbar)^2 >= 0
+            dbar = Fraction(2 * m, n)
+            assert sum((Fraction(d) - dbar) * d for d in deg) == \
+                sum((Fraction(d) - dbar) ** 2 for d in deg)
+            assert n * sum(d * d for d in deg) >= 2 * m * s   # 共分散帯の判定式
             assert n * _best_edge_union(g) >= 2 * s       # B' 本体
             seen += 1
     assert seen > 0

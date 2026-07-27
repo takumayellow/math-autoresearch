@@ -86,6 +86,11 @@ def _failed(report) -> str:
     return " | ".join(label for label, ok, _ in report.checks if not ok)
 
 
+def _notes(report) -> str:
+    """FAIL した検査項目の注記を連結して返す (どう落ちたかを見るため)."""
+    return " | ".join(note for _, ok, note in report.checks if not ok)
+
+
 def _fam(cert: Certificate, tag: str) -> dict:
     return next(f for f in cert.data["families"] if f["tag"] == tag)
 
@@ -1785,6 +1790,8 @@ def _p0009_retotal(cert: Certificate) -> None:
         "bprime_counterexamples": len(cert.data.get("bprime_counterexamples",
                                                     [])),
         "bprime_equality": sum(f.get("bprime_equal", 0) for f in fams),
+        "avg_counterexamples": len(cert.data.get("avg_counterexamples", [])),
+        "avg_equality": sum(f.get("avg_equal", 0) for f in fams),
         "exact_calls": sum(f["exact_calls"] for f in fams),
     }
     hist: dict[str, int] = {}
@@ -1792,6 +1799,13 @@ def _p0009_retotal(cert: Certificate) -> None:
         for k, v in f.get("zone_hist", {}).items():
             hist[k] = hist.get(k, 0) + v
     cert.data["zone_totals"] = hist
+    cert.data["totals"]["residual"] = sum(
+        hist.get(z, 0) for z in ("mindeg4", "mindeg3", "hard"))
+    kept = {f["tag"] for f in fams}
+    cap = cert.data.get("residual_list_cap", 64)
+    cert.data["residual_graphs"] = [
+        r for r in cert.data.get("residual_graphs", [])
+        if r["family"] in kept][:cap]
 
 
 def _p0009_graphs(fam: dict):
@@ -2066,6 +2080,56 @@ def test_p0009_wrong_published_count_is_detected(leafy):
     report = prob.verify(cert)
     assert not report.ok
     assert "公表値" in _failed(report)
+
+
+def test_p0009_fabricated_residual_graph_is_detected(leafy):
+    """「本稿の定理で閉じない残り」を捏造すると落ちる.
+
+    論文の限界節は残りを graph6 で名指しする。名指しの根拠が証明書の
+    自己申告のままだと、実際は帯で閉じているグラフを「難しい例」として
+    載せられてしまう。検証器は帯の判定を自分でやり直して突き合わせる。
+    """
+    cert, prob, _ = leafy
+    assert cert.data["residual_graphs"] == []      # この 3 族には残りが無い
+    cert.data["residual_graphs"] = [
+        {"g6": "E?bg", "n": 6, "family": "graphs_06", "zone": "hard",
+         "indep_sum": 12, "min_degree": 2}]
+    cert.data["totals"]["residual"] = 1
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "残り" in _failed(report)
+
+
+def test_p0009_wrong_residual_count_is_detected(leafy):
+    """残りの個数だけ偽っても、検証器の数え直しと帯の分布に合わない."""
+    cert, prob, _ = leafy
+    cert.data["totals"]["residual"] = 7
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "残り" in _failed(report)
+
+
+def test_p0009_shrunken_residual_cap_is_detected(leafy):
+    """名指しの上限を証明書が縮めるのを弾く.
+
+    cap を 1 にできてしまうと、閉じないグラフが何個あっても論文には 1 個
+    しか載らず、しかも検証は通る。監査の窓を証明書側から狭められるので、
+    cap は検証器の定数に固定してある。
+    """
+    cert, prob, _ = leafy
+    cert.data["residual_list_cap"] = 1
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "上限" in _notes(report)
+
+
+def test_p0009_narrowed_residual_zones_are_detected(leafy):
+    """名指しの対象帯を減らす細工 (hard を対象外にする) を弾く."""
+    cert, prob, _ = leafy
+    cert.data["residual_zones"] = ["mindeg4", "mindeg3"]
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "対象帯" in _notes(report)
 
 
 def test_p0009_inflated_totals_are_detected(leafy):

@@ -1,5 +1,5 @@
 {
-  "certificate_digest": "f7ad2d8e997f1dc4",
+  "certificate_digest": "68bf8219a793ec46",
   "checks": [
     {
       "detail": "0 件",
@@ -9,6 +9,11 @@
     {
       "detail": "0 件",
       "name": "予想 B' の反例リストは空",
+      "passed": true
+    },
+    {
+      "detail": "0 件",
+      "name": "予想 A (平均版) の反例リストは空",
       "passed": true
     },
     {
@@ -43,7 +48,17 @@
     },
     {
       "detail": "",
-      "name": "帯 (trivial / delta / hard) の分布が証明書と一致",
+      "name": "同じ 13,402,242 個で n*sum_(uv in E)|N(u) 合併 N(v)| >= 2mS (予想 4.4 = A。B' より強い)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "帯 (trivial / delta / cov / mindeg4 / mindeg3 / hard) の分布が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "本稿の定理で閉じない 14 個を検証器が独立に数え直し、先頭 14 個が証明書と走査順で一致 (論文が名指しする残り)",
       "passed": true
     },
     {
@@ -71,7 +86,7 @@
   "platform": "Windows 11 (build 26200)",
   "problem_id": "p0009_wowii2_leaf_local_indep",
   "python": "3.10.11",
-  "seconds": 2041.4,
-  "verified_at": "2026-07-27T03:49:12+00:00",
-  "verifier_hash": "9e02d97b84e92c26"
+  "seconds": 1973.1,
+  "verified_at": "2026-07-27T07:21:12+00:00",
+  "verifier_hash": "fb585606f7312924"
 }

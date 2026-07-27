@@ -20,8 +20,33 @@ NAMED_EQUALITY = {
 }
 
 
+#: 本稿の定理で閉じない帯の日本語表記 (限界節で残りを名指しするときに使う)。
+_ZONE_JA = {"mindeg4": "$\\delta \\ge 4$ 帯", "mindeg3": "$\\delta \\ge 3$ 帯",
+            "hard": "どの帯にも入らない"}
+
+
 def _tex(s: str) -> str:
     return s.replace("_", TEX_UNDERSCORE)
+
+
+def _pct(count: int, total: int) -> str:
+    """百分率を、丸めて 0 や 100 に化けない桁数で書く.
+
+    共分散帯を入れたあと「閉じた割合」は 99.9999% 台になり、固定小数で
+    書くと 100.000\\% と表示されて\\emph{{全部閉じた}}と読めてしまう。
+    残りが 1 個でもあるならそれが見える桁数まで伸ばす (逆も同じで、
+    0.000\\% と書いて残りを消さない)。
+    """
+    if total <= 0 or count == 0:
+        return "0"
+    if count == total:
+        return "100"
+    val = 100.0 * count / total
+    for digits in range(3, 10):
+        shown = f"{val:.{digits}f}"
+        if float(shown) not in (0.0, 100.0):
+            return shown
+    return f"{val:.9f}"
 
 
 def _kind(fam: dict) -> str:
@@ -55,15 +80,33 @@ def _eq_rows(entries: list[tuple[int, str, list[int]]]) -> str:
 
 
 def _zone_rows(fams: list[dict]) -> str:
+    """帯の分布表。木は全部が自明帯なので 1 行にまとめる."""
     rows = []
+    trees = [f for f in fams if f["label"] == "trees"]
     for f in fams:
+        if f["label"] == "trees":
+            continue
         z = f.get("zone_hist", {})
-        triv = z.get("trivial", 0)
-        dlt = z.get("delta", 0)
         hard = z.get("hard", 0)
-        pct = 100.0 * hard / f["count"] if f["count"] else 0.0
-        rows.append(f"{f['n']} & {f['count']:,} & {triv:,} & {dlt:,} & "
-                    f"{hard:,} & {pct:.3f} \\\\")
+        rows.append(f"{_kind(f)} & {f['n']} & {f['count']:,} & "
+                    f"{z.get('trivial', 0):,} & {z.get('delta', 0):,} & "
+                    f"{z.get('cov', 0):,} & "
+                    f"{z.get('mindeg4', 0):,} & {z.get('mindeg3', 0):,} & "
+                    f"{hard:,} & {_pct(hard, f['count'])} \\\\")
+    if trees:
+        n_tr = sum(f["count"] for f in trees)
+        lo, hi = trees[0]["n"], trees[-1]["n"]
+        # 木の行も他と同じく zone_hist から集計する (直書きしない)。
+        z_tr: dict[str, int] = {}
+        for f in trees:
+            for k, v in f.get("zone_hist", {}).items():
+                z_tr[k] = z_tr.get(k, 0) + v
+        hard_tr = z_tr.get("hard", 0)
+        rows.append(f"木 & {lo}--{hi} & {n_tr:,} & "
+                    f"{z_tr.get('trivial', 0):,} & {z_tr.get('delta', 0):,} & "
+                    f"{z_tr.get('cov', 0):,} & "
+                    f"{z_tr.get('mindeg4', 0):,} & {z_tr.get('mindeg3', 0):,} & "
+                    f"{hard_tr:,} & {_pct(hard_tr, n_tr)} \\\\")
     return "\n".join(rows)
 
 
@@ -75,7 +118,7 @@ def _fam_rows(fams: list[dict]) -> str:
             f"{_kind(f)} & {f['n']} & {f['count']:,} & "
             f"{t.get('double_star', 0):,} & {t.get('greedy', 0):,} & "
             f"{f['exact_calls']:,} & {f['counts'].get('equal', 0):,} & "
-            f"{f.get('bprime_equal', 0):,} \\\\")
+            f"{f.get('bprime_equal', 0):,} & {f.get('avg_equal', 0):,} \\\\")
     return "\n".join(rows)
 
 
@@ -96,24 +139,56 @@ def build(cert) -> dict[str, str]:
     n_bad = tot["counterexamples"]
     n_bp_bad = tot["bprime_counterexamples"]
     n_bp_eq = tot["bprime_equality"]
+    n_a_bad = tot["avg_counterexamples"]
+    n_a_eq = tot["avg_equality"]
     n_exact = tot["exact_calls"]
-    exact_pct = 100.0 * n_exact / n_total if n_total else 0.0
+    exact_pct = _pct(n_exact, n_total)
     reg_orders = ", ".join(f"({f['n']}, {f['degree']})" for f in regs)
     cid = _tex(cert.problem_id)
 
     zt = d["zone_totals"]
     z_triv = zt.get("trivial", 0)
     z_delta = zt.get("delta", 0)
+    z_cov = zt.get("cov", 0)
     z_hard = zt.get("hard", 0)
-    z_done = z_triv + z_delta
-    z_done_pct = 100.0 * z_done / n_total if n_total else 0.0
-    z_hard_pct = 100.0 * z_hard / n_total if n_total else 0.0
+    z_md4 = zt.get("mindeg4", 0)
+    z_md3 = zt.get("mindeg3", 0)
+    z_done = z_triv + z_delta + z_cov
+    z_done_pct = _pct(z_done, n_total)
+    z_cov_pct = _pct(z_cov, n_total)
+    z_cited = z_done + z_md4 + z_md3
+    z_cited_pct = _pct(z_cited, n_total)
+    z_md_pct = _pct(z_md4 + z_md3, n_total)
+    z_hard_pct = _pct(z_hard, n_total)
+    z_rest = z_md4 + z_md3 + z_hard
+
+    # --- 本稿の定理で閉じなかったグラフ。証明書が走査順で名指ししており、
+    #     検証器が帯の判定をやり直して同じ並びになることを確かめている。
+    residual = d.get("residual_graphs", [])
+    residual_all = len(residual) == tot.get("residual", -1)
+    residual_tex = "、".join(
+        f"{tt(r['g6'])} ($n = {r['n']}$、{_ZONE_JA.get(r['zone'], r['zone'])})"
+        for r in residual)
+    if not residual:
+        residual_lead = ("走査範囲では共分散帯を外れるグラフ自体が存在しない。")
+    elif residual_all:
+        residual_lead = (
+            f"この {z_rest:,} 個は走査順に全部書き出せる: {residual_tex}。"
+            f"どれも $n$ が小さく次数がそろっており、共分散が負になるのは"
+            f"わずかな差である。検証器はこの並びを帯の判定からやり直して"
+            f"突き合わせている。")
+    else:
+        residual_lead = (
+            f"この {z_rest:,} 個のうち走査順で先頭 {len(residual):,} 個は "
+            f"{residual_tex} である (証明書には先頭 {len(residual):,} 個だけを"
+            f"記録しており、検証器はその並びを帯の判定からやり直して"
+            f"突き合わせている)。")
 
     tiers = {"double_star": 0, "greedy": 0, "exact": 0}
     for f in fams:
         for k, v in f.get("tier_hist", {}).items():
             tiers[k] = tiers.get(k, 0) + v
-    ds_pct = 100.0 * tiers["double_star"] / n_total if n_total else 0.0
+    ds_pct = _pct(tiers["double_star"], n_total)
 
     # --- 等号グラフを 1 本の表にまとめる (族をまたいで n 順)
     eq_entries: list[tuple[int, str, list[int]]] = []
@@ -132,11 +207,12 @@ def build(cert) -> dict[str, str]:
     off_eq = [g6 for n, g6, rec in eq_entries
               if n * rec[0] != 2 * rec[1] - 2 * n]
     off_ds = [g6 for n, g6, rec in eq_entries if rec[0] < rec[3] - 2]
-    if n_bad or n_bp_bad:
+    if n_bad or n_bp_bad or n_a_bad:
         headline = (
             "\\textbf{警告}: 証明書には反例が記録されている "
             f"(予想 \\ref{{conj:wowii2}}: {n_bad:,} 個、"
-            f"予想 \\ref{{conj:bprime}}: {n_bp_bad:,} 個)。"
+            f"予想 \\ref{{conj:bprime}}: {n_bp_bad:,} 個、"
+            f"予想 \\ref{{conj:avg}}: {n_a_bad:,} 個)。"
             "本文の主張と食い違うので、結論を採用する前に実装を確認すること。")
     elif off_eq or off_ds:
         headline = (
@@ -148,7 +224,8 @@ def build(cert) -> dict[str, str]:
         headline = (
             f"走査した {n_total:,} 個すべてで予想 \\ref{{conj:wowii2}} は成立し、"
             f"等号は {n_eq:,} 個で成立した。本稿が新たに提出する予想 "
-            f"\\ref{{conj:bprime}} にも反例はなく、等号は {n_bp_eq:,} 個で"
+            f"\\ref{{conj:bprime}} にも、より強い予想 \\ref{{conj:avg}} にも"
+            f"反例はなく、等号はそれぞれ {n_bp_eq:,} 個、{n_a_eq:,} 個で"
             "成立した。")
 
     if eq_complete:
@@ -184,6 +261,9 @@ def build(cert) -> dict[str, str]:
     if unnamed:
         named_note += (f"残る {len(unnamed):,} 個は本稿では同定していない "
                        "(表の「---」)。")
+    # 「---」の説明は、実際に未同定の行があるときだけ出す。
+    dash_note = ("名前の列の「---」は本稿で同定していないことを表す。"
+                 if unnamed else "")
     if n_eq and eq_named == n_eq:
         loose_note = ("等号が各位数で数個しか起きず、しかもそのすべてが名前の"
                       "ついた高度に対称なグラフであることは、")
@@ -199,30 +279,41 @@ def build(cert) -> dict[str, str]:
         "\\emph{Written on the Wall II} 予想 2 (以下、予想 "
         "\\ref{conj:wowii2}) は "
         "$2(\\overline{\\ell}(G) - 1) \\le L_s(G)$ を主張する。"
-        "本稿は 3 つの寄与を与える。第 1 に\\textbf{二重星定理}: 連結グラフの"
+        "本稿は 4 つの寄与を与える。第 1 に\\textbf{二重星定理}: 連結グラフの"
         "\\textbf{任意の辺} $uv$ に対し "
         "$L_s(G) \\ge |N(u) \\cup N(v)| - 2$ (定理 \\ref{thm:doublestar})。"
         "証明は「部分木を全域木へ延長しても葉は減らない」という一行の補題だけを"
         "使う。第 2 に、この定理が予想 \\ref{conj:wowii2} を"
-        "\\textbf{局所的で多項式時間に"
-        "確かめられる}主張へ帰着させることを指摘し、その主張を予想 B' "
+        "\\textbf{全域木の最適化を含まない局所的な}"
+        "主張へ帰着させることを指摘し、その主張を予想 B' "
         "$\\max_{uv \\in E} |N(u) \\cup N(v)| \\ge 2\\overline{\\ell}(G)$ "
         "として提出する (予想 \\ref{conj:bprime})。B' は予想 "
-        "\\ref{conj:wowii2} を含意し "
-        "(系 \\ref{cor:bprime})、三角形をもたないグラフでは "
-        "Cauchy--Schwarz の 3 行で証明できる (定理 \\ref{thm:trianglefree})。"
-        "第 3 に、自明帯 $\\overline{\\ell} \\le 2$ と $\\Delta$ 帯 "
+        "\\ref{conj:wowii2} を含意する (系 \\ref{cor:bprime})。"
+        "第 3 に\\textbf{共分散定理} (定理 \\ref{thm:cov}): 次数と局所独立数の"
+        "共分散が非負、すなわち $\\sum_v (\\deg v - \\overline{d})\\ell(v) "
+        "\\ge 0$ ならば、B' より強い平均版 A (予想 \\ref{conj:avg}) が"
+        "成り立つ。核心は補題 \\ref{lem:sumbound} "
+        "$\\sum_{uv \\in E} |N(u) \\cup N(v)| \\ge \\sum_v \\deg(v)\\,\\ell(v)$ "
+        "で、これは各頂点で「近傍の点被覆数 $\\times$ 次数 $\\ge$ 近傍の辺数」に"
+        "分解する。三角形をもたないグラフは $\\ell = \\deg$ で共分散が分散に"
+        "なるので、この定理の系として 2 行で片づく (系 "
+        "\\ref{cor:trianglefree})。"
+        "第 4 に、自明帯 $\\overline{\\ell} \\le 2$ と $\\Delta$ 帯 "
         "$2\\overline{\\ell} \\le \\Delta + 2$ で予想 \\ref{conj:wowii2} を"
         "証明し "
-        "(定理 \\ref{thm:zones})、この 2 帯が実際に走査範囲の "
-        f"{z_done_pct:.3f}\\% を覆うことを示す。"
+        "(定理 \\ref{thm:zones})、これらと共分散帯を合わせると走査範囲の "
+        f"{z_done_pct}\\% が定理として閉じることを示す。"
+        "さらに $L_s$ の古典的な下界 "
+        "$l(n,3) \\ge n/4 + 2$, $l(n,4) \\ge (2n+8)/5$ を借りると帯が 2 つ"
+        "増えて (定理 \\ref{thm:mindeg}、とくに $n \\ge 8$ の連結な立方体"
+        f"グラフはすべてここで閉じる)、覆う割合は {z_cited_pct}\\% になる。"
         f"連結グラフの完全リスト ($n \\le {g_max}$)、"
         f"木 ($11 \\le n \\le {t_max}$)、"
         f"GENREG の連結正則グラフ、計 {n_total:,} 個について、"
         "各グラフに\\textbf{葉集合 1 つ}を証人として付け、探索器と"
         "グラフ計算を共有しない検証器に (i) 補集合が連結支配集合であること、"
         "(ii) 予想 \\ref{conj:wowii2}、"
-        "(iii) 二重星定理、(iv) 予想 B' を再計算させた。"
+        "(iii) 二重星定理、(iv) 予想 B'、(v) 予想 A を再計算させた。"
         f"{headline}"
         "予想 \\ref{conj:wowii2} 自体は"
         "\\textbf{一般には未解決のままである}。")
@@ -252,10 +343,12 @@ $n$ 倍して分母を払うと、整数だけの同値な形
 
 この予想は DeLaViña の公開している未解決リスト \\cite{{wowii}} に
 2026 年 7 月 27 日に取得した時点でも状態 \\texttt{{O}} (未解決) として載って
-おり、同サイトの解決済みリストには現れない。左辺は多項式時間で計算できる
-($\\ell(v)$ は近傍という小さい部分グラフの独立数である) 一方、$L_s(G)$ の決定は
-NP 困難である。予想 \\ref{{conj:wowii2}} はしたがって「安価な量で計算困難な量を
-下から押さえる」型の主張であり、Graffiti.pc が量産したこの型の予想のうち、
+おり、同サイトの解決済みリストには現れない。左辺の $\\ell(v)$ は $v$ の近傍と
+いう\\emph{{小さい部分グラフ}}の独立数なので、計算は各頂点の近傍に閉じており
+$\\sum_v 2^{{\\deg v}}$ で足りる (次数が有界なら多項式。ただし一般には独立数
+そのものなので NP 困難である) 一方、$L_s(G)$ は\\emph{{全域木全体にわたる大域的な
+最適化}}で、その決定は NP 困難である。予想 \\ref{{conj:wowii2}} は
+したがって「局所的な量で大域的な最適化を下から押さえる」型の主張であり、Graffiti.pc が量産したこの型の予想のうち、
 $L_s$ を扱うものの多くは DeLaViña--Waller \\cite{{dw2008}} や
 DeLaViña--Fajtlowicz--Waller \\cite{{dfw2005}} で解決されたが、予想
 \\ref{{conj:wowii2}} は残っている。$L_s$ そのものの下界としては、次数条件に
@@ -265,7 +358,7 @@ DeLaViña--Fajtlowicz--Waller \\cite{{dfw2005}} で解決されたが、予想
 
 \\medskip
 \\noindent\\textbf{{本稿の寄与}}。予想 \\ref{{conj:wowii2}} は一般には証明できて
-いない。得られたのは次の 3 つである。
+いない。得られたのは次の 4 つである。
 
 \\begin{{enumerate}}
 \\item \\textbf{{二重星定理}} (定理 \\ref{{thm:doublestar}}): 連結グラフの
@@ -276,15 +369,26 @@ DeLaViña--Fajtlowicz--Waller \\cite{{dfw2005}} で解決されたが、予想
 \\item \\textbf{{局所版予想 B'}} (予想 \\ref{{conj:bprime}}、本稿が提出):
   連結グラフは $\\max_{{uv \\in E}} |N(u) \\cup N(v)| \\ge 2\\overline{{\\ell}}(G)$
   を満たす。二重星定理と合わせると予想 \\ref{{conj:wowii2}} が出る
-  (系 \\ref{{cor:bprime}})。B' には NP 困難な量が現れず、$O(nm)$ で判定できる。
-  三角形をもたないグラフでは Cauchy--Schwarz で証明できる
-  (定理 \\ref{{thm:trianglefree}})。
-\\item \\textbf{{2 つの帯での証明と {n_total:,} 個での機械照合}}: 自明帯
+  (系 \\ref{{cor:bprime}})。B' には $L_s$ が現れず、辺 1 本の近傍だけを見る
+  主張になる。
+\\item \\textbf{{共分散定理}} (定理 \\ref{{thm:cov}}、本稿が証明): 次数 $\\deg$
+  と局所独立数 $\\ell$ の共分散が非負ならば、B' より強い平均版 A (予想
+  \\ref{{conj:avg}}) が成り立つ。核心は補題
+  \\ref{{lem:sumbound}}
+  $\\sum_{{uv \\in E}} |N(u) \\cup N(v)| \\ge \\sum_v \\deg(v)\\,\\ell(v)$ で、
+  これは各頂点の近傍について「点被覆数 $\\times$ 次数 $\\ge$ 辺数」という
+  1 行の評価に分解する。三角形をもたないグラフでは $\\ell = \\deg$ となって
+  共分散が分散に一致するので、Mukwembi \\cite{{mukwembi}} が解決した
+  三角形なしの場合はこの定理の\\textbf{{系}}になる (系
+  \\ref{{cor:trianglefree}})。
+\\item \\textbf{{帯での証明と {n_total:,} 個での機械照合}}: 自明帯
   $\\overline{{\\ell}} \\le 2$ と $\\Delta$ 帯
   $2\\overline{{\\ell}} \\le \\Delta + 2$ で予想 \\ref{{conj:wowii2}} を証明し
-  (定理 \\ref{{thm:zones}})、この 2 帯が走査範囲の {z_done_pct:.3f}\\% を
-  覆うことを示す。残る {z_hard:,} 個 ({z_hard_pct:.3f}\\%) も、証人つきで
-  機械照合した。
+  (定理 \\ref{{thm:zones}})、これらと共分散帯を合わせて走査範囲の
+  {z_done_pct}\\% が本稿の定理だけで閉じることを示す。$L_s$ の古典的な
+  下界 \\cite{{storer,kw1991}} を借りれば最小次数 3 と 4 の帯が加わり
+  (定理 \\ref{{thm:mindeg}})、{z_cited_pct}\\% まで上がる。残る
+  {z_hard:,} 個 ({z_hard_pct}\\%) も、証人つきで機械照合した。
 \\end{{enumerate}}
 
 \\section{{準備: 葉数と連結支配数}}\\label{{sec:prelim}}
@@ -368,7 +472,7 @@ $\\Delta$ 個ある ($\\Delta = 1$ なら $G = K_2$ で $L_s = 2 > 1$)。補題
 \\ref{{lem:extend}} による。
 \\end{{proof}}
 
-\\section{{局所版予想 B'}}\\label{{sec:bprime}}
+\\section{{局所版予想 B' と平均版 A}}\\label{{sec:bprime}}
 
 定理 \\ref{{thm:doublestar}} により、予想 \\ref{{conj:wowii2}} は NP 困難な
 $L_s$ を含まない主張へ帰着する。
@@ -388,43 +492,137 @@ $f(G)$ を達成する辺に定理 \\ref{{thm:doublestar}} を使うと
 $L_s(G) \\ge f(G) - 2 \\ge 2\\overline{{\\ell}}(G) - 2$。
 \\end{{proof}}
 
-B' の利点は 2 つある。第 1 に、$f(G)$ も $\\overline{{\\ell}}(G)$ も
-$O(nm)$ 程度で計算できるので、反例探索が全域木の最適化から解放される
-(実際、本稿の走査でも $L_s$ を厳密に解いたのは {n_exact:,} 回、
-全体の {exact_pct:.6f}\\% だけである)。第 2 に、主張が\\textbf{{辺 1 本の
+B' の利点は 2 つある。第 1 に、$f(G)$ は $O(nm)$ で、$\\overline{{\\ell}}(G)$ は
+各頂点の近傍に閉じた計算で求まるので、反例探索が\\emph{{全域木の最適化から
+解放される}} (実際、本稿の走査でも $L_s$ を厳密に解いたのは {n_exact:,} 回、
+全体の {exact_pct}\\% だけである)。$\\ell$ 自体は一般には NP 困難である
+(任意のグラフ $H$ に全頂点と隣接する頂点 $v$ を足せば $\\ell(v) = \\alpha(H)$)
+が、これは\\emph{{元の予想の左辺にもともと現れている量}}であり、B' が取り
+除いたのは $L_s$ のほうである。第 2 に、主張が\\textbf{{辺 1 本の
 近傍という局所的な対象}}だけを見ているので、次数列や局所構造からの議論が
-そのまま使える。実際、三角形がなければ 3 行で片づく。
+そのまま使える。次節がその実例である。
 
-\\begin{{theorem}}\\label{{thm:trianglefree}}
-$G$ が三角形をもたない連結グラフならば予想 \\ref{{conj:bprime}} が成り立つ。
-したがって予想 \\ref{{conj:wowii2}} も成り立つ。
+\\subsection*{{辺上の和を頂点上の和で下から押さえる}}
+
+$f(G)$ は最大値なので、辺上の平均を下から押さえれば十分である。その平均を
+評価する鍵が次の補題で、三角形の効果を\\textbf{{近傍の点被覆数}}という
+局所量に翻訳する。$H_v = G[N(v)]$ と置き、$e_v = |E(H_v)|$ ($v$ を含む
+三角形の個数)、$\\tau_v = \\tau(H_v)$ ($H_v$ の点被覆数) と書く。$H_v$ は
+$\\deg(v)$ 点のグラフなので Gallai の等式より
+$\\tau_v = \\deg(v) - \\ell(v)$ である。
+
+\\begin{{lemma}}\\label{{lem:sumbound}}
+任意のグラフ $G$ に対し
+\\[ \\sum_{{uv \\in E(G)}} |N(u) \\cup N(v)|
+   \\ \\ge \\ \\sum_{{v \\in V(G)}} \\deg(v)\\,\\ell(v) . \\]
+等号は $G$ が三角形をもたないとき、かつそのときに限り成立する。
+\\end{{lemma}}
+
+\\begin{{proof}}
+包除より $|N(u) \\cup N(v)| = \\deg u + \\deg v - |N(u) \\cap N(v)|$ であり、
+辺 $uv$ の共通近傍は $uv$ を含む三角形と一対一に対応する。三角形の総数を
+$T$ とすると各三角形はその 3 辺で 1 回ずつ数えられるので
+$\\sum_{{uv \\in E}} |N(u) \\cap N(v)| = 3T$、また各三角形はその 3 頂点の
+近傍でも 1 回ずつ数えられるので $\\sum_v e_v = 3T$。さらに
+$\\sum_{{uv \\in E}} (\\deg u + \\deg v) = \\sum_v \\deg(v)^2$ だから
+\\[ \\sum_{{uv \\in E}} |N(u) \\cup N(v)|
+   \\ = \\ \\sum_v \\deg(v)^2 - \\sum_v e_v . \\]
+一方 $\\ell(v) = \\deg(v) - \\tau_v$ より
+$\\sum_v \\deg(v)\\ell(v) = \\sum_v \\deg(v)^2 - \\sum_v \\deg(v)\\,\\tau_v$。
+したがって主張は\\textbf{{頂点ごとの}}不等式
+$\\deg(v)\\,\\tau_v \\ge e_v$ に分解する。これは次のとおり: $\\tau_v = 0$ なら
+$H_v$ に辺がなく $e_v = 0$。$\\tau_v \\ge 1$ なら $H_v$ の最小点被覆 $C$ を
+取ると $H_v$ の各辺は $C$ の点に接し、$H_v$ の頂点の次数は高々
+$\\deg(v) - 1$ なので
+\\[ e_v \\ \\le \\ \\tau_v\\bigl(\\deg(v) - 1\\bigr)
+   \\ < \\ \\deg(v)\\,\\tau_v . \\]
+よって $\\deg(v)\\tau_v \\ge e_v$ が常に成り立ち、等号となるのは
+$\\tau_v = 0$ すなわち $e_v = 0$ のときに限る。全頂点で $e_v = 0$ とは
+$G$ が三角形をもたないことである。
+\\end{{proof}}
+
+補題 \\ref{{lem:sumbound}} は「辺上の和」を「頂点上の和」に移す。$f(G)$ は
+辺上の最大値なので平均以上であり、辺上の平均が $2\\overline{{\\ell}}$ を超えて
+いれば B' が出る。この\\textbf{{平均版}}を独立した主張として立てておく。
+
+\\begin{{conjecture}}[本稿、平均版 A]\\label{{conj:avg}}
+連結グラフ $G$ に対し
+\\[ \\frac{{1}}{{m}} \\sum_{{uv \\in E(G)}} |N(u) \\cup N(v)|
+   \\ \\ge \\ 2\\,\\overline{{\\ell}}(G)
+   \\qquad\\Bigl(\\text{{整数形: }} n \\sum_{{uv \\in E}} |N(u) \\cup N(v)|
+   \\ \\ge \\ 2mS(G)\\Bigr) . \\]
+\\end{{conjecture}}
+
+\\begin{{corollary}}\\label{{cor:avg}}
+予想 \\ref{{conj:avg}} は予想 \\ref{{conj:bprime}} を、したがって予想
+\\ref{{conj:wowii2}} を含意する。
+\\end{{corollary}}
+
+\\begin{{proof}}
+最大値は平均以上: $f(G) \\ge \\frac{{1}}{{m}}\\sum_{{uv \\in E}}
+|N(u) \\cup N(v)|$ ($G$ は連結で $n \\ge 2$ だから $m \\ge 1$)。あとは系
+\\ref{{cor:bprime}}。
+\\end{{proof}}
+
+予想 \\ref{{conj:avg}} は $\\sum_{{uv \\in E}} |N(u) \\cup N(v)|
+= \\sum_v \\deg(v)^2 - 3T$ (補題 \\ref{{lem:sumbound}} の証明を参照) を使うと
+\\[ n\\Bigl(\\sum_v \\deg(v)^2 - 3T\\Bigr) \\ \\ge \\ 2m\\,S(G) \\]
+と書ける。つまり最大値も全域木も現れない、\\textbf{{次数列・三角形数・局所独立数
+だけの不等式}}である。次の定理はこれを共分散の符号に帰着させる。
+
+\\begin{{theorem}}[共分散定理]\\label{{thm:cov}}
+$G$ を連結グラフ、$\\overline{{d}} = 2m/n$ を平均次数とする。
+\\[ \\sum_{{v \\in V(G)}} \\bigl(\\deg(v) - \\overline{{d}}\\bigr)\\,\\ell(v)
+   \\ \\ge \\ 0
+   \\qquad\\Bigl(\\text{{同値な整数形: }} n \\sum_v \\deg(v)\\ell(v)
+   \\ \\ge \\ 2mS(G)\\Bigr) \\]
+ならば予想 \\ref{{conj:avg}} が成り立つ。したがって予想 \\ref{{conj:bprime}} も
+予想 \\ref{{conj:wowii2}} も成り立つ。
 \\end{{theorem}}
 
 \\begin{{proof}}
-三角形がないので各 $N(v)$ は独立集合であり $\\ell(v) = \\deg(v)$、すなわち
-$2\\overline{{\\ell}}(G) = \\frac{{2}}{{n}}\\sum_v \\deg(v) = \\frac{{4m}}{{n}}$。
-また隣接する $u, v$ が共通近傍をもてば三角形ができるので
-$N(u) \\cap N(v) = \\emptyset$、ゆえに
-$|N(u) \\cup N(v)| = \\deg u + \\deg v$。Cauchy--Schwarz より
-\\[ \\sum_{{uv \\in E}} \\bigl(\\deg u + \\deg v\\bigr)
-   \\ = \\ \\sum_{{v \\in V}} \\deg(v)^2
-   \\ \\ge \\ \\frac{{1}}{{n}}\\Bigl(\\sum_{{v}} \\deg v\\Bigr)^2
-   \\ = \\ \\frac{{4m^2}}{{n}} \\]
-なので、平均を上回る辺が存在する:
-$f(G) \\ge \\frac{{1}}{{m}} \\cdot \\frac{{4m^2}}{{n}} = \\frac{{4m}}{{n}}
- = 2\\overline{{\\ell}}(G)$。
+補題 \\ref{{lem:sumbound}} と仮定を順に使って
+\\[ \\sum_{{uv \\in E}} |N(u) \\cup N(v)|
+   \\ \\ge \\ \\sum_v \\deg(v)\\,\\ell(v)
+   \\ \\ge \\ \\overline{{d}} \\sum_v \\ell(v)
+   \\ = \\ \\frac{{2m}}{{n}} \\, S(G) , \\]
+これは予想 \\ref{{conj:avg}} の整数形そのものである。系 \\ref{{cor:avg}} より
+残りが従う。
+\\end{{proof}}
+
+仮定の左辺は $n \\cdot \\mathrm{{Cov}}(\\deg, \\ell)$ である (頂点上の一様分布
+に関する共分散)。すなわち\\textbf{{次数の大きい頂点のまわりが平均的に見て疎で
+ある}}かぎり B' は成り立つ。次数と局所独立数はどちらも「$v$ の隣人の多さ」を
+測る量なので正に相関するのが普通であり、この仮定はほとんどのグラフで満たされる
+(第 \\ref{{sec:zones}} 節)。
+
+\\begin{{corollary}}\\label{{cor:trianglefree}}
+$G$ が三角形をもたない連結グラフならば予想 \\ref{{conj:avg}} が、したがって
+予想 \\ref{{conj:bprime}} と予想 \\ref{{conj:wowii2}} が成り立つ。
+\\end{{corollary}}
+
+\\begin{{proof}}
+三角形がないので各 $N(v)$ は独立集合であり $\\ell(v) = \\deg(v)$。よって
+\\[ \\sum_v \\bigl(\\deg(v) - \\overline{{d}}\\bigr)\\ell(v)
+   \\ = \\ \\sum_v \\bigl(\\deg(v) - \\overline{{d}}\\bigr)\\deg(v)
+   \\ = \\ \\sum_v \\bigl(\\deg(v) - \\overline{{d}}\\bigr)^2
+   \\ \\ge \\ 0 \\]
+となり (第 2 の等号は $\\sum_v (\\deg v - \\overline{{d}}) = 0$ による)、定理
+\\ref{{thm:cov}} が使える。共分散が\\textbf{{分散}}に退化しているのがこの場合で
+ある。
 \\end{{proof}}
 
 三角形をもたないグラフでの予想 \\ref{{conj:wowii2}} は、連結支配数の上界を扱う
-Mukwembi \\cite{{mukwembi}} の議論と重なる可能性がある (本稿では原論文の
-主張を突き合わせていない。第 \\ref{{sec:disc}} 節を参照)。定理
-\\ref{{thm:trianglefree}} の意義は、証明が 3 行で済むことと、そこで実際に
-示されているのが予想 \\ref{{conj:wowii2}} より強い B' であることにある。
+Mukwembi \\cite{{mukwembi}} が既に解決している (本稿では原論文の主張を
+突き合わせていない。第 \\ref{{sec:disc}} 節を参照)。系
+\\ref{{cor:trianglefree}} は優先権を主張するものではなく、その場合が定理
+\\ref{{thm:cov}} の\\emph{{特殊な一例}}にすぎないことを示すために置いている。
+実際、定理 \\ref{{thm:cov}} は三角形を任意個もつグラフにも効く。
 
-\\section{{2 つの帯と、そこで閉じない部分}}\\label{{sec:zones}}
+\\section{{帯の分布と、そこで閉じない部分}}\\label{{sec:zones}}
 
-三角形があるときは $\\ell(v) < \\deg(v)$ になり得て上の計算が崩れる。しかし
-$\\overline{{\\ell}}$ が小さければ主張自体が弱くなる。
+定理 \\ref{{thm:cov}} が届かないのは共分散が負のグラフである。そこは
+$\\overline{{\\ell}}$ 自体が小さければ主張が弱くなって別の議論で埋まる。
 
 \\begin{{theorem}}\\label{{thm:zones}}
 連結グラフ $G$ が次のいずれかを満たせば予想 \\ref{{conj:wowii2}} が成り立つ。
@@ -442,30 +640,86 @@ $L_s(G) \\ge \\Delta \\ge 2\\overline{{\\ell}} - 2$。
 \\end{{proof}}
 
 木はつねに自明帯にある: 木では $\\ell(v) = \\deg(v)$ なので
-$S = 2(n-1) < 2n$。残るのは
+$S = 2(n-1) < 2n$。この 2 帯を抜けるのは
 \\[ 2S \\ > \\ n\\bigl(\\Delta(G) + 2\\bigr) \\tag{{H}} \\]
 を満たすグラフ、すなわち「平均の局所独立数が最大次数に比べて大きい」層である。
 $\\ell(v) \\le \\deg(v) \\le \\Delta$ なので (H) は $\\overline{{\\ell}}$ が
-$\\Delta$ に近いことを要求し、そのようなグラフは実際には少ない
-(表 \\ref{{tab:zones}})。
+$\\Delta$ に近いことを要求する。ところが $\\overline{{\\ell}}$ が
+$\\Delta$ に近いとは近傍がどこも疎だということであり、それは定理
+\\ref{{thm:cov}} の共分散条件が満たされやすい状況でもある。実際、以下の
+集計では (H) の層のほとんどが\\textbf{{共分散帯}}
+$n \\sum_v \\deg(v)\\ell(v) \\ge 2mS$ に落ちる (表 \\ref{{tab:zones}})。
+以下、帯は自明 $\\to$ $\\Delta$ $\\to$ 共分散の順に判定して重複なく数える。
+
+\\subsection*{{既知の下界を借りて閉じる帯}}
+
+共分散帯からも漏れるグラフは $\\overline{{\\ell}}$ が大きい、つまり近傍が疎で
+次数がそろっている。この形は $L_s$ の古典的な下界がよく効く形でもある。最小次数
+$k$ の連結グラフが必ずもつ葉数の最大値を $l(n,k)$ と書くと、次が知られて
+いる: $l(n,3) \\ge n/4 + 2$ (立方体グラフについて Storer \\cite{{storer}}、
+最小次数 3 への拡張が Linial--Sturtevant、別証明と
+$l(n,4) \\ge (2n+8)/5$ が Kleitman--West \\cite{{kw1991}}。
+立方体グラフでの最適性は Griggs--Kleitman--Shastri \\cite{{griggs}})。
+これを予想 \\ref{{conj:wowii2}} の右辺と突き合わせるだけで、2 つの帯が増える。
+
+\\begin{{theorem}}\\label{{thm:mindeg}}
+連結グラフ $G$ が次のいずれかを満たせば予想 \\ref{{conj:wowii2}} が成り立つ。
+\\begin{{enumerate}}
+\\item ($\\delta \\ge 4$ 帯) $\\delta(G) \\ge 4$ かつ $5S \\le n(n+9)$。
+\\item ($\\delta \\ge 3$ 帯) $\\delta(G) \\ge 3$ かつ $8S \\le n(n+16)$。
+\\end{{enumerate}}
+\\end{{theorem}}
+
+\\begin{{proof}}
+(1) $\\delta \\ge 4$ なら $L_s \\ge (2n+8)/5$ である \\cite{{kw1991}}。
+よって $L_s \\ge 2\\overline{{\\ell}} - 2$ を示すには
+$(2n+8)/5 + 2 \\ge 2S/n$、すなわち $n(2n+18) \\ge 10S$ で十分で、これは
+$5S \\le n(n+9)$ と同値。(2) $\\delta \\ge 3$ なら
+$L_s \\ge n/4 + 2$ \\cite{{storer,kw1991}} なので、同様に
+$n/4 + 4 \\ge 2S/n$、すなわち $8S \\le n(n+16)$ で十分。
+\\end{{proof}}
+
+$\\delta \\ge 4$ のとき $n \\ge 3$ で $(2n+8)/5 \\ge n/4 + 2$ なので (1) は
+(2) より真に強い。以下の集計では (1) を先に判定する。
+
+この 2 帯は (H) の層をかなり食う。とくに\\textbf{{連結な立方体グラフは
+$n \\ge 8$ ならすべて閉じる}}: $\\Delta = 3$ より $\\ell(v) \\le 3$、したがって
+$2\\overline{{\\ell}} - 2 \\le 4 \\le n/4 + 2$。$n \\le 6$ の立方体グラフは
+$K_4$ と $n = 6$ の 2 個だけで、いずれも走査範囲に入っている。
+
+\\medskip
+\\noindent\\textbf{{注意}}。定理 \\ref{{thm:zones}} が本稿の中で完結して
+いるのに対し、定理 \\ref{{thm:mindeg}} は\\emph{{引用した下界が正しいこと}}に
+依存する。機械照合できるのは帯の判定式 ($\\delta$ と $S$ の計算) だけであって、
+$l(n,3)$ や $l(n,4)$ の下界そのものは検証器の外にある。以下ではこの 2 種類の
+帯を集計上も分けて数える。
 
 \\begin{{table}}[t]
 \\centering
-\\caption{{連結グラフの完全リストにおける帯の分布。「残り」が (H) を満たす層で、
-本稿が定理として閉じられていない部分である。}}\\label{{tab:zones}}
-\\begin{{tabular}}{{rrrrrr}}
+\\caption{{帯の分布。自明帯と $\\Delta$ 帯は定理 \\ref{{thm:zones}}、共分散帯は
+定理 \\ref{{thm:cov}} (いずれも本稿で証明)、$\\delta \\ge 4$ 帯と
+$\\delta \\ge 3$ 帯は定理 \\ref{{thm:mindeg}} (引用した下界に依存) で閉じる。
+帯は左から順に判定するので重複はない。「残り」がどれでも閉じていない層で、
+木はすべて自明帯なので 1 行にまとめた。}}\\label{{tab:zones}}
+\\begin{{tabular}}{{lrrrrrrrrr}}
 \\toprule
-$n$ & 個数 & 自明帯 & $\\Delta$ 帯 & 残り & 残りの割合 (\\%) \\\\
+種別 & $n$ & 個数 & 自明 & $\\Delta$ & 共分散 & $\\delta \\ge 4$ &
+$\\delta \\ge 3$ & 残り & 残りの割合 (\\%) \\\\
 \\midrule
-{_zone_rows(graphs)}
+{_zone_rows(fams)}
 \\bottomrule
 \\end{{tabular}}
 \\end{{table}}
 
 走査した {n_total:,} 個のうち、自明帯が {z_triv:,} 個、$\\Delta$ 帯が
-{z_delta:,} 個で、合わせて {z_done:,} 個 ({z_done_pct:.3f}\\%) が定理
-\\ref{{thm:zones}} で閉じる。残りは {z_hard:,} 個 ({z_hard_pct:.3f}\\%) で、
-これらについては証人つきの機械照合しか持っていない。
+{z_delta:,} 個、共分散帯が {z_cov:,} 個 ({z_cov_pct}\\%) で、合わせて
+{z_done:,} 個 ({z_done_pct}\\%) が\\textbf{{本稿の定理だけで}}閉じる。
+定理 \\ref{{thm:mindeg}} がさらに
+$\\delta \\ge 4$ 帯で {z_md4:,} 個、$\\delta \\ge 3$ 帯で {z_md3:,} 個
+(合わせて {z_md_pct}\\%) を閉じるので、引用した下界を認めれば
+{z_cited:,} 個 ({z_cited_pct}\\%) が定理として片づく。残るのは
+{z_hard:,} 個 ({z_hard_pct}\\%) で、そこでは証人つきの機械照合しか
+持っていない。
 
 \\section{{機械照合}}\\label{{sec:check}}
 
@@ -485,7 +739,7 @@ $n$ & 個数 & 自明帯 & $\\Delta$ 帯 & 残り & 残りの割合 (\\%) \\\\
 \\begin{{enumerate}}
 \\item まず定理 \\ref{{thm:doublestar}} の証明そのもの、すなわち $f(G)$ を
   達成する辺の二重星を延長して得られる葉集合 ({tiers['double_star']:,} 個、
-  {ds_pct:.3f}\\% はこれで $(\\star)$ が閉じた)。
+  {ds_pct}\\% はこれで $(\\star)$ が閉じた)。
 \\item 足りなければ貪欲な連結支配集合の補集合 ({tiers['greedy']:,} 個)。
 \\item それでも足りなければ葉数を厳密に最大化する ({tiers['exact']:,} 個、
   厳密計算の呼び出しは {n_exact:,} 回)。
@@ -506,9 +760,14 @@ $n$ & 個数 & 自明帯 & $\\Delta$ 帯 & 残り & 残りの割合 (\\%) \\\\
 \\item 定理 \\ref{{thm:doublestar}}: $|L| \\ge f(G) - 2$ ($f$ も検証器が
   別実装で計算する)。
 \\item 予想 \\ref{{conj:bprime}}: $n f(G) - 2S \\ge 0$ と、その最小値・等号個数。
+\\item 予想 \\ref{{conj:avg}}: $n \\sum_{{uv \\in E}} |N(u) \\cup N(v)| - 2mS
+  \\ge 0$ と、その最小値・等号個数 (辺上の和も検証器が別実装で計算する)。
 \\item 等号が記録されたグラフについては、葉数が $|L| + 1$ 以上にならないことを
   厳密に解き直す。逆に等号リストに載っていないグラフは $(\\star)$ が
   \\textbf{{狭義に}}閉じることを要求する (等号を隠せない)。
+\\item 本稿の定理で閉じないグラフ ($\\delta \\ge 4$ 帯・$\\delta \\ge 3$ 帯・
+  残り) を走査順に集め直し、証明書が名指ししている並びと突き合わせる。
+  限界節が graph6 で挙げる残りはこの照合を通ったものである。
 \\end{{itemize}}
 
 \\subsection*{{結果}}
@@ -519,16 +778,16 @@ $n$ & 個数 & 自明帯 & $\\Delta$ 帯 & 残り & 残りの割合 (\\%) \\\\
 \\centering
 \\caption{{族ごとの内訳。「二重星」「貪欲」「厳密」は証人がどの段で得られたか
 (厳密は探索器の自己申告で、検証器は再計算しない)。「等号」は
-予想 \\ref{{conj:wowii2}} の等号、「B' 等号」は予想 \\ref{{conj:bprime}} の
-等号の個数。}}\\label{{tab:fams}}
-\\begin{{tabular}}{{lrrrrrrr}}
+予想 \\ref{{conj:wowii2}} の等号、「B' 等号」「A 等号」は予想
+\\ref{{conj:bprime}}、予想 \\ref{{conj:avg}} の等号の個数。}}\\label{{tab:fams}}
+\\begin{{tabular}}{{lrrrrrrrr}}
 \\toprule
-種別 & $n$ & 個数 & 二重星 & 貪欲 & 厳密 & 等号 & B' 等号 \\\\
+種別 & $n$ & 個数 & 二重星 & 貪欲 & 厳密 & 等号 & B' 等号 & A 等号 \\\\
 \\midrule
 {_fam_rows(fams)}
 \\midrule
 合計 & & {n_total:,} & {tiers['double_star']:,} & {tiers['greedy']:,} &
-{n_exact:,} & {n_eq:,} & {n_bp_eq:,} \\\\
+{n_exact:,} & {n_eq:,} & {n_bp_eq:,} & {n_a_eq:,} \\\\
 \\bottomrule
 \\end{{tabular}}
 \\end{{table}}
@@ -544,8 +803,7 @@ $\\ell(v) = 2$ が全頂点で成り立って $\\overline{{\\ell}} = 2$ とな�
 \\begin{{table}}[t]
 \\centering
 \\caption{{予想 \\ref{{conj:wowii2}} の等号が成立するグラフ。$f$ は
-$\\max_{{uv \\in E}}|N(u) \\cup N(v)|$。名前の列の「---」は本稿で同定して
-いないことを表す。}}\\label{{tab:eq}}
+$\\max_{{uv \\in E}}|N(u) \\cup N(v)|$。{dash_note}}}\\label{{tab:eq}}
 \\begin{{tabular}}{{llrrrrrr}}
 \\toprule
 名前 & graph6 & $n$ & $L_s$ & $S$ & $\\overline{{\\ell}}$ & $\\Delta$ & $f$ \\\\
@@ -567,29 +825,55 @@ $\\max_{{uv \\in E}}|N(u) \\cup N(v)|$。名前の列の「---」は本稿で同
 \\item 定理 \\ref{{thm:doublestar}} は、二重星の議論を三角形の有無によらない形
   ($\\deg u + \\deg v$ ではなく $|N(u) \\cup N(v)|$) に整えたものである。
   証明は補題 \\ref{{lem:extend}} 1 つで済み、$L_s$ の下界としてすぐ使える。
-\\item 予想 \\ref{{conj:bprime}} は本稿が提出する新しい主張で、予想
-  \\ref{{conj:wowii2}} を含意しながら NP 困難な量を含まない。予想
-  \\ref{{conj:wowii2}} への攻撃をこの局所的な不等式へ移せることが、本稿の
-  主要な観察である。
-\\item 定理 \\ref{{thm:trianglefree}} は三角形をもたない場合の 3 行の証明を
-  与える。しかも証明されるのは B' であって、予想 \\ref{{conj:wowii2}} より
-  強い。
+\\item 予想 \\ref{{conj:bprime}} と、それより強い予想 \\ref{{conj:avg}} は
+  本稿が提出する新しい主張で、どちらも予想 \\ref{{conj:wowii2}} を含意
+  しながら $L_s$ を含まない。とくに予想 \\ref{{conj:avg}} は
+  $n(\\sum_v \\deg(v)^2 - 3T) \\ge 2mS$ という次数列・三角形数・局所独立数
+  だけの不等式である。予想 \\ref{{conj:wowii2}} への攻撃をこの形へ移せる
+  ことが、本稿の主要な観察である。
+\\item 定理 \\ref{{thm:cov}} は、B' が「次数と局所独立数の共分散が非負」という
+  \\textbf{{1 つの不等式}}に帰着することを示す。核心の補題
+  \\ref{{lem:sumbound}} は、三角形が $|N(u) \\cup N(v)|$ を削る量
+  ($\\sum_v e_v$) と $\\ell$ を削る量 ($\\sum_v \\deg(v)\\tau_v$) を突き合わせ、
+  後者が必ず勝つことを頂点ごとの評価 $\\deg(v)\\tau_v \\ge e_v$ で示す。
+  三角形が「損」に見えて実は「得」であるというこの向きが、三角形のある場合を
+  扱えるようになった理由である。既知の三角形なしの場合 \\cite{{mukwembi}} は
+  共分散が分散に退化する特殊例 (系 \\ref{{cor:trianglefree}}) として回収される。
 \\end{{enumerate}}
 
 \\subsection*{{限界}}
 
 \\textbf{{予想 \\ref{{conj:wowii2}} は一般には未解決のままである}}。閉じて
-いないのは (H) を満たす層、すなわち三角形をもち、かつ平均の局所独立数が最大
-次数に近いグラフである。走査範囲ではこの層は {z_hard:,} 個
-({z_hard_pct:.3f}\\%) しかないが、$n$ を大きくしたときにこの割合がどう振る舞う
-かは本稿では調べていない。有限範囲の照合はいくら広くても証明ではない。
+いないのは (H) を満たし、共分散が負で、かつ定理 \\ref{{thm:mindeg}} の 2 帯にも
+入らない層である。走査範囲ではこの層は {z_hard:,} 個 ({z_hard_pct}\\%)
+しかないが、$n$ を大きくしたときにこの割合がどう振る舞うかは本稿では調べて
+いない。有限範囲の照合はいくら広くても証明ではない。
+
+定理 \\ref{{thm:cov}} の仮定 $\\mathrm{{Cov}}(\\deg, \\ell) \\ge 0$ は
+\\textbf{{十分条件でしかない}}。走査範囲で自明帯・$\\Delta$ 帯のどちらでも
+閉じず、さらに共分散も負だったのは {z_rest:,} 個あるが、その中に予想
+\\ref{{conj:avg}} の反例は {n_a_bad:,} 個しかない。つまり共分散が負の
+グラフでも A はたいてい成り立っており、A を閉じるには共分散を経由しない
+議論が要る。{residual_lead}
+また補題
+\\ref{{lem:sumbound}} が押さえているのは辺上の\\emph{{平均}}なので、$f(G)$ が
+平均に近いグラフ (正則グラフなど) では B' への余裕がほとんど残らない
+(実際、予想 \\ref{{conj:avg}} の等号は {n_a_eq:,} 個で成立している)。
+
+定理 \\ref{{thm:mindeg}} で閉じた {z_md4 + z_md3:,} 個については、依拠して
+いるのは\\emph{{引用した下界}}であって本稿の証明ではない。$l(n,3)$ と
+$l(n,4)$ の下界は原論文 \\cite{{storer,kw1991}} の主張を採ったもので、証明を
+追ってはいない (帯の判定式が下界から従うことだけは上で確かめた)。表
+\\ref{{tab:zones}} で 2 種類の帯を分けて数えているのはこのためである。
 
 先行研究の網羅的な確認も行っていない。とくに Mukwembi \\cite{{mukwembi}} の
-定理の正確な主張は原論文で突き合わせておらず、定理
-\\ref{{thm:trianglefree}} が扱う三角形なしの場合が既知である可能性がある。
+定理の正確な主張は原論文で突き合わせておらず、系
+\\ref{{cor:trianglefree}} が扱う三角形なしの場合が既知である可能性がある。
 本文でその可能性を明示したのはこのためである。予想
-\\ref{{conj:bprime}} についても、同値な主張が別の言葉で既知でないことを
-確かめてはいない。
+\\ref{{conj:bprime}} と予想 \\ref{{conj:avg}} についても、同値な主張が別の
+言葉で既知でないことを確かめてはいない。補題 \\ref{{lem:sumbound}} の
+$\\sum_{{uv \\in E}}|N(u) \\cup N(v)| = \\sum_v \\deg(v)^2 - 3T$ という
+書き換え自体は初等的で、既知である可能性が高い。
 
 機械照合の側にも境界がある。検証器が再計算するのは本節に挙げた量だけで、
 探索器が自己申告する費用 (厳密計算の回数、証人がどの段で得られたか) は検証の
@@ -599,13 +883,26 @@ $\\max_{{uv \\in E}}|N(u) \\cup N(v)|$。名前の列の「---」は本稿で同
 \\subsection*{{次に何をすべきか}}
 
 予想 \\ref{{conj:bprime}} を一般に証明することが、そのまま予想
-\\ref{{conj:wowii2}} の解決になる。三角形なしの証明が使った等式
-$|N(u) \\cup N(v)| = \\deg u + \\deg v$ は、三角形があると
-$\\deg u + \\deg v - |N(u) \\cap N(v)|$ に落ちる。一方で三角形は $\\ell(v)$ を
-$\\deg(v)$ より小さくする方向に働くので、$|N(u) \\cap N(v)|$ の損失と
-$\\deg(v) - \\ell(v)$ の得を突き合わせる不等式が作れれば、Cauchy--Schwarz の
-議論をそのまま延長できる可能性がある。表 \\ref{{tab:eq}} の等号グラフが
-すべて三角形をもたないことは、その方向を支持している。
+\\ref{{conj:wowii2}} の解決になる。定理 \\ref{{thm:cov}} により、残っているのは
+\\textbf{{共分散が負の場合}}だけである。この場合に何を使えばよいかについて、
+本稿の走査は 2 つの手がかりを与える。
+
+第 1 に、予想 \\ref{{conj:avg}} を直接示せば共分散の仮定は要らない。定理
+\\ref{{thm:cov}} の証明は $\\sum_{{uv}} |N(u) \\cup N(v)| \\ge
+\\sum_v \\deg(v)\\ell(v) \\ge \\overline{{d}} S$ と 2 段で継いでいるが、
+2 段目は共分散が負のとき破れる。ところが\\textbf{{両端をつないだ}}予想
+\\ref{{conj:avg}} には走査範囲で反例が {n_a_bad:,} 個しかない。すなわち
+共分散が負のグラフでは 2 段目の損を 1 段目の余裕が埋めており、その相殺を
+定量化するのが次の課題である。予想 \\ref{{conj:avg}} は
+$n(\\sum_v \\deg(v)^2 - 3T) \\ge 2mS$ とも書けるので、三角形数 $T$ と $S$ を
+同時に押さえる問題になる。
+
+第 2 に、補題 \\ref{{lem:sumbound}} の頂点ごとの評価
+$\\deg(v)\\tau_v \\ge e_v$ には余裕がある。実際に示したのは
+$e_v \\le \\tau_v(\\deg(v) - 1)$ であり、$\\tau_v \\ge 1$ の頂点 1 つにつき
+$\\tau_v$ だけ得をしている。三角形の多いグラフではこの余裕が積み上がるので、
+共分散が負になるほど次数と局所独立数が逆相関するグラフ (三角形が偏って
+分布するグラフ) では、この余裕で埋められる可能性がある。
 
 \\medskip
 \\noindent

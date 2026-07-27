@@ -1,8 +1,10 @@
 {
-  "claim": "連結グラフ 13,402,242 個すべてで WOWII 予想 2 が成立し、等号は 13 個で成立する。本稿の予想 B' も反例 0 個で成立する。",
+  "claim": "連結グラフ 13,402,242 個すべてで WOWII 予想 2 が成立し、等号は 13 個で成立する。本稿の予想 B' も反例 0 個で、より強い予想 A も反例 0 個で成立する。",
   "data": {
+    "avg_counterexamples": [],
     "bprime_counterexamples": [],
     "conjecture": "n*Ls(G) >= 2*S(G) - 2n  (S = sum_v alpha(G[N(v)]))",
+    "conjecture_avg": "予想 4.4 (本稿、A): n * sum_{uv in E} |N(u) 合併 N(v)| >= 2 m S(G)。B' より強い",
     "conjecture_bprime": "予想 4.1 (本稿): max_{uv in E} |N(u) 合併 N(v)| >= 2*S(G)/n",
     "conjecture_original": "2*(mean_v alpha(G[N(v)]) - 1) <= Ls(G)",
     "counterexamples": [],
@@ -10,6 +12,13 @@
     "equality_list_cap": 200000,
     "families": [
       {
+        "avg_equal": 1,
+        "avg_min_slack": [
+          0,
+          "A_",
+          2,
+          2
+        ],
         "bprime_equal": 1,
         "bprime_min_slack": [
           0,
@@ -42,6 +51,13 @@
         }
       },
       {
+        "avg_equal": 0,
+        "avg_min_slack": [
+          2,
+          "BW",
+          6,
+          4
+        ],
         "bprime_equal": 0,
         "bprime_min_slack": [
           1,
@@ -74,6 +90,13 @@
         }
       },
       {
+        "avg_equal": 1,
+        "avg_min_slack": [
+          0,
+          "C]",
+          16,
+          8
+        ],
         "bprime_equal": 1,
         "bprime_min_slack": [
           0,
@@ -119,6 +142,13 @@
         }
       },
       {
+        "avg_equal": 1,
+        "avg_min_slack": [
+          0,
+          "DUW",
+          20,
+          10
+        ],
         "bprime_equal": 1,
         "bprime_min_slack": [
           0,
@@ -165,6 +195,13 @@
         }
       },
       {
+        "avg_equal": 2,
+        "avg_min_slack": [
+          0,
+          "EEh_",
+          24,
+          12
+        ],
         "bprime_equal": 2,
         "bprime_min_slack": [
           0,
@@ -214,12 +251,19 @@
         "witness_records": 112,
         "witness_sha256": "8360775132ce9f2c33b68ad6eea4d6182883834135fd319fae82ae321a6748c5",
         "zone_hist": {
+          "cov": 2,
           "delta": 14,
-          "hard": 2,
           "trivial": 96
         }
       },
       {
+        "avg_equal": 1,
+        "avg_min_slack": [
+          0,
+          "FCp`_",
+          28,
+          14
+        ],
         "bprime_equal": 1,
         "bprime_min_slack": [
           0,
@@ -261,12 +305,19 @@
         "witness_records": 853,
         "witness_sha256": "6fe8ff7efd8295fe26c646c518cc1b818cefec11693d5fbd7d6309826a554843",
         "zone_hist": {
+          "cov": 7,
           "delta": 276,
-          "hard": 7,
           "trivial": 570
         }
       },
       {
+        "avg_equal": 4,
+        "avg_min_slack": [
+          0,
+          "G?qa`_",
+          32,
+          16
+        ],
         "bprime_equal": 4,
         "bprime_min_slack": [
           0,
@@ -325,12 +376,19 @@
         "witness_records": 11117,
         "witness_sha256": "b9fc82760451af564e6fdc2d5a9f7b18d27401b11ed15d6e857730b60d671dad",
         "zone_hist": {
+          "cov": 23,
           "delta": 6507,
-          "hard": 23,
           "trivial": 4587
         }
       },
       {
+        "avg_equal": 1,
+        "avg_min_slack": [
+          0,
+          "H?bB@_W",
+          36,
+          18
+        ],
         "bprime_equal": 1,
         "bprime_min_slack": [
           0,
@@ -372,12 +430,21 @@
         "witness_records": 261080,
         "witness_sha256": "27f48925f59057c171d9b1a5e58c7e83f2d78bf9d66f795dc8c6f82e8b8338d8",
         "zone_hist": {
+          "cov": 232,
           "delta": 215593,
-          "hard": 234,
+          "hard": 1,
+          "mindeg4": 1,
           "trivial": 45253
         }
       },
       {
+        "avg_equal": 10,
+        "avg_min_slack": [
+          0,
+          "I?BDA_gE?",
+          40,
+          20
+        ],
         "bprime_equal": 10,
         "bprime_min_slack": [
           0,
@@ -436,12 +503,20 @@
         "witness_records": 11716571,
         "witness_sha256": "f39e485036a26cf2d935fbb52fb2bfdcbb2063cdbf34f812c2d21f0996a09238",
         "zone_hist": {
+          "cov": 2466,
           "delta": 11190131,
-          "hard": 2478,
+          "mindeg4": 12,
           "trivial": 523962
         }
       },
       {
+        "avg_equal": 0,
+        "avg_min_slack": [
+          18,
+          "J?AAD?oEAO?",
+          38,
+          20
+        ],
         "bprime_equal": 0,
         "bprime_min_slack": [
           4,
@@ -474,6 +549,13 @@
         }
       },
       {
+        "avg_equal": 0,
+        "avg_min_slack": [
+          20,
+          "K??CB@OI?gP?",
+          42,
+          22
+        ],
         "bprime_equal": 0,
         "bprime_min_slack": [
           4,
@@ -506,6 +588,13 @@
         }
       },
       {
+        "avg_equal": 0,
+        "avg_min_slack": [
+          22,
+          "L??CAA_K?o@_P?",
+          46,
+          24
+        ],
         "bprime_equal": 0,
         "bprime_min_slack": [
           4,
@@ -538,6 +627,13 @@
         }
       },
       {
+        "avg_equal": 0,
+        "avg_min_slack": [
+          24,
+          "M???C@_S@OA_A_`??",
+          50,
+          26
+        ],
         "bprime_equal": 0,
         "bprime_min_slack": [
           4,
@@ -570,6 +666,13 @@
         }
       },
       {
+        "avg_equal": 0,
+        "avg_min_slack": [
+          26,
+          "N???C@?g@_B?B?@_GO?",
+          54,
+          28
+        ],
         "bprime_equal": 0,
         "bprime_min_slack": [
           4,
@@ -602,6 +705,13 @@
         }
       },
       {
+        "avg_equal": 0,
+        "avg_min_slack": [
+          28,
+          "O????A?WA_D?D?A_?gCC?",
+          58,
+          30
+        ],
         "bprime_equal": 0,
         "bprime_min_slack": [
           4,
@@ -634,6 +744,13 @@
         }
       },
       {
+        "avg_equal": 0,
+        "avg_min_slack": [
+          30,
+          "P????A?OD?E?E?B??o?E?OO?",
+          62,
+          32
+        ],
         "bprime_equal": 0,
         "bprime_min_slack": [
           4,
@@ -666,6 +783,13 @@
         }
       },
       {
+        "avg_equal": 0,
+        "avg_min_slack": [
+          32,
+          "Q??????_B?I?I?D?@O?I??gA@??",
+          66,
+          34
+        ],
         "bprime_equal": 0,
         "bprime_min_slack": [
           4,
@@ -698,6 +822,13 @@
         }
       },
       {
+        "avg_equal": 0,
+        "avg_min_slack": [
+          34,
+          "RhCGGC@?K??@?@??_?G?@??C??G??G",
+          70,
+          36
+        ],
         "bprime_equal": 0,
         "bprime_min_slack": [
           4,
@@ -730,6 +861,13 @@
         }
       },
       {
+        "avg_equal": 0,
+        "avg_min_slack": [
+          36,
+          "ShCGGC@?G?o??@??_?G?@??C??G??G??C",
+          74,
+          38
+        ],
         "bprime_equal": 0,
         "bprime_min_slack": [
           4,
@@ -762,6 +900,13 @@
         }
       },
       {
+        "avg_equal": 22,
+        "avg_min_slack": [
+          0,
+          "Ks\\__GA?_B_M",
+          108,
+          36
+        ],
         "bprime_equal": 22,
         "bprime_min_slack": [
           0,
@@ -791,12 +936,19 @@
         "witness_records": 85,
         "witness_sha256": "1a298fbb46d007e8b59404db13821e53619402f39462776eb2239369104f4542",
         "zone_hist": {
+          "cov": 45,
           "delta": 37,
-          "hard": 45,
           "trivial": 3
         }
       },
       {
+        "avg_equal": 110,
+        "avg_min_slack": [
+          0,
+          "Ms\\_gC@?O@?C?F?F?",
+          126,
+          42
+        ],
         "bprime_equal": 110,
         "bprime_min_slack": [
           0,
@@ -826,12 +978,19 @@
         "witness_records": 509,
         "witness_sha256": "fb842b04f3d0a0de07e18a45e1bc055f9795219a219ac455d5d38250898dec95",
         "zone_hist": {
+          "cov": 371,
           "delta": 135,
-          "hard": 371,
           "trivial": 3
         }
       },
       {
+        "avg_equal": 792,
+        "avg_min_slack": [
+          0,
+          "Os\\_gC@?O@_C?C?A??w?M",
+          144,
+          48
+        ],
         "bprime_equal": 792,
         "bprime_min_slack": [
           0,
@@ -861,12 +1020,19 @@
         "witness_records": 4060,
         "witness_sha256": "4caf575b0514ebd87eca4e44a68cbb3c747076a82e1ffbb8b4bb83a3bdec2925",
         "zone_hist": {
+          "cov": 3266,
           "delta": 789,
-          "hard": 3266,
           "trivial": 5
         }
       },
       {
+        "avg_equal": 7805,
+        "avg_min_slack": [
+          0,
+          "Qs\\_gC@?O@_E?A?@??O?C??[?@o",
+          162,
+          54
+        ],
         "bprime_equal": 7805,
         "bprime_min_slack": [
           0,
@@ -896,12 +1062,19 @@
         "witness_records": 41301,
         "witness_sha256": "becd128761a5dfa838811100206b37a56c86b329985c7afc61ba2c6a66032eef",
         "zone_hist": {
+          "cov": 33801,
           "delta": 7489,
-          "hard": 33801,
           "trivial": 11
         }
       },
       {
+        "avg_equal": 2,
+        "avg_min_slack": [
+          0,
+          "Js`rR?XEOL_",
+          176,
+          44
+        ],
         "bprime_equal": 2,
         "bprime_min_slack": [
           0,
@@ -931,12 +1104,19 @@
         "witness_records": 265,
         "witness_sha256": "b3af17d3d7cbbec9699cd8822126608617df1f7cd6982b920f6ea9f808bfbefc",
         "zone_hist": {
+          "cov": 73,
           "delta": 190,
-          "hard": 73,
           "trivial": 2
         }
       },
       {
+        "avg_equal": 12,
+        "avg_min_slack": [
+          0,
+          "Ks`zB?WE?F_]",
+          192,
+          48
+        ],
         "bprime_equal": 12,
         "bprime_min_slack": [
           0,
@@ -966,12 +1146,19 @@
         "witness_records": 1544,
         "witness_sha256": "e712143ce40bf0b3dd0be10e1a8d7f32e5d22b8fafd9f7d18b132951d3662179",
         "zone_hist": {
+          "cov": 532,
           "delta": 1005,
-          "hard": 532,
           "trivial": 7
         }
       },
       {
+        "avg_equal": 31,
+        "avg_min_slack": [
+          0,
+          "Ls`rb?WB?S?N?]",
+          208,
+          52
+        ],
         "bprime_equal": 31,
         "bprime_min_slack": [
           0,
@@ -1001,12 +1188,19 @@
         "witness_records": 10778,
         "witness_sha256": "fc520bbefad2fa88fefedd1debafc44201835731cd73f7cb1b5a9fe281f832f8",
         "zone_hist": {
+          "cov": 4920,
           "delta": 5853,
-          "hard": 4920,
           "trivial": 5
         }
       },
       {
+        "avg_equal": 1,
+        "avg_min_slack": [
+          0,
+          "KsaBrhkV@w?^",
+          300,
+          60
+        ],
         "bprime_equal": 1,
         "bprime_min_slack": [
           0,
@@ -1048,12 +1242,19 @@
         "witness_records": 7848,
         "witness_sha256": "37b222d397c682f9cd80df4fea7b66420dde50617bfc5007c445c4d20adb670b",
         "zone_hist": {
+          "cov": 343,
           "delta": 7499,
-          "hard": 343,
           "trivial": 6
         }
       },
       {
+        "avg_equal": 0,
+        "avg_min_slack": [
+          792,
+          "J}rDzC|NOz_",
+          336,
+          44
+        ],
         "bprime_equal": 0,
         "bprime_min_slack": [
           31,
@@ -1082,15 +1283,139 @@
         "witness_records": 266,
         "witness_sha256": "7ea7ca9b27373b3994ba3ed126102061b5aac9e9235893a9391091f3838bf9c0",
         "zone_hist": {
+          "cov": 1,
           "delta": 263,
-          "hard": 1,
           "trivial": 2
         }
       }
     ],
+    "lemma_sumbound": "補題 4.3 (本稿): sum_{uv in E} |N(u) 合併 N(v)| >= sum_v d(v) l(v)",
+    "residual_graphs": [
+      {
+        "family": "graphs_09",
+        "g6": "H?~vfbk",
+        "indep_sum": 35,
+        "min_degree": 4,
+        "n": 9,
+        "zone": "hard"
+      },
+      {
+        "family": "graphs_09",
+        "g6": "H?~vfrs",
+        "indep_sum": 32,
+        "min_degree": 4,
+        "n": 9,
+        "zone": "mindeg4"
+      },
+      {
+        "family": "graphs_10",
+        "g6": "I?bfbpwv?",
+        "indep_sum": 36,
+        "min_degree": 4,
+        "n": 10,
+        "zone": "mindeg4"
+      },
+      {
+        "family": "graphs_10",
+        "g6": "I?bfbr[}?",
+        "indep_sum": 36,
+        "min_degree": 4,
+        "n": 10,
+        "zone": "mindeg4"
+      },
+      {
+        "family": "graphs_10",
+        "g6": "I?brvRwuO",
+        "indep_sum": 36,
+        "min_degree": 4,
+        "n": 10,
+        "zone": "mindeg4"
+      },
+      {
+        "family": "graphs_10",
+        "g6": "I?brvRw{O",
+        "indep_sum": 37,
+        "min_degree": 4,
+        "n": 10,
+        "zone": "mindeg4"
+      },
+      {
+        "family": "graphs_10",
+        "g6": "I?brvrwz?",
+        "indep_sum": 38,
+        "min_degree": 4,
+        "n": 10,
+        "zone": "mindeg4"
+      },
+      {
+        "family": "graphs_10",
+        "g6": "I?bvbrwr_",
+        "indep_sum": 37,
+        "min_degree": 4,
+        "n": 10,
+        "zone": "mindeg4"
+      },
+      {
+        "family": "graphs_10",
+        "g6": "I?o|^bo{_",
+        "indep_sum": 36,
+        "min_degree": 4,
+        "n": 10,
+        "zone": "mindeg4"
+      },
+      {
+        "family": "graphs_10",
+        "g6": "I?qvf`{^?",
+        "indep_sum": 36,
+        "min_degree": 4,
+        "n": 10,
+        "zone": "mindeg4"
+      },
+      {
+        "family": "graphs_10",
+        "g6": "I?rF`zw|?",
+        "indep_sum": 36,
+        "min_degree": 4,
+        "n": 10,
+        "zone": "mindeg4"
+      },
+      {
+        "family": "graphs_10",
+        "g6": "I?rff_{n?",
+        "indep_sum": 36,
+        "min_degree": 4,
+        "n": 10,
+        "zone": "mindeg4"
+      },
+      {
+        "family": "graphs_10",
+        "g6": "I?rvdpx}?",
+        "indep_sum": 36,
+        "min_degree": 4,
+        "n": 10,
+        "zone": "mindeg4"
+      },
+      {
+        "family": "graphs_10",
+        "g6": "I?zVfa{^?",
+        "indep_sum": 36,
+        "min_degree": 4,
+        "n": 10,
+        "zone": "mindeg4"
+      }
+    ],
+    "residual_list_cap": 64,
+    "residual_zones": [
+      "mindeg4",
+      "mindeg3",
+      "hard"
+    ],
     "source": "E. DeLaVina, Written on the Wall II, Conjecture 2",
+    "theorem_covariance": "定理 4.6 (本稿): sum_v (d(v) - dbar) l(v) >= 0 ならば予想 A が成り立つ。三角形なしはこの系 (系 4.7)",
     "theorem_double_star": "定理 3.2: 連結グラフの任意の辺 uv で Ls(G) >= |N(u) 合併 N(v)| - 2",
     "totals": {
+      "avg_counterexamples": 0,
+      "avg_equality": 8796,
       "bprime_counterexamples": 0,
       "bprime_equality": 8796,
       "counterexamples": 0,
@@ -1098,26 +1423,29 @@
       "exact_calls": 13,
       "families": 28,
       "graphs": 13402242,
+      "residual": 14,
       "strict": 13402229
     },
     "witness_format": "族ごとの gzip 圧縮バイナリ列。1 グラフあたり 4 バイト = little-endian uint32 1 個で、ある全域木の葉集合のビットマスク。列挙順に並ぶ。",
     "zone_totals": {
+      "cov": 46082,
       "delta": 11435782,
-      "hard": 46096,
+      "hard": 1,
+      "mindeg4": 13,
       "trivial": 1920364
     },
-    "zones": "trivial: 2S <= 4n / delta: 2S <= n(Delta+2) / hard: それ以外"
+    "zones": "trivial: 2S <= 4n / delta: 2S <= n(Delta+2) / cov: n*sum_v d(v)l(v) >= 2mS / mindeg4: delta>=4 かつ 5S <= n(n+9) / mindeg3: delta>=3 かつ 8S <= n(n+16) / hard: それ以外。前 3 つは本稿で証明し、後 2 つは l(n,3) >= n/4+2 と l(n,4) >= (2n+8)/5 (文献) に依存する"
   },
-  "digest": "f7ad2d8e997f1dc4",
+  "digest": "68bf8219a793ec46",
   "kind": "partial-proof-with-exhaustive-machine-check",
   "problem_id": "p0009_wowii2_leaf_local_indep",
   "provenance": {
-    "created_at": "2026-07-27T03:14:36+00:00",
-    "git_rev": "4239d05",
+    "created_at": "2026-07-27T05:48:01+00:00",
+    "git_rev": "7e7f670",
     "notes": "各グラフに全域木の葉集合を 1 つ付けた。最大の |N(u) 合併 N(v)| を与える辺の二重星を全域木へ延長して作り、それで狭義に閉じないグラフだけ貪欲・厳密に上げている。等号グラフは葉数を厳密に解いて確定させた。",
     "platform": "Windows 11 (build 26200)",
     "python": "3.10.11",
-    "search_seconds": 1468.6392769813538,
+    "search_seconds": 1265.7867829799652,
     "search_seed": 0
   }
 }

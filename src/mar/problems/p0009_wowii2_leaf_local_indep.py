@@ -6,7 +6,7 @@ $L_s(G)$ は**葉数** (全域木がもつ葉の最大個数)、$\ell(v) = \alph
 局所独立数、$\overline{\ell}(G) = \frac{1}{n}\sum_v \ell(v)$ はその平均。
 分数を経由しない整数形 $n L_s(G) \ge 2S(G) - 2n$ ($S = \sum_v \ell(v)$) で扱う。
 
-本稿の貢献は 3 つある。
+本稿の貢献は 4 つある。
 
 * **二重星定理** (定理 3.2): 連結グラフの**すべての辺** $uv$ で
   $L_s(G) \ge |N(u) \cup N(v)| - 2$。Mukwembi が三角形なしグラフで使った
@@ -16,16 +16,22 @@ $L_s(G)$ は**葉数** (全域木がもつ葉の最大個数)、$\ell(v) = \alph
   $\max_{uv \in E} |N(u) \cup N(v)| \ge 2\overline{\ell}(G)$ を満たす。
   二重星定理と合わせると予想 2 が出る (系 4.2)。B' は NP 困難な量を含まない
   **局所的で多項式時間で確かめられる**主張であり、予想 2 より強い。
-  三角形なしグラフでは Cauchy--Schwarz の 3 行で証明できる (定理 4.3)。
+* **共分散定理** (定理 4.6、新しい): 次数と局所独立数の共分散が非負、すなわち
+  $\sum_v (d(v) - \overline{d})\ell(v) \ge 0$ ならば、B' より強い平均版
+  予想 A $n\sum_{uv \in E}|N(u) \cup N(v)| \ge 2mS$ (予想 4.4) が成り立つ。
+  核心は補題 4.3 $\sum_{uv \in E} |N(u) \cup N(v)| \ge \sum_v d(v)\ell(v)$ で、
+  これは各頂点で「近傍の点被覆数 $\times$ 次数 $\ge$ 近傍の辺数」に分解する。
+  三角形なしなら $\ell = d$ で共分散が分散になるので、Mukwembi が解決した
+  三角形なしの場合は本定理の**系** (系 4.7) になる。
 * **13,402,242 個での機械照合**: 各グラフに「葉集合 1 つ」を証人として付け、
   検証器が (i) その補集合が連結支配集合であること、(ii) 予想 2 の不等式、
-  (iii) 二重星定理、(iv) 予想 B' を独立に再計算する。等号成立グラフは
-  葉数を厳密に解き直して確定させる。
+  (iii) 二重星定理、(iv) 予想 B'、(v) 予想 A を独立に再計算する。等号成立
+  グラフは葉数を厳密に解き直して確定させる。
 
 予想 2 自体は 1996 年の出題以来未解決であり、本稿でも一般には証明できて
 いない。証明できたのは自明帯 ($\overline{\ell} \le 2$)、$\Delta$ 帯
-($2\overline{\ell} \le \Delta + 2$)、三角形なしの 3 つの場合で、この 3 つが
-$n \le 10$ の連結グラフのほぼ全部を覆う (第 5 節)。
+($2\overline{\ell} \le \Delta + 2$)、共分散帯 (三角形なしを含む) の 3 つで、
+この 3 つが走査した全グラフのほぼ全部を覆う (第 5 節)。
 """
 
 from __future__ import annotations
@@ -55,6 +61,12 @@ REGULAR_FAMILIES = [(12, 3), (14, 3), (16, 3), (18, 3),
 #: 等号グラフを証明書に全部書き出す上限。
 EQUALITY_LIST_CAP = 200000
 MAX_EXAMPLES = 8
+#: 本稿の定理だけでは閉じない帯。ここに落ちたグラフは走査順で先頭
+#: ``RESIDUAL_LIST_CAP`` 個まで証明書に graph6 で書き出し、検証器が
+#: 「同じグラフが同じ順で残ること」を突き合わせる。論文の限界節で
+#: 残りを名指しできるようにするための記録である。
+RESIDUAL_ZONES = ("mindeg4", "mindeg3", "hard")
+RESIDUAL_LIST_CAP = 64
 #: 1 族あたりの証人の個数の上限 (走査範囲の最大族が 11,716,571 個)。
 #: 展開量を先に頭打ちにするためだけに使う。
 MAX_RECORDS = 20_000_000
@@ -86,19 +98,43 @@ def need_doubled(order: int, indep_sum: int) -> int:
     return 2 * indep_sum - 2 * order
 
 
-def zone_of(order: int, indep_sum: int, max_degree: int) -> str:
-    r"""予想 2 が初等的に閉じる帯 (第 5 節) を判定する.
+def zone_of(order: int, indep_sum: int, max_degree: int,
+            min_degree: int, edge_count: int, deg_indep_sum: int) -> str:
+    r"""予想 2 が閉じる帯 (第 5 節) を判定する.
+
+    自力で閉じる 3 帯 (定理 5.1 と定理 4.6。本稿に完全な証明がある):
 
     * ``trivial``: $\overline{\ell} \le 2$。$L_s \ge 2$ だけで足りる。
     * ``delta``: $2\overline{\ell} \le \Delta + 2$。$L_s \ge \Delta$ で足りる。
-    * ``hard``: どちらでもない。証人 (葉集合) が本質的に要る帯。
+    * ``cov``: $n \sum_v d(v)\ell(v) \ge 2m S$、すなわち次数と局所独立数の
+      共分散が非負。定理 4.6 (共分散定理) がこの帯で予想 A を、したがって
+      B' を証明する。三角形なしのグラフは $\ell = d$ なのでこの帯に入る
+      (系 4.7)。
 
-    ``need_doubled`` と同じく探索器・検証器の共有実装である。
+    引用に依存して閉じる 2 帯 (定理 5.2。$L_s$ の古典的な下界を使う。
+    機械照合できるのは帯の判定式だけで、下界そのものは文献の主張である):
+
+    * ``mindeg4``: $\delta \ge 4$ かつ $5S \le n^2 + 9n$。
+      Kleitman--West の $l(n,4) \ge (2n+8)/5$ による。
+    * ``mindeg3``: $\delta \ge 3$ かつ $8S \le n^2 + 16n$。
+      Storer / Linial--Sturtevant の $l(n,3) \ge n/4 + 2$ による。
+
+    * ``hard``: どれでもない。証人 (葉集合) が本質的に要る帯。
+
+    $\delta \ge 4$ のとき $(2n+8)/5 \ge n/4 + 2$ ($n \ge 3$) なので
+    ``mindeg4`` を先に見る。``need_doubled`` と同じく探索器・検証器の
+    共有実装である。
     """
     if 2 * indep_sum <= 4 * order:
         return "trivial"
     if 2 * indep_sum <= order * (max_degree + 2):
         return "delta"
+    if order * deg_indep_sum >= 2 * edge_count * indep_sum:
+        return "cov"
+    if min_degree >= 4 and 5 * indep_sum <= order * (order + 9):
+        return "mindeg4"
+    if min_degree >= 3 and 8 * indep_sum <= order * (order + 16):
+        return "mindeg3"
     return "hard"
 
 
@@ -136,13 +172,14 @@ class LeafLocalIndepProblem(Problem):
             ],
             caveats=[
                 "本稿は予想 2 を一般には証明していない。証明できるのは"
-                "自明帯・$\\Delta$ 帯・三角形なしの 3 つの場合であり、"
+                "自明帯・$\\Delta$ 帯・共分散帯の 3 つの場合であり、"
                 "残りは 13,402,242 個のグラフ上での機械照合である。",
                 "三角形なしの場合は Mukwembi (2014) が先に解決している。"
-                "本稿の定理 4.3 はその場合の**別証明** (Cauchy--Schwarz の "
-                "3 行) であり、優先権を主張するものではない。",
-                "予想 B' (予想 4.1) は本稿で提出する主張だが、1988 年以降の"
-                "文献に同等の主張が埋もれている可能性は排除できない。",
+                "本稿の系 4.7 はその場合の**別証明**であり (共分散定理 4.6 の"
+                "系として 2 行で出る)、優先権を主張するものではない。",
+                "予想 B' (予想 4.1) と予想 A (予想 4.4) は本稿で提出する主張"
+                "だが、1988 年以降の文献に同等の主張が埋もれている可能性は"
+                "排除できない。",
                 "葉数は $n \\ge 3$ の連結グラフで $L_s(G) = n - \\gamma_c(G)$ "
                 "($\\gamma_c$ は連結支配数) と一致する。$K_2$ だけは "
                 "$L_s = 2 > 1 = n - \\gamma_c$ でずれるが、本稿の検証は "
@@ -174,6 +211,9 @@ class LeafLocalIndepProblem(Problem):
         families = []
         counterexamples: list[dict] = []
         bprime_bad: list[dict] = []
+        avg_bad: list[dict] = []
+        residual: list[dict] = []
+        residual_count = 0
         totals: Counter[str] = Counter()
 
         for tag, n, label, degree, expected in self._families():
@@ -189,19 +229,34 @@ class LeafLocalIndepProblem(Problem):
             exact_calls = 0
             bp_equal = 0
             bp_worst: list | None = None
+            a_equal = 0
+            a_worst: list | None = None
             # gzip ヘッダの MTIME を 0 に固定して書く (mar.search.witness 参照)。
             with open_witness(path) as out:
                 for g in self._source(label, n, degree):
                     count += 1
                     _, adj = g
-                    indep_sum = sum(inv.independence_number_on(g, adj[v])
-                                    for v in range(n))
+                    ells = [inv.independence_number_on(g, adj[v])
+                            for v in range(n)]
+                    indep_sum = sum(ells)
                     need = need_doubled(n, indep_sum)
-                    delta = max(inv._popcount(adj[v]) for v in range(n))
-                    zones[zone_of(n, indep_sum, delta)] += 1
+                    degs = [inv._popcount(adj[v]) for v in range(n)]
+                    delta = max(degs)
+                    m_edges = sum(degs) // 2
+                    zone = zone_of(n, indep_sum, delta, min(degs), m_edges,
+                                   sum(d * e for d, e in zip(degs, ells)))
+                    zones[zone] += 1
+                    if zone in RESIDUAL_ZONES:
+                        residual_count += 1
+                        if len(residual) < RESIDUAL_LIST_CAP:
+                            residual.append({"g6": G.encode_graph6(g), "n": n,
+                                             "family": tag, "zone": zone,
+                                             "indep_sum": indep_sum,
+                                             "min_degree": min(degs)})
 
-                    fmax, u, v = _best_edge(g)
+                    fmax, u, v, esum = _best_edge(g)
                     slack = n * fmax - 2 * indep_sum
+                    aslack = n * esum - 2 * m_edges * indep_sum
                     g6 = None
                     if slack <= 0:
                         g6 = G.encode_graph6(g)
@@ -211,9 +266,21 @@ class LeafLocalIndepProblem(Problem):
                                  "fmax": fmax, "indep_sum": indep_sum})
                         else:
                             bp_equal += 1
+                    if aslack <= 0:
+                        g6 = g6 or G.encode_graph6(g)
+                        if aslack < 0:
+                            avg_bad.append(
+                                {"g6": g6, "n": n, "family": tag,
+                                 "edge_sum": esum, "edges": m_edges,
+                                 "indep_sum": indep_sum})
+                        else:
+                            a_equal += 1
                     if bp_worst is None or slack < bp_worst[0]:
                         bp_worst = [slack, g6 or G.encode_graph6(g), fmax,
                                     indep_sum]
+                    if a_worst is None or aslack < a_worst[0]:
+                        a_worst = [aslack, g6 or G.encode_graph6(g), esum,
+                                   indep_sum]
 
                     mask = _double_star_leaves(g, u, v)
                     size = inv._popcount(mask)
@@ -258,6 +325,8 @@ class LeafLocalIndepProblem(Problem):
                 "tier_hist": dict(tiers),
                 "bprime_equal": bp_equal,
                 "bprime_min_slack": bp_worst,
+                "avg_equal": a_equal,
+                "avg_min_slack": a_worst,
                 "exact_calls": exact_calls,
                 "equality_examples": equality[:MAX_EXAMPLES],
                 "equality_graphs": equality,
@@ -271,6 +340,7 @@ class LeafLocalIndepProblem(Problem):
             totals["strict"] += counts["strict"]
             totals["fail"] += counts["fail"]
             totals["bprime_equal"] += bp_equal
+            totals["avg_equal"] += a_equal
             for key, val in zones.items():
                 totals[f"zone_{key}"] += val
 
@@ -284,25 +354,43 @@ class LeafLocalIndepProblem(Problem):
                                     "Ls(G) >= |N(u) 合併 N(v)| - 2"),
             "conjecture_bprime": ("予想 4.1 (本稿): max_{uv in E} "
                                   "|N(u) 合併 N(v)| >= 2*S(G)/n"),
+            "conjecture_avg": ("予想 4.4 (本稿、A): n * sum_{uv in E} "
+                               "|N(u) 合併 N(v)| >= 2 m S(G)。B' より強い"),
+            "lemma_sumbound": ("補題 4.3 (本稿): sum_{uv in E} "
+                               "|N(u) 合併 N(v)| >= sum_v d(v) l(v)"),
+            "theorem_covariance": ("定理 4.6 (本稿): sum_v (d(v) - dbar) l(v) "
+                                   ">= 0 ならば予想 A が成り立つ。"
+                                   "三角形なしはこの系 (系 4.7)"),
             "data_source": ("B. McKay, connected graphs (graph6) と trees "
                             "(edge lists) / M. Meringer, GENREG regular graphs"),
             "witness_format": ("族ごとの gzip 圧縮バイナリ列。1 グラフあたり "
                                "4 バイト = little-endian uint32 1 個で、ある"
                                "全域木の葉集合のビットマスク。列挙順に並ぶ。"),
             "equality_list_cap": EQUALITY_LIST_CAP,
+            "residual_list_cap": RESIDUAL_LIST_CAP,
+            "residual_zones": list(RESIDUAL_ZONES),
             "zones": ("trivial: 2S <= 4n / delta: 2S <= n(Delta+2) / "
-                      "hard: それ以外"),
+                      "cov: n*sum_v d(v)l(v) >= 2mS / "
+                      "mindeg4: delta>=4 かつ 5S <= n(n+9) / "
+                      "mindeg3: delta>=3 かつ 8S <= n(n+16) / "
+                      "hard: それ以外。前 3 つは本稿で証明し、後 2 つは "
+                      "l(n,3) >= n/4+2 と l(n,4) >= (2n+8)/5 (文献) に依存する"),
             "families": families,
             "counterexamples": counterexamples,
             "bprime_counterexamples": bprime_bad,
+            "avg_counterexamples": avg_bad,
+            "residual_graphs": residual,
             "zone_totals": zone_total,
             "totals": {"graphs": totals["graphs"],
+                       "residual": residual_count,
                        "families": len(families),
                        "equality": totals["equal"],
                        "strict": totals["strict"],
                        "counterexamples": totals["fail"],
                        "bprime_counterexamples": len(bprime_bad),
                        "bprime_equality": totals["bprime_equal"],
+                       "avg_counterexamples": len(avg_bad),
+                       "avg_equality": totals["avg_equal"],
                        "exact_calls": totals["exact_calls"]},
         }
         prov = Provenance.capture(
@@ -315,7 +403,8 @@ class LeafLocalIndepProblem(Problem):
             problem_id=self.problem_id,
             claim=(f"連結グラフ {totals['graphs']:,} 個すべてで WOWII 予想 2 が"
                    f"成立し、等号は {totals['equal']:,} 個で成立する。"
-                   f"本稿の予想 B' も反例 {len(bprime_bad)} 個で成立する。"),
+                   f"本稿の予想 B' も反例 {len(bprime_bad)} 個で、より強い"
+                   f"予想 A も反例 {len(avg_bad)} 個で成立する。"),
             kind="partial-proof-with-exhaustive-machine-check",
             data=data,
             provenance=prov,
@@ -332,6 +421,9 @@ class LeafLocalIndepProblem(Problem):
         bp_bad = data.get("bprime_counterexamples", [])
         bp_bad_g6 = {c["g6"] for c in bp_bad}
         rep.add("予想 B' の反例リストは空", not bp_bad, f"{len(bp_bad)} 件")
+        a_bad = data.get("avg_counterexamples", [])
+        a_bad_g6 = {c["g6"] for c in a_bad}
+        rep.add("予想 A (平均版) の反例リストは空", not a_bad, f"{len(a_bad)} 件")
 
         declared = _declared_tags()
         listed = [f["tag"] for f in data["families"]]
@@ -348,11 +440,20 @@ class LeafLocalIndepProblem(Problem):
         leafset_ok = True
         double_star_ok = True
         bprime_ok = True
+        avg_ok = True
         zone_ok = True
         count_ok = True
         source_ok = True
         class_ok = True
         class_closed = True
+        # 本稿の定理で閉じないグラフは走査順に先頭 cap 個まで名指しで照合する。
+        # cap は検証器側の定数で固定する。証明書が小さい cap を自己申告して
+        # 監査窓を縮めることを許すと、名指しの範囲そのものを細工できてしまう。
+        residual_cap = RESIDUAL_LIST_CAP
+        cap_ok = data.get("residual_list_cap") == RESIDUAL_LIST_CAP
+        zones_ok = data.get("residual_zones") == list(RESIDUAL_ZONES)
+        residual_list: list[dict] = []
+        residual_seen = 0
         checked = 0
         ce_checked = 0
         eq_checked = 0
@@ -415,6 +516,8 @@ class LeafLocalIndepProblem(Problem):
             zone_seen: Counter[str] = Counter()
             bp_equal = 0
             bp_worst: list | None = None
+            a_equal = 0
+            a_worst: list | None = None
             strict = 0
             seen = 0
             broken = False
@@ -438,15 +541,33 @@ class LeafLocalIndepProblem(Problem):
                 seen += 1
                 leaves = ck.mask_to_set(mask)
                 order, nbr = g
-                indep_sum = ck.indep_neighbors_sum(g)
+                # 局所独立数は 1 頂点ずつ検証器の実装で解き直す。共分散帯
+                # (定理 4.6) の判定に per-vertex の値が要るので、合計だけを
+                # 返す ck.indep_neighbors_sum ではなくこちらを使う。
+                ells = [ck.independence_number_on(g, nbr[v])
+                        for v in range(order)]
+                indep_sum = sum(ells)
                 need = need_doubled(order, indep_sum)
-                delta = max(len(s) for s in nbr)
-                zone_seen[zone_of(order, indep_sum, delta)] += 1
+                degs = [len(s) for s in nbr]
+                delta = max(degs)
+                zone = zone_of(order, indep_sum, delta, min(degs),
+                               sum(degs) // 2,
+                               sum(d * e for d, e in zip(degs, ells)))
+                zone_seen[zone] += 1
                 g6 = ck.sets_to_graph6(g)
+                if zone in RESIDUAL_ZONES:
+                    residual_seen += 1
+                    if len(residual_list) < residual_cap:
+                        residual_list.append({"g6": g6, "n": order,
+                                              "family": fam["tag"],
+                                              "zone": zone,
+                                              "indep_sum": indep_sum,
+                                              "min_degree": min(degs)})
 
-                # --- 予想 B' を検証器が独立に再計算する --------------------
-                fmax = _verifier_best_edge(g)
+                # --- 予想 B' と予想 A を検証器が独立に再計算する ------------
+                fmax, esum = _verifier_best_edge(g)
                 bslack = order * fmax - 2 * indep_sum
+                aslack = order * esum - 2 * (sum(degs) // 2) * indep_sum
                 if bslack == 0:
                     bp_equal += 1
                 if bp_worst is None or bslack < bp_worst[0]:
@@ -455,6 +576,16 @@ class LeafLocalIndepProblem(Problem):
                     bprime_ok = False
                     broken = True
                     bad.append(f"{fam['tag']}: {g6} が予想 B' を破るのに"
+                               f"証明書の反例リストに無い")
+                    break
+                if aslack == 0:
+                    a_equal += 1
+                if a_worst is None or aslack < a_worst[0]:
+                    a_worst = [aslack, g6, esum, indep_sum]
+                if aslack < 0 and g6 not in a_bad_g6:
+                    avg_ok = False
+                    broken = True
+                    bad.append(f"{fam['tag']}: {g6} が予想 A を破るのに"
                                f"証明書の反例リストに無い")
                     break
 
@@ -554,6 +685,15 @@ class LeafLocalIndepProblem(Problem):
                 bad.append(f"{fam['tag']}: B' の最小余裕が証明書と一致しない "
                            f"(実際 {bp_worst} / 主張 "
                            f"{fam.get('bprime_min_slack')})")
+            if a_equal != fam.get("avg_equal"):
+                avg_ok = False
+                bad.append(f"{fam['tag']}: A の等号数 {a_equal} != "
+                           f"{fam.get('avg_equal')}")
+            if a_worst != fam.get("avg_min_slack"):
+                avg_ok = False
+                bad.append(f"{fam['tag']}: A の最小余裕が証明書と一致しない "
+                           f"(実際 {a_worst} / 主張 "
+                           f"{fam.get('avg_min_slack')})")
             if eq_complete and class_ok:
                 missing = eq_expected - eq_seen
                 if missing:
@@ -579,6 +719,9 @@ class LeafLocalIndepProblem(Problem):
             "bprime_counterexamples": len(bp_bad),
             "bprime_equality": sum(f.get("bprime_equal", 0)
                                    for f in data["families"]),
+            "avg_counterexamples": len(a_bad),
+            "avg_equality": sum(f.get("avg_equal", 0)
+                                for f in data["families"]),
         }
         totals_bad = [f"{k}: {totals.get(k)} != {v}"
                       for k, v in want.items() if totals.get(k) != v]
@@ -591,6 +734,43 @@ class LeafLocalIndepProblem(Problem):
                 zone_want[k] += v
         if dict(zone_want) != data.get("zone_totals", {}):
             totals_bad.append("帯の分布の合計が族ごとの集計と一致しない")
+
+        # 本稿の定理で閉じなかったグラフを名指しで突き合わせる。証明書が
+        # 「残りは k 個」と書いておいて中身を差し替える細工をここで落とす。
+        residual_ok = True
+        residual_bad: list[str] = []
+        if not cap_ok:
+            residual_ok = False
+            residual_bad.append(f"名指しの上限 {data.get('residual_list_cap')} "
+                                f"が検証器の定数 {RESIDUAL_LIST_CAP} と違う")
+        if not zones_ok:
+            residual_ok = False
+            residual_bad.append(f"名指しの対象帯 {data.get('residual_zones')} "
+                                f"が検証器の定義と違う")
+        if residual_seen != sum(zone_want[z] for z in RESIDUAL_ZONES):
+            residual_ok = False
+            residual_bad.append(f"残りの個数 {residual_seen} が帯の分布と合わない")
+        if totals.get("residual") != residual_seen:
+            residual_ok = False
+            residual_bad.append(f"証明書の残り {totals.get('residual')} != "
+                                f"{residual_seen}")
+        claimed = data.get("residual_graphs", [])
+        if not isinstance(claimed, list) or len(claimed) != len(residual_list):
+            residual_ok = False
+            residual_bad.append(f"残りのリストの長さ "
+                                f"{len(claimed) if isinstance(claimed, list) else '?'}"
+                                f" != {len(residual_list)}")
+        else:
+            keys = ("g6", "n", "family", "zone", "indep_sum", "min_degree")
+            for got, mine in zip(claimed, residual_list):
+                # キー集合まで一致を要求する。余分なキーを許すと、検証器が
+                # 見ていない値を論文が読んでしまう経路ができる。
+                if (not isinstance(got, dict) or set(got) != set(keys)
+                        or any(got[k] != mine[k] for k in keys)):
+                    residual_ok = False
+                    residual_bad.append(
+                        f"残りのリストが走査順で一致しない (検証器: {mine['g6']})")
+                    break
 
         if ce_by_g6:
             rep.add(f"反例として届け出られた {len(ce_by_g6):,} 個のうち "
@@ -607,8 +787,15 @@ class LeafLocalIndepProblem(Problem):
                 f"(定理 3.2 の機械照合)", double_star_ok, "; ".join(bad[:3]))
         rep.add(f"同じ {checked:,} 個で n*max_(uv in E)|N(u) 合併 N(v)| >= 2S "
                 f"(予想 4.1 = B')", bprime_ok, "; ".join(bad[:3]))
-        rep.add("帯 (trivial / delta / hard) の分布が証明書と一致", zone_ok,
+        rep.add(f"同じ {checked:,} 個で n*sum_(uv in E)|N(u) 合併 N(v)| >= 2mS "
+                f"(予想 4.4 = A。B' より強い)", avg_ok, "; ".join(bad[:3]))
+        rep.add("帯 (trivial / delta / cov / mindeg4 / mindeg3 / hard) の"
+                "分布が証明書と一致", zone_ok,
                 "; ".join(bad[:3]))
+        rep.add(f"本稿の定理で閉じない {residual_seen:,} 個を検証器が独立に"
+                f"数え直し、先頭 {len(residual_list):,} 個が証明書と"
+                f"走査順で一致 (論文が名指しする残り)", residual_ok,
+                "; ".join(residual_bad[:3]))
         rep.add("走査したグラフ数が証明書と一致", count_ok, "; ".join(bad[:3]))
         rep.add("列挙個数が検証器の持つ公表値 (OEIS A001349 / A000055 / "
                 "A002851 / A006820-A006822) と一致", source_ok,
@@ -654,6 +841,15 @@ class LeafLocalIndepProblem(Problem):
                       "J. R. Griggs, D. J. Kleitman, A. Shastri, Spanning trees "
                       "with many leaves in cubic graphs, J. Graph Theory 13 "
                       "(1989) 669--695."),
+            Reference("storer",
+                      "J. A. Storer, Constructing full spanning trees for cubic "
+                      "graphs, Inform. Process. Lett. 13 (1981) 8--11."),
+            Reference("kw1991",
+                      "D. J. Kleitman, D. B. West, Spanning trees with many "
+                      "leaves, SIAM J. Discrete Math. 4 (1991) 99--106. "
+                      "$l(n,3) \\ge n/4 + 2$ (Storer / Linial--Sturtevant の"
+                      "再証明と最小次数 3 への拡張) と "
+                      "$l(n,4) \\ge (2n+8)/5$。"),
             Reference("mckay",
                       "B. D. McKay, A. Piperno, Practical graph isomorphism II, "
                       "J. Symbolic Comput. 60 (2014) 94--112. "
@@ -671,25 +867,28 @@ class LeafLocalIndepProblem(Problem):
 # 探索器側のヘルパ (ビットマスク表現。mar.checkgraph を参照しない)
 # ---------------------------------------------------------------------------
 
-def _best_edge(g) -> tuple[int, int, int]:
-    r"""$|N(u) \cup N(v)|$ を最大にする辺 $uv$ と、その値を返す.
+def _best_edge(g) -> tuple[int, int, int, int]:
+    r"""$(\max_{uv}|N(u) \cup N(v)|,\ u,\ v,\ \sum_{uv}|N(u) \cup N(v)|)$.
 
-    連結グラフ ($n \ge 2$) には辺があるので必ず見つかる。同点は辞書順で
-    最初のものを取る (再現性のため)。
+    連結グラフ ($n \ge 2$) には辺があるので最大は必ず見つかる。同点は辞書順で
+    最初のものを取る (再現性のため)。第 4 成分は辺上の総和で、予想 A
+    (平均版) の左辺である。
     """
     n, adj = g
     best = (-1, -1, -1)
+    total = 0
     for u in range(n):
         m = adj[u] >> (u + 1)
         v = u + 1
         while m:
             if m & 1:
                 f = inv._popcount(adj[u] | adj[v])
+                total += f
                 if f > best[0]:
                     best = (f, u, v)
             m >>= 1
             v += 1
-    return best
+    return best + (total,)
 
 
 def _double_star_leaves(g, u: int, v: int) -> int:
@@ -843,17 +1042,19 @@ def _declared_tags() -> list[str]:
     return tags
 
 
-def _verifier_best_edge(g) -> int:
-    r"""$\max_{uv \in E} |N(u) \cup N(v)|$ を集合表現で計算する."""
+def _verifier_best_edge(g) -> tuple[int, int]:
+    r"""$|N(u) \cup N(v)|$ の辺上の最大と総和を集合表現で計算する."""
     order, nbr = g
     best = 0
+    total = 0
     for u in range(order):
         for v in nbr[u]:
             if v > u:
                 size = len(nbr[u] | nbr[v])
+                total += size
                 if size > best:
                     best = size
-    return best
+    return best, total
 
 
 def _leaf_set_defect(g, leaves: set[int]) -> str:
