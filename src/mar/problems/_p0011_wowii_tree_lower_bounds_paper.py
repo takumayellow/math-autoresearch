@@ -1,0 +1,552 @@
+"""p0011 の LaTeX 本文。数値は必ず証明書 (cert.data) から生成する."""
+
+from __future__ import annotations
+
+from ..report.texescape import tt
+
+TEX_UNDERSCORE = chr(92) + "_"
+
+LABEL_NAME = {"graphs": "連結グラフ", "trees": "木", "regular": "正則グラフ"}
+CONJ = ("c72a", "c72b", "c76", "c84", "c85")
+CONJ_REF = {"c72a": "conj:72a", "c72b": "conj:72b", "c76": "conj:76",
+            "c84": "conj:84", "c85": "conj:85"}
+
+
+def _tex(s: str) -> str:
+    return s.replace("_", TEX_UNDERSCORE)
+
+
+def _kind(fam: dict) -> str:
+    if fam["label"] == "regular":
+        return f"{fam['degree']}-正則"
+    return LABEL_NAME[fam["label"]]
+
+
+def _rows(families: list[dict]) -> str:
+    rows = []
+    for f in families:
+        c = f["counts"]
+        # 族ごとの counts は Counter を dict 化したもので、一度も数えなかった
+        # キーは存在しない (tight が 0 件の族など)。欠損は 0 と読んでよい。
+        # 一方 totals は全キーを明示して組むので、そちらは直接引く。
+        rows.append(
+            f"{_kind(f)} & {f['n']} & {f['count']:,} "
+            + "".join(f"& {c.get(k + ':tight', 0):,} " for k in CONJ)
+            + f"& {f['exact_calls']:,} \\\\")
+    return "\n".join(rows)
+
+
+def _examples(families: list[dict], key: str, want: int = 3):
+    """位数の大きい連結グラフの族から tight な例を拾う."""
+    for fam in reversed([f for f in families if f["label"] == "graphs"]):
+        ex = fam.get("tight_examples", {}).get(key) or []
+        if ex:
+            return fam["n"], ex[:want]
+    return None, []
+
+
+def build(cert) -> dict[str, str]:
+    d = cert.data
+    fams = d["families"]
+    tot = d["totals"]
+    graphs = [f for f in fams if f["label"] == "graphs"]
+    trees = [f for f in fams if f["label"] == "trees"]
+    regs = [f for f in fams if f["label"] == "regular"]
+    g_max = max(f["n"] for f in graphs)
+    t_max = max(f["n"] for f in trees)
+    t_min = min(f["n"] for f in trees)
+    n_total = tot["graphs"]
+    n_conn = sum(f["count"] for f in graphs)
+    n_trees = sum(f["count"] for f in trees)
+    n_reg = sum(f["count"] for f in regs)
+    n_exact = tot["exact_calls"]
+    n_short = tot["tree_shortcuts"]
+    exact_pct = 100.0 * n_exact / n_total
+    tight = {k: tot[f"{k}:tight"] for k in CONJ}
+    cap = d["tight_list_cap"]
+    res72 = tot["residual:c72b"]
+    res84 = tot["residual:c84"]
+    res72_pct = 100.0 * res72 / n_total
+    res84_pct = 100.0 * res84 / n_total
+    reg_orders = ", ".join(f"({f['n']}, {f['degree']})" for f in regs)
+    cid = _tex(cert.problem_id)
+
+    # 定理 \ref{thm:72a} は 72a が tight になり得ないことを主張する。
+    # 証明書がそれと整合しない場合に備え、本文を差し替える (原則 5)。
+    if tight["c72a"] == 0:
+        a_note = ("定理 \\ref{thm:72a} が予言するとおり、走査した "
+                  f"{n_total:,} 個のいずれでも予想 \\ref{{conj:72a}} は "
+                  "tight にならなかった (表 \\ref{tab:fams} の 72a 列)。")
+    else:
+        a_note = ("\\textbf{警告}: 定理 \\ref{thm:72a} は予想 "
+                  "\\ref{conj:72a} が tight になり得ないことを主張するが、"
+                  f"証明書は {tight['c72a']:,} 個を tight として記録している。"
+                  "実装を確認すること。")
+
+    # 命題 \ref{prop:76tree} より、木は必ず予想 76 の tight を達成する。
+    tree_76 = sum(f["counts"].get("c76:tight", 0) for f in trees)
+    tree_cnt = sum(f["count"] for f in trees)
+    if tree_76 == tree_cnt:
+        t_note = ("命題 \\ref{prop:76tree} が予言するとおり、木の族では "
+                  f"{tree_cnt:,} 個すべてが予想 \\ref{{conj:76}} の tight で"
+                  "ある (表 \\ref{tab:fams})。")
+    else:
+        t_note = ("\\textbf{警告}: 命題 \\ref{prop:76tree} は木がすべて予想 "
+                  "\\ref{conj:76} の tight であることを主張するが、証明書は "
+                  f"{tree_cnt:,} 個中 {tree_76:,} 個しか記録していない。"
+                  "実装を確認すること。")
+
+    ex_n, ex_g6 = {}, {}
+    for k in CONJ:
+        ex_n[k], ex_g6[k] = _examples(fams, k)
+
+    def ex_clause(k: str) -> str:
+        if not ex_g6[k]:
+            return ""
+        return (f"予想 \\ref{{{CONJ_REF[k]}}} では位数 ${ex_n[k]}$ の "
+                + "、".join(tt(x) for x in ex_g6[k]))
+
+    ex_body = "、".join(c for c in (ex_clause(k)
+                                   for k in ("c72b", "c84", "c85")) if c)
+    ex_text = ("tight なグラフの例を graph6 表記で挙げる: " + ex_body + " である。"
+               if ex_body else "")
+
+    capped = sum(1 for f in fams if not f.get("tight_complete"))
+    if capped:
+        cap_note = (f"tight なグラフがいずれかの予想で {cap:,} 個を超えた族 "
+                    f"({capped} 族) では graph6 の一覧を省いた。"
+                    "そこでも分類は件数の照合で閉じる。")
+    else:
+        cap_note = "すべての族で tight なグラフの graph6 全リストが証明書に載る。"
+
+    abstract = (
+        "DeLaViña の Graffiti.pc が生成した予想 Written on the Wall II "
+        "Conjecture 72・76・84・85 を扱う (2026 年 7 月 27 日時点でいずれも"
+        "未解決)。4 本とも最大誘導木の位数 $\\mathrm{tree}(G)$ を"
+        "距離量・次数量・局所独立数で下から抑える主張である。"
+        "\\textbf{まず手計算で 3 つの場合を落とす}。誘導測地路から出る "
+        "$\\mathrm{tree}(G) \\ge \\mathrm{diam}(G) + 1$ と、局所独立集合が"
+        "張る誘導星から出る $\\mathrm{tree}(G) \\ge \\ell_{\\max} + 1$ を"
+        "組み合わせると、予想 72 の弱い読みは\\textbf{すべての連結グラフで"
+        "成り立ち、しかも決して鋭くならない}こと、強い読みは "
+        "$\\ell_{\\max} \\le 3$ または $3\\,\\mathrm{diam}(G) \\le "
+        "2\\ell_{\\max} + 3$ で成り立つこと、予想 84 は $\\delta \\ge 2$ で狭義に、"
+        "$\\delta = 1$ でも $\\max(\\mathrm{diam}, \\ell_{\\max}) \\ge "
+        "2\\,\\mathrm{rad} - 1$ なら成り立つこと、予想 76 は木でつねに等号に"
+        "なることが従う。"
+        f"残るのは 72 が {res72:,} 個 ({res72_pct:.1f}\\%)、"
+        f"84 が {res84:,} 個 ({res84_pct:.1f}\\%) で、ほかに 76・85 である。"
+        f"これを、連結グラフの完全リスト ($n \\le {g_max}$)、木の完全リスト "
+        f"($n \\le {t_max}$)、GENREG の連結正則グラフ、計 {n_total:,} 個に対して"
+        "網羅検証した。反例は存在しない。"
+        "$\\mathrm{tree}(G)$ の計算は NP 困難だが、4 本の左辺はいずれも"
+        "多項式時間で計算でき右辺は共通なので、\\textbf{木を誘導する頂点集合 "
+        "1 つ}を証人にすれば 4 本すべてが線形時間で確認できる。"
+        "さらに下界が $\\mathrm{tree}(G)$ にちょうど一致する場合を分類し、"
+        "完全グラフ $K_n$ が予想 72 の強い読みと予想 85 の、偶数個の頂点を"
+        "もつ道 $P_{2k}$ が予想 84 の、木が予想 76 の等号を与える無限族で"
+        "あることを示す。")
+
+    body = f"""
+\\section{{はじめに}}
+
+$G$ を位数 $n = |V(G)| \\ge 2$ の連結な単純グラフとする。頂点部分集合
+$T \\subseteq V(G)$ が\\textbf{{木を誘導する}}とは、誘導部分グラフ $G[T]$ が
+連結かつ閉路をもたないことをいい、そのような $T$ の最大濃度を
+$\\mathrm{{tree}}(G)$ と書く。最大誘導木は古くから研究されている量であり
+\\cite{{ess1986}}、$n$ に比べていくらでも小さくなり得る
+($\\mathrm{{tree}}(K_n) = 2$)。その計算は NP 困難である。したがって
+$\\mathrm{{tree}}(G)$ の下界を多項式時間で計算できる量だけで与える主張は
+自明ではない。
+
+本稿が扱うのは、Graffiti.pc が生成した未解決予想集 Written on the Wall II
+\\cite{{wowii}} のうち、$\\mathrm{{tree}}(G)$ の下界を与える 4 本である。
+記号は同サイトの定義ページに従う。$\\mathrm{{ecc}}(v)$ を離心数、
+$\\mathrm{{diam}}(G)$, $\\mathrm{{rad}}(G)$ を直径・半径、$\\delta(G)$ を最小次数、
+$\\deg_{{\\mathrm{{avg}}}}(G) = 2|E(G)|/n$ を平均次数とし、さらに
+
+\\begin{{itemize}}
+\\item $\\ell(v)$: $v$ の近傍が誘導する部分グラフ $G[N(v)]$ の独立数
+      (\\textbf{{局所独立数}})。$\\ell_{{\\max}} = \\max_v \\ell(v)$ と書く。
+\\item $T(v)$: $v$ を含む三角形の個数。$T_{{\\max}} = \\max_v T(v)$ とし、
+      $\\mathrm{{freq}}[T_{{\\max}}]$ を $T(v) = T_{{\\max}}$ なる頂点の個数とする。
+\\item $\\mathrm{{dist}}_{{\\mathrm{{even}}}}(v)$: $v$ からの距離が偶数の頂点の個数
+      ($v$ 自身を含む)。
+\\end{{itemize}}
+
+\\begin{{conjecture}}[Graffiti.pc; WOWII Conjecture 76 \\cite{{wowii}}]\\label{{conj:76}}
+$\\dfrac{{\\mathrm{{freq}}[T_{{\\max}}]}}{{\\lfloor \\deg_{{\\mathrm{{avg}}}}(G) \\rfloor}}
+ \\ \\le \\ \\mathrm{{tree}}(G)$.
+\\end{{conjecture}}
+
+\\begin{{conjecture}}[Graffiti.pc; WOWII Conjecture 84 \\cite{{wowii}}]\\label{{conj:84}}
+$\\dfrac{{2\\,\\mathrm{{rad}}(G)}}{{\\delta(G)}} \\ \\le \\ \\mathrm{{tree}}(G)$.
+\\end{{conjecture}}
+
+\\begin{{conjecture}}[Graffiti.pc; WOWII Conjecture 85 \\cite{{wowii}}]\\label{{conj:85}}
+$\\left\\lceil \\sqrt{{1 + 2 \\min_{{v}} \\mathrm{{dist}}_{{\\mathrm{{even}}}}(v)}}
+ \\right\\rceil \\ \\le \\ \\mathrm{{tree}}(G)$.
+\\end{{conjecture}}
+
+予想 72 の原文は \\texttt{{CEIL[average of ecc(v) + maximum of l (v) /3]}} で
+あり、\\texttt{{/3}} が全体に係るのか $\\ell_{{\\max}}$ だけに係るのかが
+\\textbf{{曖昧}}である。本稿では両方を別の主張として扱う。
+
+\\begin{{conjecture}}[WOWII Conjecture 72、弱い読み]\\label{{conj:72a}}
+$\\left\\lceil \\dfrac{{1}}{{3}}\\left(
+   \\dfrac{{1}}{{n}}\\sum_{{v}} \\mathrm{{ecc}}(v) + \\ell_{{\\max}} \\right)
+ \\right\\rceil \\ \\le \\ \\mathrm{{tree}}(G)$.
+\\end{{conjecture}}
+
+\\begin{{conjecture}}[WOWII Conjecture 72、強い読み]\\label{{conj:72b}}
+$\\left\\lceil \\dfrac{{1}}{{n}}\\sum_{{v}} \\mathrm{{ecc}}(v)
+   + \\dfrac{{\\ell_{{\\max}}}}{{3}} \\right\\rceil \\ \\le \\ \\mathrm{{tree}}(G)$.
+\\end{{conjecture}}
+
+予想 \\ref{{conj:72b}} は左辺が大きいので予想 \\ref{{conj:72a}} を含意する。
+2026 年 7 月 27 日に取得した出題者の公開ページ \\cite{{wowii}} では、
+4 本とも状態 \\texttt{{O}} (未解決) である。
+
+\\begin{{remark}}[$n = 1$ の除外]\\label{{rem:k1}}
+$K_1$ では $\\lfloor \\deg_{{\\mathrm{{avg}}}} \\rfloor = \\delta = 0$ となり、
+予想 \\ref{{conj:76}} と \\ref{{conj:84}} の右辺が定義されない。以下つねに
+$n \\ge 2$ とする。
+\\end{{remark}}
+
+計算上は分数と天井を次のように扱う。予想 \\ref{{conj:76}}, \\ref{{conj:84}} は
+天井を含まないので分母を払って
+\\[ \\mathrm{{freq}}[T_{{\\max}}] \\ \\le \\ \\mathrm{{tree}}(G)
+   \\cdot \\lfloor \\deg_{{\\mathrm{{avg}}}}(G) \\rfloor, \\qquad
+   2\\,\\mathrm{{rad}}(G) \\ \\le \\ \\mathrm{{tree}}(G) \\cdot \\delta(G) \\]
+とし、予想 \\ref{{conj:72a}}, \\ref{{conj:72b}}, \\ref{{conj:85}} は天井を
+\\textbf{{先に取って整数に落としてから}}比較する。本稿で\\textbf{{等号}}
+(tight) と呼ぶのは、この\\emph{{原文どおりの右辺}}が $\\mathrm{{tree}}(G)$ に
+ちょうど一致することである。天井を取る前の実数が $\\mathrm{{tree}}(G)$ より
+真に小さくても等号は起こり得る。
+
+\\section{{証人つき検証という設計}}\\label{{sec:design}}
+
+\\begin{{lemma}}\\label{{lem:witness}}
+$T \\subseteq V(G)$ が木を誘導し、予想 \\ref{{conj:76}}, \\ref{{conj:84}},
+\\ref{{conj:85}}, \\ref{{conj:72a}}, \\ref{{conj:72b}} の $\\mathrm{{tree}}(G)$ を
+$|T|$ に置き換えた 5 本の不等式をすべて満たすならば、$G$ はいずれの予想の
+反例でもない。
+\\end{{lemma}}
+
+\\begin{{proof}}
+定義より $\\mathrm{{tree}}(G) \\ge |T|$。5 本はいずれも $\\mathrm{{tree}}(G)$ に
+ついて単調である ($\\mathrm{{tree}}(G)$ は不等式の大きい側にしか現れず、
+掛かる係数 $\\lfloor \\deg_{{\\mathrm{{avg}}}} \\rfloor$, $\\delta$ は非負) から、
+$|T|$ で成立すれば $\\mathrm{{tree}}(G)$ でも成立する。
+\\end{{proof}}
+
+仮定の確認に要するのは $G[T]$ が木かどうかの判定と、離心数・最小次数・
+三角形数・局所独立数・偶数距離頂点数の計算である。局所独立数は誘導部分グラフ
+$G[N(v)]$ の独立数なので一般には NP 困難な問題だが、走査した範囲では
+$|N(v)| \\le n-1$ の小さいグラフに対する計算であり支配的な費用にならない。
+いずれにせよ、NP 困難な $\\mathrm{{tree}}(G)$ そのものを検証器が解き直す必要は
+ない。そこで本稿の証明書は、各グラフに対する $T$ を与える。証人は族ごとに
+1 グラフ 4 バイト (little-endian の 32 ビット整数 1 個 = $T$ のビットマスク)
+で列挙順に並べ、gzip 圧縮したバイナリに書き出す。そのファイルの SHA-256 を
+証明書 JSON に記録し、検証器は同じ順序で元データを走査しながら証人を消費する。
+
+\\subsection{{証人の作り方: 貪欲・木の近道・厳密解}}
+
+誘導木は「ちょうど 1 本の辺で現在の木につながる頂点」を足すことでしか育たない。
+探索器は各頂点を根としてこの規則で貪欲に頂点を追加する。5 本すべてを
+\\emph{{狭義}}で満たすのに十分な大きさ $\\mathrm{{need}}$ (各予想の右辺を
+$\\mathrm{{tree}}$ について解いた値の最大 $+\\,1$) に届いた時点で打ち切ってよい。
+そのグラフは反例でも等号でもないことが確定するからである。
+
+貪欲が $\\mathrm{{need}}$ に届かないグラフでは $\\mathrm{{tree}}(G)$ を厳密に
+求める必要があるが、\\textbf{{$G$ が木のときは全数探索が要らない}}。
+連結かつ $|E(G)| = n - 1$ なら $G$ 自身が木なので $V(G)$ が誘導木を与え、
+$\\mathrm{{tree}}(G) = n$ である。命題 \\ref{{prop:76tree}} が示すように木は
+必ず予想 \\ref{{conj:76}} の等号になるので $\\mathrm{{need}}$ には決して届かず、
+この近道が無ければ木の族すべてで厳密解を呼ぶことになる。実際、走査した
+{n_total:,} 個のうち近道が効いたのが {n_short:,} 個、厳密解に進んだのは
+{n_exact:,} 個 ({exact_pct:.3f}\\%) だけである。
+
+\\subsection{{検証器}}
+
+検証器 (\\texttt{{mar.checkgraph}}) は探索器のコードを一切参照せず、標準ライブラリ
+のみで書かれている。アルゴリズムも意図的に変えてある。
+
+\\begin{{enumerate}}
+\\item 距離は Floyd--Warshall の全点対距離 (探索器はビットマスクの幅優先探索)。
+      偶数距離の頂点数もこの距離行列から数える。
+\\item 三角形数は近傍の頂点対の総当たり (探索器はビット演算による共通近傍の
+      ポップカウント)。
+\\item $\\lceil a/b \\rceil$ は商と剰余から組み立て、$\\lceil \\sqrt{{s}} \\rceil$ は
+      $r^2 \\ge s$ となる最小の $r$ を単調に探す (探索器は整数平方根を使う)。
+\\item 木の判定は「森であり辺数 $= |T| - 1$」(探索器は「連結成分数 $= 1$ かつ森」)。
+\\item 最大誘導木は頂点ごとの採否による分枝 (探索器は葉を 1 枚ずつ生やす分枝)。
+\\end{{enumerate}}
+
+元リストの個数を照合するための公表値 (OEIS A001349, A000055, A002851,
+A006820--A006822) も、探索器の表ではなく検証器が独自にもつ定数と突き合わせる。
+第 \\ref{{sec:hand}} 節で証明する 4 つの主張についても、探索器と検証器の双方が
+走査した全グラフで照合する (破れが 1 件でもあれば検証は失敗する)。
+
+\\subsection{{等号の分類をどう閉じるか}}\\label{{sec:tight}}
+
+補題 \\ref{{lem:witness}} が閉じるのは不等式だけである。等号の主張は
+$\\mathrm{{tree}}(G)$ の上からの評価を含むので証人からは従わない。検証器は
+\\textbf{{証人が 5 本すべてを狭義で満たさないグラフ}}について
+$\\mathrm{{tree}}(G)$ を独立に計算し直し、予想ごとに狭義・等号・反例の 3 分類を
+作って、その\\textbf{{件数が証明書の記録と一致すること}}を確かめる。等号の
+グラフを 1 個でも隠せば、そのグラフで狭義の不等式が破れるため件数が合わずに
+検出される。加えて、族ごとの等号グラフの graph6 一覧が証明書にあるときは、
+どの予想で等号になるかまで一致することを確かめる。{cap_note}
+
+\\section{{手計算でどこまで詰められるか}}\\label{{sec:hand}}
+
+網羅検証に入る前に、4 予想がどの範囲で\\emph{{証明できる}}かを見る。
+以下 $G$ は位数 $n \\ge 2$ の連結グラフ、$t = \\mathrm{{tree}}(G)$,
+$D = \\mathrm{{diam}}(G)$, $r = \\mathrm{{rad}}(G)$, $\\delta = \\delta(G)$ とする。
+
+\\begin{{lemma}}\\label{{lem:diam}}
+$t \\ge D + 1$.
+\\end{{lemma}}
+
+\\begin{{proof}}
+最短路は誘導道である (途中の非隣接であるべき 2 頂点が隣接していれば、より短い
+路が取れる)。距離 $D$ の 2 頂点を結ぶ最短路は $D+1$ 個の頂点からなる誘導道、
+すなわち誘導木である。
+\\end{{proof}}
+
+\\begin{{lemma}}\\label{{lem:ell}}
+$t \\ge \\ell_{{\\max}} + 1$.
+\\end{{lemma}}
+
+\\begin{{proof}}
+$\\ell(v) = \\ell_{{\\max}}$ となる $v$ を取り、$G[N(v)]$ の最大独立集合を $S$ と
+する。$|S| = \\ell_{{\\max}}$ であり、$S \\cup \\{{v\\}}$ が誘導する部分グラフは
+$S$ の内部に辺が無く $v$ が $S$ の全点に隣接するから、星
+$K_{{1,\\ell_{{\\max}}}}$ すなわち木である。
+\\end{{proof}}
+
+\\begin{{theorem}}\\label{{thm:72a}}
+予想 \\ref{{conj:72a}} はすべての連結グラフ ($n \\ge 2$) で成り立ち、しかも
+\\textbf{{決して等号にならない}}。
+\\end{{theorem}}
+
+\\begin{{proof}}
+すべての $v$ で $\\mathrm{{ecc}}(v) \\le D$ だから平均離心数も $D$ 以下であり、
+補題 \\ref{{lem:diam}}, \\ref{{lem:ell}} より $D \\le t-1$ かつ
+$\\ell_{{\\max}} \\le t-1$。よって天井を取る前の値は
+\\[ \\frac{{1}}{{3}}\\left( \\frac{{1}}{{n}}\\sum_{{v}} \\mathrm{{ecc}}(v)
+   + \\ell_{{\\max}} \\right) \\ \\le \\ \\frac{{(t-1) + (t-1)}}{{3}}
+   \\ = \\ \\frac{{2t-2}}{{3}} \\ \\le \\ t - 1 \\]
+となる (最後の不等号は $t \\ge 1$ と同値)。整数 $t-1$ 以下の実数の天井は
+$t-1$ 以下だから、予想 \\ref{{conj:72a}} の左辺は $t-1 < t$ であり、
+狭義の不等式が成り立つ。
+\\end{{proof}}
+
+\\begin{{theorem}}\\label{{thm:72b}}
+$\\ell_{{\\max}} \\le 3$ または $3D \\le 2\\ell_{{\\max}} + 3$ ならば予想
+\\ref{{conj:72b}} が成り立つ。とくに反例 $G$ は $\\ell_{{\\max}} \\ge 4$ かつ
+$D \\ge 4$、したがって $t \\ge 5$ を満たす。
+\\end{{theorem}}
+
+\\begin{{proof}}
+すべての $v$ で $\\mathrm{{ecc}}(v) \\le D$ だから平均離心数も $D$ 以下である。
+$\\ell_{{\\max}} \\le 3$ のときは補題 \\ref{{lem:diam}} から
+\\[ \\frac{{1}}{{n}}\\sum_{{v}} \\mathrm{{ecc}}(v) + \\frac{{\\ell_{{\\max}}}}{{3}}
+   \\ \\le \\ (t-1) + \\frac{{3}}{{3}} \\ = \\ t . \\]
+$3D \\le 2\\ell_{{\\max}} + 3$ のときは $D \\le \\frac{{2}}{{3}}\\ell_{{\\max}} + 1$
+なので $D + \\ell_{{\\max}}/3 \\le \\ell_{{\\max}} + 1$ であり、補題
+\\ref{{lem:ell}} から
+\\[ \\frac{{1}}{{n}}\\sum_{{v}} \\mathrm{{ecc}}(v) + \\frac{{\\ell_{{\\max}}}}{{3}}
+   \\ \\le \\ D + \\frac{{\\ell_{{\\max}}}}{{3}} \\ \\le \\ \\ell_{{\\max}} + 1
+   \\ \\le \\ t . \\]
+どちらも右端が整数なので、天井を取っても $t$ を超えない。後半は対偶である。
+$\\ell_{{\\max}} \\ge 4$ と $3D > 2\\ell_{{\\max}} + 3 \\ge 11$ から $D \\ge 4$ が
+出て、補題 \\ref{{lem:diam}} より $t \\ge 5$ となる。
+\\end{{proof}}
+
+\\begin{{remark}}[2 つの補題は合成できない]\\label{{rem:l3}}
+定理 \\ref{{thm:72b}} が 2 つの枝に分かれるのは、補題 \\ref{{lem:diam}} と
+\\ref{{lem:ell}} から得られる下界が $t \\ge \\max(D, \\ell_{{\\max}}) + 1$ 止まり
+だからである。両者を足した $t \\ge D + \\ell_{{\\max}} - 1$ が言えれば、
+$\\ell_{{\\max}} \\ge 2$ に対して
+$\\frac{{1}}{{n}}\\sum_v \\mathrm{{ecc}}(v) + \\ell_{{\\max}}/3
+\\le D + \\ell_{{\\max}}/3 \\le t + 1 - 2\\ell_{{\\max}}/3 \\le t$ となり、予想
+\\ref{{conj:72b}} は完全に片付く。しかしこの下界は\\textbf{{偽}}である。
+$4$ 閉路 $v_1 v_2 v_3 v_4$ の $v_4$ に葉 $v_5$ を 1 枚つけた $5$ 頂点グラフ
+(graph6 表記 {tt("DEw")}) では、$\\mathrm{{dist}}(v_2, v_5) = 3$ より $D = 3$、
+$N(v_4) = \\{{v_1, v_3, v_5\\}}$ が独立集合だから $\\ell_{{\\max}} = 3$ である
+一方、$G$ は閉路をもつので $t = 4 < 3 + 3 - 1$ となる。誘導測地路と誘導星は
+一般には\\textbf{{重ならずに合成できない}}。
+\\end{{remark}}
+
+\\begin{{theorem}}\\label{{thm:84}}
+$\\delta \\ge 2$ ならば予想 \\ref{{conj:84}} は狭義に成り立つ。
+\\end{{theorem}}
+
+\\begin{{proof}}
+$r \\le D \\le t - 1$ (補題 \\ref{{lem:diam}}) と $\\delta \\ge 2$ より
+\\[ 2\\,\\mathrm{{rad}}(G) \\ \\le \\ \\delta \\cdot r \\ \\le \\ \\delta (t-1)
+   \\ < \\ \\delta t . \\]
+\\end{{proof}}
+
+\\begin{{theorem}}\\label{{thm:84d1}}
+$\\delta = 1$ の場合も、$D \\ge 2r - 1$ または $\\ell_{{\\max}} \\ge 2r - 1$ なら
+予想 \\ref{{conj:84}} が成り立つ。とくに反例 $G$ は $\\delta = 1$ かつ
+$\\max(D, \\ell_{{\\max}}) \\le 2r - 2$ を満たす。
+\\end{{theorem}}
+
+\\begin{{proof}}
+$\\delta = 1$ なので右辺は $t$ である。$D \\ge 2r - 1$ なら補題
+\\ref{{lem:diam}} より $t \\ge D + 1 \\ge 2r$、$\\ell_{{\\max}} \\ge 2r - 1$ なら
+補題 \\ref{{lem:ell}} より $t \\ge \\ell_{{\\max}} + 1 \\ge 2r$ となる。
+\\end{{proof}}
+
+\\begin{{remark}}[残余は狭義の議論では閉じない]\\label{{rem:84resid}}
+定理 \\ref{{thm:84d1}} の残余は空ではない。$6$ 閉路の 1 頂点に葉を 1 枚つけた
+$7$ 頂点グラフ (graph6 表記 {tt("F?qb_")}) は $\\delta = 1$, $r = 3$, $D = 4$,
+$\\ell_{{\\max}} = 3$ で、$D$ も $\\ell_{{\\max}}$ も $2r - 1 = 5$ に届かない。
+しかもこのグラフは $t = 6 = 2r$ であり、予想 \\ref{{conj:84}} の\\textbf{{等号}}を
+達成する。残余ケースが等号を達成するグラフを含む以上、狭義の不等式しか生まない
+議論ではこの残余は閉じない。
+\\end{{remark}}
+
+\\begin{{proposition}}\\label{{prop:76tree}}
+$G$ が木 ($n \\ge 2$) ならば予想 \\ref{{conj:76}} は等号である。
+\\end{{proposition}}
+
+\\begin{{proof}}
+木は三角形をもたないので全頂点で $T(v) = 0$、したがって $T_{{\\max}} = 0$ かつ
+$\\mathrm{{freq}}[T_{{\\max}}] = n$。また
+$\\deg_{{\\mathrm{{avg}}}} = 2(n-1)/n = 2 - 2/n \\in [1, 2)$ より
+$\\lfloor \\deg_{{\\mathrm{{avg}}}} \\rfloor = 1$。$G$ 自身が誘導木だから $t = n$ で
+あり、右辺は $n/1 = n = t$ となる。
+\\end{{proof}}
+
+定理 \\ref{{thm:72a}}, \\ref{{thm:72b}}, \\ref{{thm:84}}, \\ref{{thm:84d1}} と命題
+\\ref{{prop:76tree}} は、走査した全グラフでも機械的に照合してある
+(第 \\ref{{sec:design}} 節)。未解決として残るのは
+\\textbf{{$\\ell_{{\\max}} \\ge 4$ かつ $3D > 2\\ell_{{\\max}} + 3$ の予想
+\\ref{{conj:72b}}}}、\\textbf{{$\\delta = 1$ かつ
+$\\max(D, \\ell_{{\\max}}) \\le 2r - 2$ の予想 \\ref{{conj:84}}}}、および予想
+\\ref{{conj:76}}, \\ref{{conj:85}} の一般の場合である。走査した {n_total:,} 個の
+うち、前者に該当するのが {res72:,} 個 ({res72_pct:.1f}\\%)、後者が {res84:,} 個
+({res84_pct:.1f}\\%) であった。
+
+\\section{{網羅検証}}
+
+\\begin{{theorem}}\\label{{thm:main}}
+位数 $n \\le {g_max}$ の連結グラフ全体 ({n_conn:,} 個)、
+位数 ${t_min} \\le n \\le {t_max}$ の木全体 ({n_trees:,} 個。
+位数 ${g_max}$ 以下の木は前者に含まれる)、
+および $(n, r) \\in \\{{{reg_orders}\\}}$ の連結 $r$-正則グラフ全体
+({n_reg:,} 個) のいずれにおいても、予想 \\ref{{conj:76}}, \\ref{{conj:84}},
+\\ref{{conj:85}} と予想 72 の 2 通りの読み (\\ref{{conj:72a}},
+\\ref{{conj:72b}}) はすべて成立する。とくにこれらの反例 $G$ が存在するならば
+$n \\ge {g_max + 1}$ であり、$G$ が木ならば $n \\ge {t_max + 1}$ である。
+\\end{{theorem}}
+
+\\begin{{proof}}
+表 \\ref{{tab:fams}} の各族について、木を誘導する頂点集合 $T$ を計算して記録した。
+補題 \\ref{{lem:witness}} より、各グラフで $G[T]$ が木であり $|T|$ が 5 本の
+不等式を満たすことを確認すれば主張が従う。この確認は証明書
+\\texttt{{{cid}.json}} と証人ファイルに対して検証器が実行し、
+全 {n_total:,} 個で成立した。元リストの完全性は、走査行数が
+OEIS A001349 (連結グラフ)、A000055 (木)、A002851 および
+A006820--A006822 (連結正則グラフ) の公表値と一致することで担保される。
+\\end{{proof}}
+
+\\begin{{table}}[htbp]
+\\centering
+\\small
+\\caption{{走査した族と、予想ごとに下界が $\\mathrm{{tree}}(G)$ とちょうど一致した
+グラフの個数。「厳密」は貪欲な証人が $\\mathrm{{need}}$ に届かず最大誘導木を
+厳密に解いた回数 (木の近道が効いた分は含まない)。}}
+\\label{{tab:fams}}
+\\begin{{tabular}}{{lrrrrrrrr}}
+\\toprule
+族 & $n$ & 個数 & 72a & 72b & 76 & 84 & 85 & 厳密 \\\\
+\\midrule
+{_rows(fams)}
+\\midrule
+\\multicolumn{{2}}{{l}}{{合計}} & {n_total:,} & {tight['c72a']:,}
+& {tight['c72b']:,} & {tight['c76']:,} & {tight['c84']:,} & {tight['c85']:,}
+& {n_exact:,} \\\\
+\\bottomrule
+\\end{{tabular}}
+\\end{{table}}
+
+{a_note}
+
+{t_note}
+
+{ex_text}
+
+\\section{{鋭さ: 等号を達成する無限族}}\\label{{sec:sharp}}
+
+網羅検証は有限範囲の話だが、等号については無限族を手で与えられる。以下により、
+予想 \\ref{{conj:72b}}, \\ref{{conj:76}}, \\ref{{conj:84}}, \\ref{{conj:85}} の
+4 本すべてが\\textbf{{いくらでも大きい位数で改善不能}}であることが分かる。
+
+\\begin{{proposition}}\\label{{prop:kn}}
+$n \\ge 2$ のとき完全グラフ $K_n$ は予想 \\ref{{conj:72b}} と \\ref{{conj:85}} の
+等号を達成する。
+\\end{{proposition}}
+
+\\begin{{proof}}
+$K_n$ では全頂点の離心数が $1$ なので平均離心数は $1$、
+$G[N(v)] = K_{{n-1}}$ より $\\ell_{{\\max}} = 1$、また $v$ 以外のすべての頂点が
+$v$ から距離 $1$ にあるので $\\mathrm{{dist}}_{{\\mathrm{{even}}}}(v) = 1$ である。
+誘導部分グラフが木になるのは高々 2 頂点なので $t = 2$。予想 \\ref{{conj:72b}} の
+左辺は $\\lceil 1 + 1/3 \\rceil = 2 = t$、予想 \\ref{{conj:85}} の左辺は
+$\\lceil \\sqrt{{3}} \\rceil = 2 = t$ で、いずれも等号である。
+\\end{{proof}}
+
+\\begin{{proposition}}\\label{{prop:path}}
+$k \\ge 1$ のとき $2k$ 個の頂点をもつ道 $P_{{2k}}$ は予想 \\ref{{conj:84}} の
+等号を達成する。奇数個の頂点をもつ道は達成しない。
+\\end{{proposition}}
+
+\\begin{{proof}}
+$n$ 頂点の道の半径は $\\lceil (n-1)/2 \\rceil$、最小次数は $1$、そして道自身が
+木なので $t = n$ である。$n = 2k$ なら
+$2\\,\\mathrm{{rad}} = 2k = t \\cdot \\delta$ で等号、$n = 2k+1$ なら
+$2\\,\\mathrm{{rad}} = 2k < 2k+1 = t \\cdot \\delta$ で狭義である。
+\\end{{proof}}
+
+命題 \\ref{{prop:76tree}} は、木という無限族が予想 \\ref{{conj:76}} の等号を
+達成することを既に与えている。一方、予想 \\ref{{conj:72a}} については
+定理 \\ref{{thm:72a}} により等号を達成するグラフが\\textbf{{存在しない}}。
+すなわち予想 72 の 2 通りの読みのうち、\\textbf{{弱い読みは常に真だが決して
+鋭くなく、強い読みは $K_n$ で鋭い}}。出題者の意図が強い読みであることの
+状況証拠と読める。
+
+\\section{{限界}}
+
+本稿が示したのは第 \\ref{{sec:hand}} 節の部分的な証明と、有限範囲での検証で
+あって、4 予想の完全な証明ではない。連結グラフの完全リストは McKay
+\\cite{{mckay}} が $n \\le {g_max}$ まで、木は $n \\le 22$ まで公開しており、
+本稿は前者の全体と後者の $n \\le {t_max}$ を走査した。正則グラフは GENREG
+\\cite{{genreg}} が公開している範囲から、連結グラフの族に含まれない
+$n \\ge 11$ のものを選んだ。
+
+一般の証明に必要な道具は予想ごとに異なる。予想 \\ref{{conj:72b}} で残るのは
+$\\ell_{{\\max}} \\ge 4$ の場合であり、注意 \\ref{{rem:l3}} が示すように
+「誘導測地路と誘導星を合成する」という素朴な方針は使えない。必要なのは
+$D$ と $\\ell_{{\\max}}$ が\\emph{{同時に}}大きいときに働く下界である。
+予想 \\ref{{conj:84}} で残るのは $\\delta = 1$、すなわち葉をもつグラフで
+$t \\ge 2\\,\\mathrm{{rad}}(G)$ を示すことであり、命題 \\ref{{prop:path}} の道が
+示すようにこの形は鋭い。予想 \\ref{{conj:76}} と \\ref{{conj:85}} については、
+本稿は部分的な証明を与えられていない。
+
+Graffiti.pc 自身がその開発時に小さいグラフのデータベース上で予想を試している
+可能性が高い。したがって「位数の小さい連結グラフに反例がない」ことの新規性は
+限定的であり、本稿の寄与は (i) 予想 72 の曖昧さを 2 通りの読みとして分離し、
+弱い読みが\\emph{{常に真かつ決して鋭くない}}ことを示したこと、(ii) 4 本を
+1 つの証人で同時に検証できる形に落とし、第三者が独立に再実行できる証明書に
+したこと、(iii) 部分的な証明により未解決部分を $\\ell_{{\\max}} \\ge 4$ と
+$\\delta = 1$ に狭め、その残余が走査範囲でどれだけの割合を占めるかを測ったこと、
+(iv) 等号を達成する無限族を予想 \\ref{{conj:72b}}, \\ref{{conj:76}},
+\\ref{{conj:84}}, \\ref{{conj:85}} のすべてについて与えたこと、の 4 点にある。
+"""
+    return {"ABSTRACT": abstract, "BODY": body}

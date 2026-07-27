@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import itertools
+import math
 from fractions import Fraction
 
 import pytest
@@ -1345,3 +1346,267 @@ def test_p0010_theorem172_survives_every_reading_of_D():
         assert -1 + diam_b_g + dist_g == 2 * k - 1, k
         assert 4 < -1 + diam_b_g + dist_g, k
         assert (4 < -1 + diam_b_g2 + dist_g2) == (k >= 5), k
+
+
+# ---------------------------------------------------------------------------
+# p0011: 最大誘導木の位数の下界 4 本 (誘導測地路と誘導星)
+# ---------------------------------------------------------------------------
+
+#: 厳密な tree(G) を総当たりで出すので、位数はここまで。
+P11_MAX_N = 7
+
+
+def _p11_graphs(max_n=P11_MAX_N):
+    for n in range(2, max_n + 1):
+        for g in _graphs(n):
+            yield g
+
+
+def _p11_invariants(g):
+    """検証器側の不変量辞書 (探索器の実装は読まない)."""
+    from mar.problems.p0011_wowii_tree_lower_bounds import _verify_invariants
+    return _verify_invariants(ck, g)
+
+
+def _p11_ceil_sqrt(s: int) -> int:
+    r = 0
+    while r * r < s:
+        r += 1
+    return r
+
+
+def _p11_complete(n: int):
+    return (n, [{u for u in range(n) if u != v} for v in range(n)])
+
+
+def _p11_path(n: int):
+    nbr = [set() for _ in range(n)]
+    for i in range(n - 1):
+        nbr[i].add(i + 1)
+        nbr[i + 1].add(i)
+    return (n, nbr)
+
+
+def test_p0011_integer_forms_match_the_original_inequalities():
+    """整数化した 5 本が、分数・天井・平方根のままの原型と同値であること."""
+    from mar.problems.p0011_wowii_tree_lower_bounds import _verify_sides
+    seen = 0
+    for g in _p11_graphs():
+        q = _p11_invariants(g)
+        t = ck.max_induced_tree_size(g)
+        sides = _verify_sides(q, t)
+        g6 = ck.sets_to_graph6(g)
+        avg_ecc = Fraction(q["ecc_sum"], q["n"])
+        # 原型 (分数は Fraction、天井は math.ceil、平方根は r^2 >= s で書く)
+        lhs = {
+            "c72a": math.ceil((avg_ecc + q["ell_max"]) / 3),
+            "c72b": math.ceil(avg_ecc + Fraction(q["ell_max"], 3)),
+            "c76": Fraction(q["tri_freq"], q["deg_avg_floor"]),
+            "c84": Fraction(2 * q["rad"], q["delta"]),
+            "c85": _p11_ceil_sqrt(1 + 2 * q["de_min"]),
+        }
+        for key, (lo, hi) in sides.items():
+            assert (lo <= hi) == (lhs[key] <= t), (g6, key)
+            assert (lo == hi) == (lhs[key] == t), (g6, key)
+        seen += 1
+    assert seen > 0
+
+
+def test_p0011_invariants_agree_with_the_definitions():
+    """局所独立数・三角形頻度・偶数距離頂点数を定義そのままに突き合わせる."""
+    seen = 0
+    for g in _p11_graphs():
+        n, nbr = g
+        q = _p11_invariants(g)
+        dist = ck.all_pairs_distance(g)
+        g6 = ck.sets_to_graph6(g)
+        # l_max: 近傍の部分集合を総当たりして独立集合の最大サイズを取る
+        ell = 0
+        for v in range(n):
+            cand = sorted(nbr[v])
+            best = 0
+            for size in range(len(cand), 0, -1):
+                if size <= best:
+                    break
+                for sub in itertools.combinations(cand, size):
+                    if all(y not in nbr[x] for i, x in enumerate(sub)
+                           for y in sub[i + 1:]):
+                        best = size
+                        break
+                if best:
+                    break
+            ell = max(ell, best)
+        assert q["ell_max"] == ell, g6
+        # T(v) と freq[T_max]
+        tri = [sum(1 for u, w in itertools.combinations(sorted(nbr[v]), 2)
+                   if w in nbr[u]) for v in range(n)]
+        assert q["tri_freq"] == tri.count(max(tri)), g6
+        # dist_even(v) は v 自身を含むので必ず 1 以上
+        de = [sum(1 for u in range(n) if dist[v][u] % 2 == 0) for v in range(n)]
+        assert q["de_min"] == min(de), g6
+        assert all(d >= 1 for d in de), g6
+        seen += 1
+    assert seen > 0
+
+
+def test_p0011_geodesic_and_star_lemmas_hold():
+    """補題 (tree >= diam+1) と補題 (tree >= l_max+1)."""
+    seen = 0
+    for g in _p11_graphs():
+        q = _p11_invariants(g)
+        t = ck.max_induced_tree_size(g)
+        g6 = ck.sets_to_graph6(g)
+        assert t >= q["diam"] + 1, g6
+        assert t >= q["ell_max"] + 1, g6
+        seen += 1
+    assert seen > 0
+
+
+def test_p0011_theorem72a_is_never_tight():
+    """定理: 予想 72a の左辺は天井を取っても tree(G) - 1 以下."""
+    seen = 0
+    for g in _p11_graphs():
+        q = _p11_invariants(g)
+        t = ck.max_induced_tree_size(g)
+        lhs = math.ceil((Fraction(q["ecc_sum"], q["n"]) + q["ell_max"]) / 3)
+        assert lhs <= t - 1, ck.sets_to_graph6(g)
+        seen += 1
+    assert seen > 0
+
+
+def test_p0011_theorem72b_covers_two_branches():
+    """定理: l_max <= 3 または 3*diam <= 2*l_max+3 なら予想 72b が成り立つ."""
+    seen = covered = residual = 0
+    for g in _p11_graphs():
+        q = _p11_invariants(g)
+        t = ck.max_induced_tree_size(g)
+        lhs = math.ceil(Fraction(q["ecc_sum"], q["n"])
+                        + Fraction(q["ell_max"], 3))
+        g6 = ck.sets_to_graph6(g)
+        if q["ell_max"] <= 3 or 3 * q["diam"] <= 2 * q["ell_max"] + 3:
+            assert lhs <= t, g6
+            covered += 1
+        else:
+            # 定理の後半: 残余は l_max >= 4 かつ diam >= 4、したがって t >= 5
+            assert q["ell_max"] >= 4 and q["diam"] >= 4, g6
+            assert t >= 5, g6
+            residual += 1
+        seen += 1
+    assert seen > 0 and covered > 0 and residual > 0
+
+
+def test_p0011_theorem84_covers_minimum_degree_at_least_two():
+    """定理: delta >= 2 なら予想 84 は狭義."""
+    seen = covered = 0
+    for g in _p11_graphs():
+        q = _p11_invariants(g)
+        if q["delta"] >= 2:
+            t = ck.max_induced_tree_size(g)
+            assert 2 * q["rad"] < t * q["delta"], ck.sets_to_graph6(g)
+            covered += 1
+        seen += 1
+    assert seen > 0 and covered > 0
+
+
+def test_p0011_theorem84_covers_leaves_via_diameter_or_star():
+    """定理: delta=1 でも diam >= 2rad-1 か l_max >= 2rad-1 なら予想 84."""
+    covered = residual = 0
+    for g in _p11_graphs():
+        q = _p11_invariants(g)
+        if q["delta"] != 1:
+            continue
+        rad = q["rad"]
+        if q["diam"] >= 2 * rad - 1 or q["ell_max"] >= 2 * rad - 1:
+            t = ck.max_induced_tree_size(g)
+            assert 2 * rad <= t * q["delta"], ck.sets_to_graph6(g)
+            covered += 1
+        else:
+            residual += 1
+    assert covered > 0 and residual > 0
+
+
+def test_p0011_the_delta_one_residual_contains_a_tight_graph():
+    """注意: 84 の残余には等号達成グラフがある (6 閉路 + 葉 1 枚)."""
+    g = ck.graph6_to_sets("F?qb_")
+    q = _p11_invariants(g)
+    t = ck.max_induced_tree_size(g)
+    assert (q["n"], q["m"], q["delta"]) == (7, 7, 1)
+    assert (q["rad"], q["diam"], q["ell_max"]) == (3, 4, 3)
+    # 残余の条件 (どちらの補題も 2*rad に届かない) を満たす
+    assert q["diam"] < 2 * q["rad"] - 1 and q["ell_max"] < 2 * q["rad"] - 1
+    # それでも予想 84 は等号で成り立つ
+    assert 2 * q["rad"] == t * q["delta"] == 6
+
+
+def test_p0011_trees_are_always_tight_for_conjecture76():
+    """命題: 木では freq[T_max] / floor(deg_avg) = n = tree(G)."""
+    seen = 0
+    for g in _p11_graphs(8):
+        n, nbr = g
+        if sum(len(s) for s in nbr) // 2 != n - 1:
+            continue
+        q = _p11_invariants(g)
+        g6 = ck.sets_to_graph6(g)
+        assert q["deg_avg_floor"] == 1, g6
+        assert q["tri_freq"] == n, g6
+        assert ck.max_induced_tree_size(g) == n, g6
+        seen += 1
+    assert seen > 0
+
+
+def test_p0011_summing_the_two_lemmas_is_false():
+    """注意: tree >= diam + l_max - 1 は偽 (4 閉路の 1 頂点に葉を 1 枚)."""
+    g = ck.graph6_to_sets("DEw")
+    q = _p11_invariants(g)
+    t = ck.max_induced_tree_size(g)
+    assert (q["n"], q["m"]) == (5, 5)
+    assert (q["diam"], q["ell_max"], t) == (3, 3, 4)
+    assert t < q["diam"] + q["ell_max"] - 1
+    # 本文の記述 (4 閉路 + 葉 1 枚) と次数列が一致することも確かめる
+    _n, nbr = g
+    assert sorted(len(s) for s in nbr) == [1, 2, 2, 2, 3]
+    # 走査範囲でも「2 つの補題を足した下界」は破れ続ける
+    bad = 0
+    for h in _p11_graphs():
+        qh = _p11_invariants(h)
+        if ck.max_induced_tree_size(h) < qh["diam"] + qh["ell_max"] - 1:
+            bad += 1
+    assert bad > 0
+
+
+def test_p0011_complete_graphs_are_tight_for_72b_and_85():
+    """命題: K_n は予想 72b と 85 の等号を達成する."""
+    for n in range(2, 12):
+        g = _p11_complete(n)
+        q = _p11_invariants(g)
+        assert (q["ecc_sum"], q["ell_max"], q["de_min"]) == (n, 1, 1), n
+        t = ck.max_induced_tree_size(g)
+        assert t == 2, n
+        assert math.ceil(Fraction(q["ecc_sum"], n)
+                         + Fraction(q["ell_max"], 3)) == t, n
+        assert _p11_ceil_sqrt(1 + 2 * q["de_min"]) == t, n
+
+
+def test_p0011_even_paths_are_tight_for_84():
+    """命題: P_{2k} は予想 84 の等号、P_{2k+1} は狭義."""
+    for n in range(2, 16):
+        g = _p11_path(n)
+        q = _p11_invariants(g)
+        assert q["rad"] == -(-(n - 1) // 2), n
+        assert q["delta"] == 1, n
+        t = ck.max_induced_tree_size(g)
+        assert t == n, n
+        assert 2 * q["rad"] <= t * q["delta"], n
+        assert (2 * q["rad"] == t * q["delta"]) == (n % 2 == 0), n
+
+
+def test_p0011_verifier_tree_shortcut_matches_brute_force():
+    """木の近道 (tree(G) = n) が厳密計算と一致する."""
+    from mar.problems.p0011_wowii_tree_lower_bounds import _verify_tree_size
+    seen = 0
+    for g in _p11_graphs():
+        q = _p11_invariants(g)
+        assert _verify_tree_size(ck, q, g) == ck.max_induced_tree_size(g), \
+            ck.sets_to_graph6(g)
+        seen += 1
+    assert seen > 0
