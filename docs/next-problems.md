@@ -381,39 +381,48 @@ $\ell_{\max} \le 3$ のグラフはすべて定理側に入る)。厳密な最�
 * **予想 322 / 316 / 314**: 結論が well-totally-dominated という**性質**で、
   否定側の証人が作りにくい。後回し。
 
-## p0012 の第一候補: 二部数 b(G) の下界 14 本 (WOWII 予想 13・16-29)
+## p0012 で扱ったもの: 二部数 b(G) の下界で唯一残った WOWII 予想 19
 
 `data/refs/wowIIdefs.js` の定義 15 より **b(G) = 二部数** (誘導部分グラフで
-二部グラフになるものの最大位数)。同ファイルの conjEntry を機械的に取り出すと、
-b(G) を左辺に持つ予想は 16 本あり、そのうち **14 本が状態 O (未解決)**:
+二部グラフになるものの最大位数)。
 
-| 予想 | 主張 | 状態 |
+**状態の一次ソースは `wowIIdefs.js` ではなく `wowii_all.html`** である。
+`wowIIdefs.js` は状態が古いうえ、21 番以降は主張の番号づけ自体が公開ページと
+ずれている (同ファイルの 22 は $b \ge \lfloor \alpha +
+\mathrm{dist}_{\mathrm{avg}}(M) \rfloor$ だが、公開ページの 22 は
+$\lceil 2\,\mathrm{dist}(B,V) \rceil \ge \lceil 2\,\mathrm{dist}_{\mathrm{avg}}(V)
+\rceil$)。2026-07-27 取得の `wowii_all.html` で数え直すと、b(G) の下界を
+与える予想 13--30 (18 本) の状態は次のとおりで、**未解決 (O) は 19 の 1 本だけ**:
+
+| 予想 | 主張 (公開ページの表記) | 状態 |
 |------|------|------|
-| 13 | $b \ge \mathrm{diam} + \ell_{\max} - 1$ | O |
-| 14 | $b \ge \mathrm{diam} + f_1 - 1$ | T (既に真) |
-| 15 | $b \ge 2\,\mathrm{rad}$ | T (既に真) |
-| 16 | $b \ge 2(\mathrm{rad} - 1) + \ell_{\max}$ | O |
-| 17 | $b \ge lpha + \lceil \mathrm{diam}/3 ceil$ | O |
-| 18 | $b \ge lpha + \lceil \sqrt{\mathrm{dist}_{\max}(M)} ceil$ | O |
-| 19 | $b \ge \lfloor \overline{\mathrm{ecc}} + \ell_{\max} floor$ | O |
-| 20 | $b \ge n / \lfloor \overline{\deg} floor$ | O |
-| 22 | $b \ge \lfloor lpha + \mathrm{dist}_{\mathrm{avg}}(M) floor$ | O |
-| 23 | $b \ge \ell + \lceil \min_v \mathrm{dist}_{\mathrm{even}}(v)/3 ceil$ | O |
-| 24 | $b \ge 2\lceil (1 + \min_v \mathrm{dist}_{\mathrm{even}}(v))/3 ceil$ | O |
-| 25 | $b \ge \lceil 1 + dd(G)^{0.25} ceil$ | O |
-| 26 | $b \ge (\min_e |N(e)|)\,t(G) - 1$ | O |
-| 27 | $b \ge \mathrm{dist}_{\min}(A) + \mathrm{dist}_{\min}(M)^{0.25}$ | O |
-| 28 | $b \ge \mathrm{dist}_{\max}(A) + 1/(n mod D)$ | O |
-| 29 | $b \ge \mathrm{dist}_{\min}(A) + |E_G(M)|^{0.25}$ | O |
+| 13 | $b \ge \mathrm{diam} + \ell_{\max} - 1$ | T |
+| 14 | $b \ge \mathrm{diam} + f_G(1) - 1$ | T |
+| 15 | $b \ge 2\,\mathrm{rad}$ | R |
+| 16 | $b \ge 2(\mathrm{rad} - 1) + \ell_{\max}$ | T |
+| 17 | $b \ge \alpha + \lceil \mathrm{diam}/3 \rceil$ | T |
+| 18 | $b \ge \alpha + \lceil \sqrt{\mathrm{dist}_{\max}(M)} \rceil$ | T |
+| **19** | $b \ge \lfloor \overline{\mathrm{ecc}} + \ell_{\max} \rfloor$ | **O** |
+| 20 | $b \ge n / \lfloor \overline{\deg} \rfloor$ | T\* ($f(G)$ 側の結果から) |
+| 21--26, 28, 30 | 距離平均・$dd(G)$ 等の 8 本 | F (反例あり) |
+| 27 | $b \ge (\min_e |N(e)|)^{1 - t(G)}$ | T |
+| 29 | $b \ge \mathrm{dist}_{\max}(A) + 1/(n \bmod D)$ | T |
 
-この束が p0011 の直後に来る理由:
+19 への注記 (2005-06-22) は「$\overline{\mathrm{ecc}} \le \mathrm{diam} - 1$
+なら予想 13 から従う」とだけ述べる。残る場合 $\overline{\mathrm{ecc}} >
+\mathrm{diam} - 1$ は**自己中心的 ($\mathrm{rad} = \mathrm{diam}$) の場合に
+他ならない**ので、そこを引用なしで閉じれば予想全体が閉じる。p0012 では
+$b(G) \ge \mathrm{ecc}(v) + \ell(v)$ (測地路と星を距離の偶奇で 2 彩色する)
+を証明してこの穴を埋め、予想 19 を解決した。
+
+この問題が p0011 の直後に来る理由:
 
 * **証人が p0010 型に戻る**。b(G) の証人は「頂点部分集合 + 2 彩色」で、検証は
-  多項式時間 (誘導部分グラフに単色辺が無いことを見るだけ)。1 つの証人で
-  14 本を同時に検証できるので p0010 (葉数の下界 11 本) と同じ構造が使える。
+  多項式時間 (誘導部分グラフに単色辺が無いことを見るだけ)。NP 困難な b(G) を
+  検証器が解き直す必要がない (等号の判定のときだけ厳密に解く)。
 * **p0011 で作った道具がそのまま効く**。最短路は誘導路で二部グラフだから
   $b \ge \mathrm{diam} + 1$、星も二部グラフだから $b \ge \ell_{\max} + 1$、
-  独立集合も二部だから $b \ge lpha$。$b \ge \mathrm{tree}$ なので p0011 の
+  独立集合も二部だから $b \ge \alpha$。$b \ge \mathrm{tree}$ なので p0011 の
   下界はすべて b にも効く。
 * **予想 13 は「p0011 で偽だった和」の二部版**。$\mathrm{tree} \ge \mathrm{diam}
   + \ell_{\max} - 1$ は `DEw` で偽だったが、同じ `DEw` で
@@ -423,6 +432,39 @@ b(G) を左辺に持つ予想は 16 本あり、そのうち **14 本が状態 O
   広いので、貪欲な証人 (最大の二部誘導部分グラフの近似) を先に作り、
   届かないグラフだけ厳密に解く p0011 の構成をそのまま流用する。
 
-注意: このファイルの conjEntry は 55 件しか含まれていない (WOWII の全リストは
-300 本超)。b(G) の予想が 30 番以降にもある可能性があるので、着手時に
-`wowii_open.txt` 側でも b(G) を検索して取りこぼしを確認すること。
+注意: `wowIIdefs.js` の conjEntry は 55 件しか含まれていない (WOWII の全リストは
+300 本超)。b(G) は 30 番以降にも現れる (下の 176--186)。状態も番号も
+`wowii_all.html` / `wowii_open_items.txt` で確認すること。
+
+## p0013 の第一候補: $L_s(G) + b(G)$ の下界 11 本 (WOWII 予想 176-186)
+
+`data/refs/wowii_open_items.txt` で状態 `O` のまま連続して残っている束。
+左辺は**葉数 (全域木の葉の最大数) と二部数の和**で、右辺は $G$ 自身と
+**2 乗グラフ $G^2$** の距離量が混ざる:
+
+| 予想 | 主張 |
+|------|------|
+| 176 | $L_s + b \ge n + \mathrm{dist}_{\min}(M_2)$ |
+| 177 | $L_s + b \ge 2\alpha + \sigma$ (Waller が $\ge 2\alpha + 1$ までは証明) |
+| 178 | $L_s + b \ge \ell_{\max} + \max_e |N(e)|$ |
+| 179 | $L_s + b \ge \Delta + \gamma + \ell_{\max}$ |
+| 180 | $L_s + b \ge 1 + \alpha + \max_v \mathrm{dist}_{\mathrm{even}}(v)$ |
+| 181 | $L_s + b \ge \alpha + \overline{\deg}(B(G^2))$ |
+| 182 | $L_s + b \ge \Delta(B(G^2)) + \mathrm{diam}$ |
+| 183 | $L_s + b \ge \Delta(G^2) + 2\,\mathrm{rad}(G^2)$ |
+| 184 | $L_s + b \ge \Delta(G^2) + 2\,\mathrm{dist}_{\mathrm{avg}}(B(G^2), V(G^2))$ |
+| 185 | $L_s + b \ge \Delta(G^2) + 2\,\mathrm{dist}_{\mathrm{avg}}(G^2)$ |
+| 186 | $L_s + b \ge |N(C(G^2))| + 2\,\mathrm{ecc}(C(G^2))$ |
+
+この束が次に来る理由:
+
+* **証人が 2 つで足りる**。$L_s$ の証人 (全域木) は p0010 で、$b$ の証人
+  (頂点集合 + 2 彩色) は p0012 で既に書いた。両方を 1 グラフにつき 1 個ずつ
+  渡せば 11 本すべてが多項式時間で閉じる。
+* **和の形なので手証明の入り口がある**。$b \ge \mathrm{ecc}(v) + \ell(v)$
+  (p0012 の定理 1) と $L_s \ge n + 1 - 2\mu$ (Fajtlowicz) を足すだけで
+  いくつかは落ちる可能性がある。177 は Waller が $L_s + b \ge 2\alpha + 1$ を
+  証明済みで、残るのは $\sigma(G)$ (公開ページの定義: **次数列の 2 番目に
+  小さい値**) が 2 以上のグラフだけなので、まずここを詰める。
+* **新しい道具は $G^2$ だけ**。2 乗グラフの距離量は既存の
+  `mar.search.invariants` に隣接ビットの 2 乗を足せば作れる。

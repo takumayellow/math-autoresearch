@@ -1387,3 +1387,131 @@ def lex_min_hamiltonian_path(g: Graph) -> tuple[int, ...] | None:
         if go(start, 1 << start):
             return tuple(path)
     return None
+
+
+# ---------------------------------------------------------------------------
+# 誘導二部部分グラフ (WOWII の二部数 b(G))
+# ---------------------------------------------------------------------------
+
+
+def two_colouring(adj: tuple[int, ...], mask: int) -> tuple[int, int] | None:
+    r"""$G[\mathrm{mask}]$ が二部なら 2 彩色 $(A, B)$ を返す (でなければ ``None``).
+
+    連結成分ごとに幅優先で距離の偶奇に振り分け、最後に**各側が独立集合か**を
+    確かめる。二部グラフなら距離の偶奇による彩色は必ず適切なので、この
+    確認が通らないことと二部でないことは同値。
+    """
+    rest = mask
+    side_a = side_b = 0
+    while rest:
+        bit = rest & -rest
+        seen = bit
+        frontier = bit
+        side_a |= bit
+        odd = True
+        while frontier:
+            nxt = 0
+            m = frontier
+            while m:
+                x = m & -m
+                m ^= x
+                nxt |= adj[x.bit_length() - 1] & mask & ~seen
+            if not nxt:
+                break
+            if odd:
+                side_b |= nxt
+            else:
+                side_a |= nxt
+            odd = not odd
+            seen |= nxt
+            frontier = nxt
+        rest &= ~seen
+    for side in (side_a, side_b):
+        m = side
+        while m:
+            x = m & -m
+            m ^= x
+            if adj[x.bit_length() - 1] & side:
+                return None
+    return side_a, side_b
+
+
+def _bipartite_orders(g: Graph) -> list[list[int]]:
+    """貪欲に試す頂点の順序 (自然順・次数の昇降順・各頂点を根にした幅優先順)."""
+    n, adj = g
+    deg = [_popcount(adj[v]) for v in range(n)]
+    orders = [list(range(n)),
+              sorted(range(n), key=lambda v: deg[v]),
+              sorted(range(n), key=lambda v: -deg[v])]
+    for root in range(n):
+        order = [root]
+        seen = 1 << root
+        i = 0
+        while i < len(order):
+            m = adj[order[i]] & ~seen
+            i += 1
+            while m:
+                x = m & -m
+                m ^= x
+                order.append(x.bit_length() - 1)
+                seen |= x
+        orders.append(order)
+    return orders
+
+
+def greedy_induced_bipartite(g: Graph,
+                             target: int | None = None) -> tuple[int, int]:
+    r"""大きい誘導二部部分グラフを貪欲に作る (下界のみ).
+
+    頂点を順に見て、片側に入れても辺が生じないならそちらへ入れる。どちらへも
+    入らない頂点は捨てる。得られた $(A, B)$ はつねに $A \cup B$ が二部を誘導
+    する 2 彩色なので、そのまま証人になる。``target`` に達したら打ち切る。
+    """
+    n, adj = g
+    best = (0, 0)
+    best_size = 0
+    for order in _bipartite_orders(g):
+        side_a = side_b = 0
+        for v in order:
+            bit = 1 << v
+            if not adj[v] & side_a:
+                side_a |= bit
+            elif not adj[v] & side_b:
+                side_b |= bit
+        size = _popcount(side_a) + _popcount(side_b)
+        if size > best_size:
+            best, best_size = (side_a, side_b), size
+            if target is not None and best_size >= target:
+                return best
+    return best
+
+
+def max_induced_bipartite(g: Graph, lower: int = 0) -> tuple[int, int] | None:
+    r"""$b(G)$ を達成する 2 彩色を厳密に求める.
+
+    「$k$ 頂点を捨てれば二部になるか」を $k = 0, 1, \dots$ と増やしながら試す
+    (奇閉路トランスバーサルの反復深化)。``lower`` に既知の下界を渡すと
+    $n - \mathrm{lower}$ 個より多くは捨てない。**より大きいものが無い**
+    (つまり $b(G) = \mathrm{lower}$) と分かったときは ``None`` を返す。
+    """
+    n, adj = g
+    full = (1 << n) - 1
+    for k in range(0, max(0, n - lower)):
+        for gone in combinations(range(n), k):
+            mask = full
+            for v in gone:
+                mask &= ~(1 << v)
+            colouring = two_colouring(adj, mask)
+            if colouring is not None:
+                return colouring
+    return None
+
+
+def bipartite_number(g: Graph) -> int:
+    r"""二部数 $b(G)$ = 誘導二部部分グラフの最大位数."""
+    side_a, side_b = greedy_induced_bipartite(g)
+    lower = _popcount(side_a) + _popcount(side_b)
+    better = max_induced_bipartite(g, lower)
+    if better is None:
+        return lower
+    return _popcount(better[0]) + _popcount(better[1])

@@ -1610,3 +1610,324 @@ def test_p0011_verifier_tree_shortcut_matches_brute_force():
             ck.sets_to_graph6(g)
         seen += 1
     assert seen > 0
+
+
+# ---------------------------------------------------------------------------
+# p0012: 二部数 b(G) と平均離心率 (WOWII 予想 19)
+# ---------------------------------------------------------------------------
+
+#: 厳密な b(G) を部分集合の総当たりで出すので、位数はここまで。
+P12_MAX_N = 7
+
+#: グラフごとの b(G) は複数のテストで使うので使い回す。
+_P12_B_CACHE: dict[str, int] = {}
+
+
+def _p12_graphs(max_n=P12_MAX_N):
+    for n in range(2, max_n + 1):
+        for g in _graphs(n):
+            yield g
+
+
+def _p12_invariants(g):
+    """検証器側の不変量辞書 (探索器の実装は読まない)."""
+    from mar.problems.p0012_wowii19_bipartite_avg_ecc import _verify_invariants
+    return _verify_invariants(ck, g)
+
+
+def _p12_is_bipartite(nbr, subset):
+    """subset が誘導する部分グラフが二部か (定義どおり 2 彩色を探す)."""
+    colour: dict[int, int] = {}
+    for start in subset:
+        if start in colour:
+            continue
+        colour[start] = 0
+        stack = [start]
+        while stack:
+            v = stack.pop()
+            for u in nbr[v] & subset:
+                if u not in colour:
+                    colour[u] = 1 - colour[v]
+                    stack.append(u)
+                elif colour[u] == colour[v]:
+                    return False
+    return True
+
+
+def _p12_b(g):
+    """b(G) を部分集合の総当たりで求める (探索器も検証器も使わない)."""
+    key = ck.sets_to_graph6(g)
+    if key in _P12_B_CACHE:
+        return _P12_B_CACHE[key]
+    n, nbr = g
+    value = 0
+    for size in range(n, 0, -1):
+        if any(_p12_is_bipartite(nbr, set(sub))
+               for sub in itertools.combinations(range(n), size)):
+            value = size
+            break
+    _P12_B_CACHE[key] = value
+    return value
+
+
+def _p12_max_independent(nbr, subset):
+    """G[subset] の最大独立集合を 1 つ返す (定義どおり総当たり)."""
+    cand = sorted(subset)
+    for size in range(len(cand), 0, -1):
+        for sub in itertools.combinations(cand, size):
+            if all(y not in nbr[x] for i, x in enumerate(sub)
+                   for y in sub[i + 1:]):
+                return set(sub)
+    return set()
+
+
+def _p12_alpha_on(nbr, subset):
+    """G[subset] の独立数."""
+    return len(_p12_max_independent(nbr, subset))
+
+
+def _p12_star(m):
+    """星 K_{1,m} (中心 0、葉 1..m)."""
+    return (m + 1, [set(range(1, m + 1))] + [{0} for _ in range(m)])
+
+
+def _p12_theorem1_sides(g, dist, v):
+    """定理 1 の証明が作る 2 彩色 (A, B) を、証明の手順どおりに組む."""
+    n, nbr = g
+    ecc = max(dist[v])
+    target = max(range(n), key=lambda u: dist[v][u])
+    path = [target]
+    while path[-1] != v:
+        cur = path[-1]
+        path.append(min(nbr[cur], key=lambda u: dist[v][u]))
+    path.reverse()
+    side_a = {v} | {path[i] for i in range(2, ecc + 1, 2)}
+    side_b = _p12_max_independent(nbr, nbr[v]) \
+        | {path[i] for i in range(3, ecc + 1, 2)}
+    return side_a, side_b
+
+
+def test_p0012_invariants_agree_with_the_definitions():
+    """離心率の総和・局所独立数・e_l を定義そのままに突き合わせる."""
+    seen = 0
+    for g in _p12_graphs():
+        n, nbr = g
+        q = _p12_invariants(g)
+        dist = ck.all_pairs_distance(g)
+        ecc = [max(dist[v]) for v in range(n)]
+        ells = [_p12_alpha_on(nbr, nbr[v]) for v in range(n)]
+        g6 = ck.sets_to_graph6(g)
+        assert (q["n"], q["diam"], q["rad"]) == (n, max(ecc), min(ecc)), g6
+        assert q["m"] == sum(len(s) for s in nbr) // 2, g6
+        assert q["ecc_sum"] == sum(ecc), g6
+        assert q["ell_max"] == max(ells), g6
+        assert q["e_ell"] == max(ecc[v] for v in range(n)
+                                 if ells[v] == max(ells)), g6
+        assert q["lb1"] == max(ecc[v] + ells[v] for v in range(n)), g6
+        seen += 1
+    assert seen > 0
+
+
+def test_p0012_theorem1_construction_is_a_bipartite_witness():
+    """定理 1 の証明: {v} ∪ S ∪ (測地路) は二部を誘導し、位数は ecc(v)+l(v)."""
+    seen = 0
+    for g in _p12_graphs():
+        n, nbr = g
+        dist = ck.all_pairs_distance(g)
+        g6 = ck.sets_to_graph6(g)
+        for v in range(n):
+            side_a, side_b = _p12_theorem1_sides(g, dist, v)
+            # 証明の主張 1: A も B も独立集合で、互いに交わらない
+            for side in (side_a, side_b):
+                assert all(not (nbr[x] & side) for x in side), (g6, v)
+            assert not (side_a & side_b), (g6, v)
+            # 証明の主張 2: 合わせて ecc(v) + l(v) 頂点
+            union = side_a | side_b
+            assert len(union) == max(dist[v]) + _p12_alpha_on(nbr, nbr[v]), \
+                (g6, v)
+            assert _p12_is_bipartite(nbr, union), (g6, v)
+        seen += 1
+    assert seen > 0
+
+
+def test_p0012_theorem1_lower_bound_holds():
+    """定理 1: 任意の頂点 v で b(G) >= ecc(v) + l(v)."""
+    seen = 0
+    for g in _p12_graphs():
+        n, nbr = g
+        q = _p12_invariants(g)
+        b = _p12_b(g)
+        dist = ck.all_pairs_distance(g)
+        g6 = ck.sets_to_graph6(g)
+        for v in range(n):
+            assert b >= max(dist[v]) + _p12_alpha_on(nbr, nbr[v]), (g6, v)
+        assert b >= q["lb1"], g6
+        seen += 1
+    assert seen > 0
+
+
+def test_p0012_layer_generalisation_holds():
+    """注意の一般化: b(G) >= alpha(G[E_v]) + alpha(G[O_v])."""
+    seen = 0
+    for g in _p12_graphs():
+        n, nbr = g
+        dist = ck.all_pairs_distance(g)
+        b = _p12_b(g)
+        g6 = ck.sets_to_graph6(g)
+        for v in range(n):
+            even = {u for u in range(n) if dist[v][u] % 2 == 0}
+            odd = {u for u in range(n) if dist[v][u] % 2 == 1}
+            assert b >= _p12_alpha_on(nbr, even) + _p12_alpha_on(nbr, odd), \
+                (g6, v)
+        seen += 1
+    assert seen > 0
+
+
+def test_p0012_average_eccentricity_lemma():
+    """補題: avg ecc <= diam。等号は自己中心的 (rad = diam) と同値."""
+    selfcentered = other = 0
+    for g in _p12_graphs():
+        q = _p12_invariants(g)
+        avg = Fraction(q["ecc_sum"], q["n"])
+        g6 = ck.sets_to_graph6(g)
+        assert q["rad"] <= avg <= q["diam"], g6
+        assert (avg == q["diam"]) == (q["rad"] == q["diam"]), g6
+        if q["rad"] == q["diam"]:
+            selfcentered += 1
+        else:
+            # 系: rad < diam なら floor(avg ecc) <= diam - 1
+            assert avg.numerator // avg.denominator <= q["diam"] - 1, g6
+            other += 1
+    assert selfcentered > 0 and other > 0
+
+
+def test_p0012_conjecture19_holds_and_is_sometimes_tight():
+    """予想 19 が走査範囲で成り立ち、等号も実際に起きる."""
+    seen = tight = 0
+    for g in _p12_graphs():
+        q = _p12_invariants(g)
+        avg = Fraction(q["ecc_sum"], q["n"])
+        rhs = avg.numerator // avg.denominator + q["ell_max"]
+        b = _p12_b(g)
+        assert b >= rhs, ck.sets_to_graph6(g)
+        tight += b == rhs
+        seen += 1
+    assert seen > 0 and tight > 0
+
+
+def test_p0012_self_centered_case_closes_without_the_citation():
+    """定理: rad = diam なら定理 1 だけで予想 19 が閉じる."""
+    covered = 0
+    for g in _p12_graphs():
+        q = _p12_invariants(g)
+        if q["rad"] != q["diam"]:
+            continue
+        avg = Fraction(q["ecc_sum"], q["n"])
+        rhs = avg.numerator // avg.denominator + q["ell_max"]
+        g6 = ck.sets_to_graph6(g)
+        assert rhs == q["diam"] + q["ell_max"], g6
+        # l_max を達成する頂点の離心率は diam なので、定理 1 の下界が右辺に届く
+        assert q["e_ell"] == q["diam"], g6
+        assert q["lb1"] >= rhs, g6
+        assert _p12_b(g) >= rhs, g6
+        covered += 1
+    assert covered > 0
+
+
+def test_p0012_theorem1_covers_all_but_the_residual():
+    """定理 3 の被覆条件 e_l >= floor(avg) と、引用が要る残余の切り分け."""
+    covered = residual = 0
+    for g in _p12_graphs():
+        q = _p12_invariants(g)
+        avg = Fraction(q["ecc_sum"], q["n"])
+        floor_avg = avg.numerator // avg.denominator
+        rhs = floor_avg + q["ell_max"]
+        g6 = ck.sets_to_graph6(g)
+        if q["e_ell"] >= floor_avg:
+            assert q["lb1"] >= rhs, g6
+            covered += 1
+        else:
+            # 残余は自己中心的ではない (よって floor(avg) <= diam - 1)
+            assert q["rad"] < q["diam"], g6
+            assert floor_avg <= q["diam"] - 1, g6
+            # 引用した予想 13 の下界で閉じる
+            b = _p12_b(g)
+            assert b >= q["diam"] + q["ell_max"] - 1 >= rhs, g6
+            residual += 1
+    assert covered > 0 and residual > 0
+
+
+def test_p0012_cited_conjecture13_holds_in_range():
+    """引用: b(G) >= diam + l_max - 1 (走査範囲での確認)."""
+    seen = 0
+    for g in _p12_graphs():
+        q = _p12_invariants(g)
+        assert _p12_b(g) >= q["diam"] + q["ell_max"] - 1, ck.sets_to_graph6(g)
+        seen += 1
+    assert seen > 0
+
+
+def test_p0012_ceiling_reading_is_false_for_stars():
+    """命題: K_{1,m} (m >= 2) は天井読みの反例。予想 19 自身は等号."""
+    for m in range(2, 9):
+        g = _p12_star(m)
+        q = _p12_invariants(g)
+        avg = Fraction(q["ecc_sum"], q["n"])
+        assert (q["n"], q["diam"], q["rad"], q["ell_max"]) \
+            == (m + 1, 2, 1, m), m
+        assert avg == Fraction(2 * m + 1, m + 1), m
+        b = _p12_b(g)
+        assert b == m + 1, m
+        # 床読み (予想 19) はちょうど等号
+        assert avg.numerator // avg.denominator + q["ell_max"] == b, m
+        # 天井読みは 1 だけ超過する
+        assert math.ceil(avg + q["ell_max"]) == m + 2 > b, m
+
+
+def test_p0012_smallest_ceiling_counterexample_has_order_three():
+    """天井読みの最小反例は P_3 = K_{1,2} (位数 2 では破れない)."""
+    bad = []
+    for n in (2, 3):
+        for g in _graphs(n):
+            q = _p12_invariants(g)
+            avg = Fraction(q["ecc_sum"], q["n"])
+            if math.ceil(avg + q["ell_max"]) > _p12_b(g):
+                bad.append(g)
+    assert len(bad) == 1, [ck.sets_to_graph6(h) for h in bad]
+    # 唯一の反例は P_3 (次数列 1,1,2)。頂点の番号づけは元データ依存。
+    n, nbr = bad[0]
+    assert (n, sorted(len(s) for s in nbr)) == (3, [1, 1, 2])
+    q = _p12_invariants(bad[0])
+    assert q == _p12_invariants(_p12_star(2))
+
+
+def test_p0012_verifier_bipartite_number_matches_brute_force():
+    """検証器の奇閉路トランスバーサルが総当たりの b(G) と一致する."""
+    from mar.problems.p0012_wowii19_bipartite_avg_ecc import (
+        _verify_bipartite_number,
+    )
+    seen = 0
+    for g in _p12_graphs():
+        q = _p12_invariants(g)
+        assert _verify_bipartite_number(q, g) == _p12_b(g), \
+            ck.sets_to_graph6(g)
+        seen += 1
+    assert seen > 0
+
+
+def test_p0012_verifier_checks_do_not_fire_on_the_truth():
+    """厳密な b(G) を渡したとき、定理チェックは 1 件も鳴らない."""
+    from collections import Counter
+
+    from mar.problems.p0012_wowii19_bipartite_avg_ecc import (
+        _verify_residual_check,
+        _verify_theorem_check,
+    )
+    bad: Counter = Counter()
+    resid: Counter = Counter()
+    for g in _p12_graphs():
+        q = _p12_invariants(g)
+        _verify_theorem_check(q, _p12_b(g), bad)
+        _verify_residual_check(q, resid)
+    assert not bad
+    assert resid["c19"] > 0
