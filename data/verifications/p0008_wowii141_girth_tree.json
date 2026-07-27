@@ -1,0 +1,77 @@
+{
+  "certificate_digest": "76de2b9099790564",
+  "checks": [
+    {
+      "detail": "0 件",
+      "name": "反例リストは空",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "走査範囲が宣言どおりの 28 族である (族を落とした証明書を弾く)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証人ファイルの SHA-256 と長さが証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "13,402,242 個すべてで T が木を誘導し girth - 2 + 2*lmax <= 2|T| を満たす",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "内周 4 以上の 20,143 個で lmax = Delta (三角形なしの言い換え)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "同じ 20,143 個で、全頂点の球 B_r(v) (r = floor(girth/2) - 1) が木を誘導し |B_r(v*)| >= Delta + r (補題 3.3・定理 3.4)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "内周が奇数の 887 個で L_(r+1) が空でなく、その各点が B_r にちょうど 1 本の辺をもつ (命題 3.5。球を 1 頂点伸ばせて切り上げ版が出る)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "同じ 20,143 個で Moore 型の下界 |B_r(v*)| >= 1 + Delta*sum_{i<r}(delta-1)^i (命題 3.8)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "走査したグラフ数が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "内周の分布が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "列挙個数が検証器の持つ公表値 (OEIS A001349 / A000055 / A002851 / A006820-A006822) と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "等号 480 個を厳密に再計算し、いずれも内周 4 かつ tree = 1 + Delta (定理 3.7)。残り全部で狭義成立",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証明書の合計 (論文の見出し数) が族ごとの集計と一致",
+      "passed": true
+    }
+  ],
+  "ok": true,
+  "platform": "Windows 11 (build 26200)",
+  "problem_id": "p0008_wowii141_girth_tree",
+  "python": "3.10.11",
+  "seconds": 2403.4,
+  "verified_at": "2026-07-27T01:55:22+00:00",
+  "verifier_hash": "fd394e9549848f2e"
+}

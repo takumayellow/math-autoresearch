@@ -32,6 +32,7 @@ P0004 = "p0004_wowii61_induced_forest"
 P0005 = "p0005_wowii_induced_tree"
 P0006 = "p0006_wowii194_hamiltonian"
 P0007 = "p0007_wowii200_star_tree"
+P0008 = "p0008_wowii141_girth_tree"
 #: 元データの走査が軽く、かつ等号グラフを含む族。
 P0002_FAMILIES = ("subcubic_06", "subcubic_08")
 #: 反例は $n \ge 9$ にしか無いので、ここで検査するのは比と証人の側。
@@ -45,6 +46,8 @@ P0005_FAMILIES = ("graphs_06", "graphs_07")
 P0006_FAMILIES = ("graphs_06", "graphs_07", "reg3_12")
 #: 2 種類の証人 (路と誘導木) と仮定成立グラフがどちらも現れる軽い族。
 P0007_FAMILIES = ("graphs_06", "graphs_07", "reg3_12")
+#: 等号 (内周 4) と奇内周のグラフがどちらも現れ、かつ数秒で走る族。
+P0008_FAMILIES = ("graphs_06", "graphs_07", "reg3_12")
 
 
 def _prepare(pid: str, keep, tmp_path, monkeypatch):
@@ -1539,3 +1542,214 @@ def test_p0007_mask_swapped_for_real_path_is_detected(star):
     assert not report.ok
     assert "仮定を満たさないのに仮定成立として数えられている" in \
         _detail(report, "モード 0 のグラフ")
+
+
+# ----------------------------------------------------------------- p0008
+
+
+@pytest.fixture()
+def girth(tmp_path, monkeypatch):
+    """p0008 を軽い 3 族に縮める.
+
+    検証器は「族の取りこぼし」を検出するためにモジュールの宣言
+    (``GRAPH_ORDERS`` 等) と証明書を突き合わせるので、宣言のほうも
+    同じ 3 族に差し替えてから渡す。
+    """
+    mod = importlib.import_module(f"mar.problems.{P0008}")
+    monkeypatch.setattr(mod, "GRAPH_ORDERS", [6, 7])
+    monkeypatch.setattr(mod, "TREE_ORDERS", [])
+    monkeypatch.setattr(mod, "REGULAR_FAMILIES", [(12, 3)])
+    cert, prob, wdir = _prepare(P0008, P0008_FAMILIES, tmp_path, monkeypatch)
+    _p0008_retotal(cert)
+    return cert, prob, wdir
+
+
+def _p0008_retotal(cert: Certificate) -> None:
+    """縮めた族に合わせて合計を作り直す (合計の検査を素通しさせる)."""
+    fams = cert.data["families"]
+    cert.data["totals"] = {
+        "graphs": sum(f["count"] for f in fams),
+        "families": len(fams),
+        "equality": sum(f["counts"].get("equal", 0) for f in fams),
+        "strict": sum(f["counts"].get("strict", 0) for f in fams),
+        "counterexamples": sum(f["counts"].get("fail", 0) for f in fams),
+        "exact_calls": sum(f["exact_calls"] for f in fams),
+    }
+    hist: dict[str, int] = {}
+    for f in fams:
+        for k, v in f.get("girth_hist", {}).items():
+            hist[k] = hist.get(k, 0) + v
+    cert.data["girth_totals"] = hist
+
+
+def _p0008_graphs(fam: dict):
+    """検証器が読むのと同じ順序で族のグラフを返す."""
+    import mar.checkgraph as ck
+    from mar.problems.p0008_wowii141_girth_tree import _verifier_source
+
+    return list(_verifier_source(ck, fam))
+
+
+def _p0008_lhs2(g) -> int:
+    """検証器側の実装で左辺の 2 倍を求める."""
+    import mar.checkgraph as ck
+    from mar.problems.p0008_wowii141_girth_tree import _lmax, lhs_doubled
+
+    return lhs_doubled(ck.girth(g), _lmax(ck, g))
+
+
+def _p0008_equality(cert: Certificate):
+    """等号グラフを 1 つ (族, graph6) で返す."""
+    for fam in cert.data["families"]:
+        for g6 in fam.get("equality_graphs", []):
+            return fam, g6
+    return None, None
+
+
+def test_p0008_clean_certificate_verifies(girth):
+    cert, prob, _ = girth
+    report = prob.verify(cert)
+    assert report.ok, _failed(report)
+
+
+def test_p0008_bit_flip_in_witness_is_detected(girth):
+    cert, prob, wdir = girth
+    _flip_first_byte(wdir / _fam(cert, "graphs_06")["witness_file"])
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "SHA-256" in _failed(report)
+
+
+def test_p0008_empty_witness_is_detected(girth):
+    """空集合は木を誘導しない."""
+    cert, prob, wdir = girth
+    _rewrite_witness(wdir, _fam(cert, "graphs_06"), 0, 0)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "T が木を誘導し" in _failed(report)
+
+
+def test_p0008_witness_with_a_cycle_is_detected(girth):
+    """閉路を含む頂点集合を証人にすると木の判定で落ちる."""
+    import mar.checkgraph as ck
+
+    cert, prob, wdir = girth
+    fam = _fam(cert, "graphs_06")
+    graphs = _p0008_graphs(fam)
+    full = set(range(fam["n"]))
+    index = next(i for i, g in enumerate(graphs) if not ck.induces_tree(g, full))
+    _rewrite_witness(wdir, fam, index, (1 << fam["n"]) - 1)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "T が木を誘導し" in _failed(report)
+
+
+def test_p0008_too_small_witness_is_detected(girth):
+    """木ではあるが下界に届かない証人 (1 頂点) を弾く.
+
+    証人の**大きさ**を見ていない検証器はこれを通してしまうので、
+    木かどうかの判定とは別に試す。
+    """
+    cert, prob, wdir = girth
+    fam = _fam(cert, "graphs_06")
+    graphs = _p0008_graphs(fam)
+    index = next(i for i, g in enumerate(graphs) if _p0008_lhs2(g) > 2)
+    _rewrite_witness(wdir, fam, index, 1)   # 頂点 0 だけ = 1 頂点の木
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "下界に届かない" in _detail(report, "T が木を誘導し")
+
+
+def test_p0008_hidden_equality_graph_is_detected(girth):
+    """等号グラフを 1 個隠すと、証人で狭義が閉じないことが露見する."""
+    cert, prob, _ = girth
+    fam, hidden = _p0008_equality(cert)
+    assert hidden, "等号グラフが族に無いとテストにならない"
+    fam["equality_graphs"].remove(hidden)
+    fam["equality_data"].pop(hidden, None)
+    fam["equality_examples"] = [g6 for g6 in fam["equality_examples"]
+                                if g6 != hidden]
+    fam["counts"]["equal"] -= 1
+    fam["counts"]["strict"] += 1
+    _p0008_retotal(cert)
+    report = prob.verify(cert)
+    assert not report.ok
+    detail = _detail(report, "等号")
+    assert "等号リストに無いのに" in detail and hidden in detail
+
+
+def test_p0008_false_equality_claim_is_detected(girth):
+    """狭義成立のグラフを等号リストに入れると、厳密再計算で露見する."""
+    import mar.checkgraph as ck
+
+    cert, prob, _ = girth
+    fam = _fam(cert, "graphs_06")
+    listed = set(fam["equality_graphs"])
+    innocent = next(g6 for g6 in (ck.sets_to_graph6(g)
+                                  for g in _p0008_graphs(fam))
+                    if g6 not in listed)
+    fam["equality_graphs"].append(innocent)
+    fam["counts"]["equal"] += 1
+    fam["counts"]["strict"] -= 1
+    _p0008_retotal(cert)
+    report = prob.verify(cert)
+    assert not report.ok
+    detail = _detail(report, "等号")
+    assert "2*tree" in detail and innocent in detail
+
+
+def test_p0008_tampered_equality_data_is_detected(girth):
+    """等号グラフの 4 つ組 (girth, Delta, lmax, tree) を書き換えると落ちる."""
+    cert, prob, _ = girth
+    fam, g6 = _p0008_equality(cert)
+    assert g6, "等号グラフが族に無いとテストにならない"
+    fam["equality_data"][g6] = [4, 99, 99, 100]
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "等号データが再現しない" in _detail(report, "等号")
+
+
+def test_p0008_dropped_family_is_detected(girth):
+    """族を 1 つ落とした証明書は、残った族だけ見ると整合してしまう.
+
+    公表値との突合も合計の検査も族ごとなので、走査範囲そのものを
+    検査しないと「どこまで見たか」の主張だけが検証の外に残る。
+    """
+    cert, prob, _ = girth
+    cert.data["families"] = [f for f in cert.data["families"]
+                             if f["tag"] != "graphs_07"]
+    _p0008_retotal(cert)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "graphs_07" in _detail(report, "走査範囲")
+
+
+def test_p0008_wrong_girth_histogram_is_detected(girth):
+    """内周の分布を 1 個ずらすと、検証器の数え直しと合わなくなる."""
+    cert, prob, _ = girth
+    fam = _fam(cert, "graphs_06")
+    key = next(k for k, v in fam["girth_hist"].items() if v > 0)
+    fam["girth_hist"][key] -= 1
+    fam["girth_hist"]["9"] = fam["girth_hist"].get("9", 0) + 1
+    _p0008_retotal(cert)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "内周の分布" in _failed(report)
+
+
+def test_p0008_wrong_published_count_is_detected(girth):
+    """証明書の期待個数を偽ると、検証器が自前で持つ公表値と食い違う."""
+    cert, prob, _ = girth
+    _fam(cert, "graphs_06")["source_expected"] = 111
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "公表値" in _failed(report)
+
+
+def test_p0008_inflated_totals_are_detected(girth):
+    """合計だけ水増しした証明書 (論文の見出し数の偽装) を弾く."""
+    cert, prob, _ = girth
+    cert.data["totals"]["graphs"] += 1000
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "合計" in _failed(report)

@@ -1,0 +1,580 @@
+% !TEX program = lualatex
+% 自動生成: mar.report.latex — 手で編集した場合は再生成で上書きされる
+\documentclass[paper=a4,fontsize=10.5pt,jafontsize=10.5pt]{jlreq}
+
+\usepackage{luatexja}
+\usepackage[haranoaji]{luatexja-preset}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[margin=25mm]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  frame=single,
+  showstringspaces=false,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  captionpos=b,
+}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{定理}[section]
+\newtheorem{proposition}[theorem]{命題}
+\newtheorem{lemma}[theorem]{補題}
+\newtheorem{corollary}[theorem]{系}
+\newtheorem{conjecture}[theorem]{予想}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{定義}
+\newtheorem{example}[theorem]{例}
+\newtheorem{remark}[theorem]{注意}
+
+\renewcommand{\proofname}{証明}
+
+\title{内周と局所独立数による最大誘導木の下界: Written on the Wall II 予想 141 の証明と等号グラフの特徴づけ}
+\author{自動研究パイプライン \texttt{mar}（Claude Opus 5 + 検証器）}
+\date{2026年07月27日}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+DeLaViña の Graffiti.pc が生成し、2005 年から未解決のまま残っている Written on the Wall II Conjecture 141 を\textbf{解決する}。$\mathrm{tree}(G)$ を最大誘導木の位数、$\mathrm{girth}(G)$ を内周 (閉路がなければ $0$)、$\ell_{\max}(G) = \max_v \alpha(G[N(v)])$ を局所独立数の最大値とするとき、この予想は連結グラフ $G$ に対し $\tfrac{1}{2}\mathrm{girth}(G) - 1 + \ell_{\max}(G) \le \mathrm{tree}(G)$ が成り立つと主張する。本稿はこれを証明する。鍵は\textbf{球の補題}である: $2r + 2 \le \mathrm{girth}(G)$ ならば半径 $r$ の球 $B_r(v)$ は必ず木を誘導する。$r = \lfloor \mathrm{girth}/2 \rfloor - 1$ と取り、最大次数の頂点を中心にしてレベルを数えると $\mathrm{tree}(G) \ge |B_r(v^*)| \ge \Delta(G) + r$ が出る。内周 $\ge 4$ では三角形がないので $\ell_{\max} = \Delta$ となり、これがそのまま主張を与える。内周 $\le 3$ は星の下界 $\mathrm{tree} \ge 1 + \ell_{\max}$ (WOWII 予想 140) で片づく。内周が奇数のときは球をさらに 1 頂点伸ばせるので、切り捨てを含む Lean 形式化よりも強い\textbf{有理数のままの}主張が得られる。さらに等号を完全に特徴づける: 等号が成立するのは $\mathrm{girth}(G) = 4$ かつ $\mathrm{tree}(G) = 1 + \Delta(G)$ のときに限る。同じ議論から Moore 型の指数的な下界 $\mathrm{tree}(G) \ge 1 + \Delta \sum_{i<r} (\delta-1)^i$ も従い、最小次数 $\ge 3$ のグラフでは予想 141 が真の姿から遠く弱いことがわかる。証明の各段は、連結グラフの完全リスト ($n \le 10$)、木 ($n \le 20$)、GENREG の連結正則グラフ、計 13,402,242 個の上で機械的に照合した。球の補題は内周 $\ge 4$ の 20,143 個すべてについて\textbf{全頂点}を中心に検査し、等号は 480 個で成立して、いずれも定理の述べるとおりであった。
+\end{abstract}
+
+\noindent\textbf{キーワード:} graph theory、induced tree、girth、local independence、Graffiti.pc、open problem、proof、certificate
+
+
+\section{はじめに}
+
+$G$ を位数 $n = |V(G)|$ の連結な単純グラフとする。$\alpha(G)$ を独立数、
+$N(v)$ を頂点 $v$ の\textbf{開}近傍、$\deg(v) = |N(v)|$、
+$\Delta(G)$ と $\delta(G)$ を最大次数・最小次数とする。
+\[ \ell(v) \ = \ \alpha\bigl(G[N(v)]\bigr), \qquad
+   \ell_{\max}(G) \ = \ \max_{v \in V(G)} \ell(v) \]
+と置く。$\ell(v)$ は「$v$ の隣人のうち互いに隣接しないものを最大何個取れるか」
+であり、$G$ が $v$ の周りでどれだけ局所的に疎かを測る\textbf{局所独立数}である。
+$\mathrm{tree}(G)$ は木を誘導する頂点集合の最大の大きさ
+(\textbf{最大誘導木の位数})、$\mathrm{girth}(G)$ は最短閉路の長さで、
+$G$ が閉路をもたないときは $\mathrm{girth}(G) = 0$ と規約する
+(\texttt{formal-conjectures} \cite{formalconj} の定義に合わせる)。
+
+\begin{conjecture}[Graffiti.pc; WOWII Conjecture 141 \cite{wowii}]\label{conj:141}
+連結グラフ $G$ に対し
+\[ \frac{1}{2}\,\mathrm{girth}(G) \ - \ 1 \ + \ \ell_{\max}(G)
+   \ \le \ \mathrm{tree}(G) . \]
+\end{conjecture}
+
+この予想は 2005 年 7 月 19 日に Graffiti.pc が出題したもので、DeLaViña の
+公開している未解決リスト \cite{wowii} に 2026 年 7 月 27 日に取得した時点でも
+状態 \texttt{O} (未解決) として載っており、同サイトの解決済みリストには
+現れない。Google DeepMind の \texttt{formal-conjectures} \cite{formalconj} にも
+Lean 4 で形式化されているが、そこでは
+\[ \left\lfloor \frac{\mathrm{girth}(G)}{2} \right\rfloor - 1
+   + \ell_{\max}(G) \ \le \ \mathrm{tree}(G) \tag{$\ast$} \]
+と切り捨てで書かれており、証明は \texttt{sorry} のままである。内周が奇数の
+とき $(\ast)$ は予想 \ref{conj:141} より真に弱い。本稿は\textbf{強い方}、
+すなわち有理数のままの予想 \ref{conj:141} を証明する。
+
+$\mathrm{tree}(G)$ の決定は NP 困難である \cite{ess1986} 一方、
+$\mathrm{girth}(G)$ と $\ell_{\max}(G)$ は多項式時間で計算できる
+($\ell(v)$ は近傍という小さい部分グラフの独立数である)。予想 \ref{conj:141} は
+したがって「安価に計算できる量で、計算困難な量を下から押さえる」型の主張である。
+
+本稿の構成は次のとおり。第 \ref{sec:plan} 節で証明の見取り図と、それを
+第三者が再実行できる形にするための証人つき証明書の設計を述べる。第
+\ref{sec:proof} 節が主要部で、予想 \ref{conj:141} を証明し (系
+\ref{cor:main})、等号を完全に特徴づけ (定理 \ref{thm:eq})、さらに強い
+Moore 型の下界を与える (命題 \ref{prop:moore})。第 \ref{sec:check} 節で
+13,402,242 個のグラフ上での機械照合の結果を報告する。
+
+\section{証明の見取り図と機械照合の設計}\label{sec:plan}
+
+証明は内周で場合分けする。$g = \mathrm{girth}(G)$ と書く。
+
+\begin{itemize}
+\item $g \in \{0, 3\}$ (森、または三角形をもつ): 左辺は
+  $\ell_{\max} - 1$ または $\ell_{\max} + \tfrac{1}{2}$ にすぎない。
+  $\{v\} \cup A$ ($A$ は $N(v)$ の最大独立集合) が星を誘導するという一行の
+  観察から出る\textbf{星の下界} $\mathrm{tree}(G) \ge 1 + \ell_{\max}(G)$
+  で足りる。
+\item $g \ge 4$: 三角形がないので $N(v)$ は独立集合であり
+  $\ell(v) = \deg(v)$、したがって $\ell_{\max}(G) = \Delta(G)$ と
+  \textbf{最大次数に化ける}。あとは「次数 $\Delta$ の頂点のまわりに、
+  木を誘導する大きさ $\Delta + \lfloor g/2 \rfloor - 1$ の集合がある」ことを
+  言えばよい。これを与えるのが\textbf{球の補題} (補題 \ref{lem:ball}) である。
+\end{itemize}
+
+見取り図としてはこれだけである。内周が大きいグラフは局所的に木に見える、という
+直観を「半径 $\lfloor g/2 \rfloor - 1$ の球は\textbf{厳密に}木を誘導する」
+という形に固定できたことが要点で、そこから先はレベルを数えるだけになる。
+
+\subsection*{機械照合}
+
+証明が済んでいるので網羅走査は必要ではない。しかし本稿は証明の各段を
+\textbf{独立に実装された検証器}に再計算させ、有限だが大きな範囲で照合する。
+目的は 2 つある。第 1 に、初等的な場合分けの見落とし (とくに内周の小さい端点、
+$r = 0$ になる境界、閉路をもたない規約) を潰すこと。第 2 に、等号の分類
+(定理 \ref{thm:eq}) が実際にどれだけの頻度で起きるかを数え、主張が
+空虚でないことを示すことである。
+
+検証器が各グラフについて再計算するのは次のものである。
+
+\begin{itemize}
+\item \textbf{証人}: グラフごとに木を誘導する頂点集合 $T$ を 1 つ
+  (32 ビットのビットマスク) 渡す。$G[T]$ が木であること、および
+  $g - 2 + 2\ell_{\max} \le 2|T|$ (予想 \ref{conj:141} を 2 倍して分母を
+  払った形) は線形時間で確認できる。NP 困難な $\mathrm{tree}(G)$ を検証器が
+  解き直す必要はない。
+\item \textbf{球の補題}: 内周 $\ge 4$ のグラフについて、$r = \lfloor g/2
+  \rfloor - 1$ とし\textbf{すべての頂点} $v$ を中心に $B_r(v)$ を幅優先
+  探索で構成し、それが木を誘導することを確かめる。
+\item \textbf{レベル数えと Moore 型}: 同じグラフで
+  $|B_r(v^*)| \ge \Delta + r$ と
+  $|B_r(v^*)| \ge 1 + \Delta \sum_{i<r} (\delta-1)^i$ を確かめる。
+\item \textbf{内周が奇数のときの 1 頂点の伸長}: $L_{r+1}(v^*)$ が空でない
+  こと、およびその各点が $B_r(v^*)$ にちょうど 1 本しか辺をもたないことを
+  確かめ、伸ばした集合が実際に木を誘導することまで見る (命題 \ref{prop:odd})。
+  切り上げ版、すなわち有理数のままの予想 \ref{conj:141} が切り捨て版 $(\ast)$ より
+  真に強くなるのはこの段だけなので、独立に検査する価値がある。
+\item \textbf{等号の分類}: 等号が成立するグラフは graph6 で全列挙し、そこだけ
+  最大誘導木を厳密に解き直して、内周が 4 で $\mathrm{tree} = 1 + \Delta$ で
+  あることを確かめる。リストに載っていないグラフでは、証人が\textbf{狭義の}
+  不等号を満たすことを要求する。これで分類が両側から閉じる。
+\end{itemize}
+
+厳密計算を要したのは 1,466 個 (0.011\%) だけである。ただし
+この数は\textbf{探索器が自己申告した費用であって、検証器が再計算した量では
+ない}。検証器が独立に数えているのは等号グラフの個数 (そこだけ厳密に解き直す)
+であり、探索器の呼び出し回数そのものは検証の対象外である。本稿の主張はこの
+数値に依存しない。
+
+\section{予想 141 の証明}\label{sec:proof}
+
+以下 $G$ は連結、$n \ge 2$、$g = \mathrm{girth}(G)$ とする。頂点 $v$ と
+整数 $i \ge 0$ に対し
+\[ L_i(v) = \{u \in V(G) : d(u,v) = i\}, \qquad
+   B_r(v) = \bigcup_{i=0}^{r} L_i(v) \]
+と置く ($d$ は $G$ 上の距離、$L_0(v) = \{v\}$)。$\mathrm{ecc}(v)$ を $v$ の
+離心数 ($\max_u d(u,v)$) とする。
+
+\subsection{星の下界と内周の小さい場合}
+
+\begin{theorem}[星の下界; WOWII 予想 140 \cite{wowii}]\label{thm:star}
+任意のグラフ $G$ に対し $\mathrm{tree}(G) \ge 1 + \ell_{\max}(G)$。
+\end{theorem}
+
+\begin{proof}
+$\ell(v)$ を最大にする頂点 $v$ を取り、$A \subseteq N(v)$ を $G[N(v)]$ の
+最大独立集合とする ($|A| = \ell_{\max}(G)$)。$A$ は独立で、$A$ の各点は $v$ に
+隣接するから $G[\{v\} \cup A]$ は星 $K_{1,|A|}$ そのものであり、とくに木で
+ある。よって $\mathrm{tree}(G) \ge 1 + \ell_{\max}(G)$。
+\end{proof}
+
+定理 \ref{thm:star} は WOWII の\textbf{予想 140} そのものであり、DeLaViña の
+リスト \cite{wowii} では状態 \texttt{E} (容易に解決済み) とされている。
+本稿では既知の事実として引用する。
+
+\begin{corollary}\label{cor:small}
+$g \le 3$ (すなわち $g = 0$ または $g = 3$) ならば予想 \ref{conj:141} は
+\textbf{狭義の不等号}で成り立つ。より詳しく、$g = 0$ なら
+$\mathrm{tree}(G) - (\tfrac{g}{2} - 1 + \ell_{\max}) \ge 2$、
+$g = 3$ なら $\ge \tfrac{1}{2}$ である。
+\end{corollary}
+
+\begin{proof}
+$g = 0$ のとき左辺は $\ell_{\max} - 1$ で、定理 \ref{thm:star} より
+$\mathrm{tree} \ge \ell_{\max} + 1$。差は $2$ 以上。
+$g = 3$ のとき左辺は $\ell_{\max} + \tfrac{1}{2}$ で、同じく
+$\mathrm{tree} \ge \ell_{\max} + 1$。差は $\tfrac{1}{2}$ 以上。
+\end{proof}
+
+内周 $\ge 4$ の場合に進む前に、この場合に左辺が何になるかを見ておく。
+
+\medskip
+\noindent
+\textbf{観察.} $g \ge 4$ ならば $G$ は三角形をもたないので、任意の $v$ に
+ついて $N(v)$ は独立集合であり $\ell(v) = \deg(v)$。したがって
+\[ \ell_{\max}(G) \ = \ \Delta(G) \qquad (g \ge 4). \]
+
+\subsection{球の補題}
+
+\begin{lemma}[球は木を誘導する]\label{lem:ball}
+$G$ を閉路をもつグラフ、$g = \mathrm{girth}(G)$ とし、整数 $r \ge 1$ が
+$2r + 2 \le g$ を満たすとする。このとき\textbf{任意の}頂点 $v$ について
+$G[B_r(v)]$ は木である。
+\end{lemma}
+
+\begin{proof}
+まず 2 つのことを示す。
+
+\textbf{(a) 各レベルの内部に辺はない。} $1 \le i \le r$ とし、
+$x, y \in L_i(v)$ が隣接したとする。$v$ から $x$ への最短路、$y$ から $v$ への
+最短路、および辺 $xy$ をつなぐと、長さ $2i + 1$ の閉じた歩道が得られる。長さが
+奇数の閉じた歩道は必ず奇閉路を含むから、$G$ は長さ $\le 2i + 1 \le 2r + 1
+\le g - 1$ の閉路をもつ。これは $g$ が最短閉路の長さであることに反する。
+
+\textbf{(b) 親は一意である。} $1 \le i \le r$ とし、$u \in L_i(v)$ が
+$x, y \in L_{i-1}(v)$ ($x \ne y$) の両方に隣接したとする。$v$--$x$ 最短路 $P$ と
+$v$--$y$ 最短路 $Q$ を取り、$P$ と $Q$ の共通頂点のうち $v$ からの距離が最大の
+ものを $z$ とし、$j = d(v,z)$ と置く。最短路上では $v$ からの距離が単調に増える
+ので、$z$ より後の $P$ の頂点は $Q$ 上にはない。すなわち $P$ の $z$--$x$ 部分と
+$Q$ の $z$--$y$ 部分は内部で交わらず、長さはともに $(i-1) - j$ である。
+$x \ne y$ より $j \le i - 2$、とくにこの共通の長さは $1$ 以上である。また
+$u \in L_i(v)$ は $P \cup Q$ 上にない。したがって
+\[ z \ \to \ \cdots \ \to \ x \ \to \ u \ \to \ y \ \to \ \cdots \ \to \ z \]
+は長さ $2\bigl((i-1)-j\bigr) + 2$ の閉路であり、この長さは $4$ 以上
+$2(i-1) + 2 = 2i \le 2r \le g - 2$ 以下である。これも $g$ の最小性に反する。
+
+さて $u \in L_i(v)$ ($1 \le i \le r$) の $B_r(v)$ 内の隣接点を数える。距離の
+定義から $u$ の隣接点は $L_{i-1} \cup L_i \cup L_{i+1}$ にしか入らない。
+(a) より $L_i$ には入らず、(b) より $L_{i-1}$ にはちょうど 1 個入る (最短路を
+たどれば 1 個は必ずある)。ゆえに $G[B_r(v)]$ の辺のうち $u$ を「下側」の端点と
+するものはちょうど 1 本であり、これを $u$ に割り当てると
+\[ |E(G[B_r(v)])| \ = \ |B_r(v)| - 1 \]
+を得る ($v$ 自身には割り当てがない)。$B_r(v)$ は $v$ から距離順に作られており
+$G[B_r(v)]$ は連結だから、辺数が頂点数より 1 少ない連結グラフとして木である。
+\end{proof}
+
+$2r + 2 \le g$ を満たす最大の整数は $r = \lfloor g/2 \rfloor - 1$ である。
+以後この値を単に $r$ と書く。切り上げにしてはいけない: $g = 5$ で $r = 2$ と
+取ると $C_5$ 自身が反例になる ($B_2(v)$ が $C_5$ 全体になってしまう)。
+
+\subsection{予想 141 の証明}
+
+\begin{theorem}\label{thm:main}
+$G$ を閉路をもつ連結グラフ、$g = \mathrm{girth}(G) \ge 4$、
+$r = \lfloor g/2 \rfloor - 1 \ (\ge 1)$ とする。このとき任意の頂点 $v$ で
+$\mathrm{ecc}(v) \ge r + 1$ であり、最大次数の頂点 $v^*$ について
+\[ \mathrm{tree}(G) \ \ge \ |B_r(v^*)| \ \ge \ \Delta(G) + r
+   \ = \ \ell_{\max}(G) + \left\lfloor \frac{g}{2} \right\rfloor - 1 . \]
+\end{theorem}
+
+\begin{proof}
+$g \ge 4$ より $r \ge 1$ であり、$2r + 2 \le g$ だから補題 \ref{lem:ball} が
+使える。
+
+まず離心数を評価する。ある頂点 $v$ で $\mathrm{ecc}(v) \le r$ だったとすると
+$B_r(v) = V(G)$ であり、補題 \ref{lem:ball} より $G$ 自身が木になる。これは
+$G$ が閉路をもつことに反する。よってすべての $v$ で $\mathrm{ecc}(v) \ge r+1$
+であり、とくに $L_1(v), \dots, L_{r+1}(v)$ はすべて空でない。
+
+$v^*$ を $\deg(v^*) = \Delta(G)$ なる頂点とする。$|L_1(v^*)| = \Delta(G)$ で
+あり、$2 \le i \le r$ の各レベルは空でないから
+\[ |B_r(v^*)| \ = \ 1 + |L_1(v^*)| + \sum_{i=2}^{r} |L_i(v^*)|
+   \ \ge \ 1 + \Delta(G) + (r-1) \ = \ \Delta(G) + r . \]
+補題 \ref{lem:ball} より $G[B_r(v^*)]$ は木なので
+$\mathrm{tree}(G) \ge |B_r(v^*)|$。最後の等号は $g \ge 4$ における観察
+($\ell_{\max} = \Delta$) による。
+\end{proof}
+
+定理 \ref{thm:main} と系 \ref{cor:small} を合わせると、切り捨て版
+$(\ast)$ すなわち Lean 形式化 \cite{formalconj} の主張が全連結グラフで
+従う。内周が奇数のときはもう 1 頂点伸ばせる。
+
+\begin{proposition}[奇内周では 1 頂点伸びる]\label{prop:odd}
+$G$ を連結、$g = \mathrm{girth}(G)$ が奇数で $g \ge 5$ とし
+$r = \lfloor g/2 \rfloor - 1 = \tfrac{g-3}{2}$ とする。このとき
+\[ \mathrm{tree}(G) \ \ge \ \Delta(G) + r + 1
+   \ = \ \ell_{\max}(G) + \frac{g-1}{2} . \]
+\end{proposition}
+
+\begin{proof}
+定理 \ref{thm:main} の証明より $L_{r+1}(v^*) \ne \emptyset$。
+$w \in L_{r+1}(v^*)$ を取る。$w$ の $B_r(v^*)$ 内の隣接点は $L_r(v^*)$ にしか
+入らない。もし $x, y \in L_r(v^*) \cap N(w)$、$x \ne y$ があったとすると、
+補題 \ref{lem:ball} の (b) とまったく同じ議論で長さ
+$2(r - j) + 2 \le 2r + 2 = g - 1$ の閉路が得られ、$g$ の最小性に反する
+($j$ は 2 本の最短路が分かれる高さ)。よって $w$ は $B_r(v^*)$ にちょうど 1 個の
+隣接点をもつ。したがって $G[B_r(v^*) \cup \{w\}]$ は木であり、
+$\mathrm{tree}(G) \ge |B_r(v^*)| + 1 \ge \Delta(G) + r + 1$。
+$r + 1 = \tfrac{g-1}{2}$ である。
+\end{proof}
+
+\begin{corollary}[予想 \ref{conj:141}]\label{cor:main}
+すべての連結グラフ $G$ に対し
+\[ \frac{1}{2}\,\mathrm{girth}(G) - 1 + \ell_{\max}(G)
+   \ \le \ \mathrm{tree}(G) . \]
+\end{corollary}
+
+\begin{proof}
+$g \le 3$ は系 \ref{cor:small}。$g$ が偶数で $g \ge 4$ のとき、
+$\lfloor g/2 \rfloor - 1 = \tfrac{g}{2} - 1$ なので定理 \ref{thm:main} が
+そのまま主張である。$g$ が奇数で $g \ge 5$ のとき、命題 \ref{prop:odd} より
+\[ \mathrm{tree}(G) \ \ge \ \ell_{\max}(G) + \frac{g-1}{2}
+   \ > \ \ell_{\max}(G) + \frac{g}{2} - 1 . \]
+\end{proof}
+
+分母を払っておくと、以下の議論で扱いやすい。整数の主張として述べれば
+\begin{equation}\label{eq:int}
+g - 2 + 2\,\ell_{\max}(G) \ \le \ 2\,\mathrm{tree}(G)
+\end{equation}
+であり、これが第 \ref{sec:check} 節で検証器が確かめる形である。
+
+\subsection{等号の特徴づけ}
+
+\begin{theorem}[等号]\label{thm:eq}
+連結グラフ $G$ について、系 \ref{cor:main} の等号
+$\tfrac{1}{2}\mathrm{girth}(G) - 1 + \ell_{\max}(G) = \mathrm{tree}(G)$
+が成り立つのは
+\[ \mathrm{girth}(G) = 4 \quad\text{かつ}\quad
+   \mathrm{tree}(G) = 1 + \Delta(G) \]
+のとき、\textbf{かつそのときに限る}。このとき最大誘導木は星である。
+\end{theorem}
+
+\begin{proof}
+($\Leftarrow$) $g = 4$ なら観察より $\ell_{\max} = \Delta$ で、左辺は
+$2/2 - 1 + \Delta = 1 + \Delta = \mathrm{tree}(G)$。
+
+($\Rightarrow$) 内周で場合分けする。
+\begin{itemize}
+\item $g = 0$: 系 \ref{cor:small} より差は $2$ 以上で等号は起こらない。
+\item $g$ が奇数: 左辺 $= \ell_{\max} + \tfrac{g-2}{2}$ は半整数
+  (分母 2 の既約分数) だが右辺は整数なので、等号は起こらない。
+  これは $g = 3$ も $g \ge 5$ も同時に片づける。
+\item $g$ が偶数で $g \ge 6$: $r = \tfrac{g}{2} - 1 \ge 2$ である。
+  等号は $\mathrm{tree}(G) = \Delta + r$ を意味する。定理 \ref{thm:main} の
+  評価は
+  $\Delta + r \le |B_r(v^*)| \le \mathrm{tree}(G) = \Delta + r$
+  なので、途中の不等号はすべて等号でなければならない。とくに
+  $\sum_{i=2}^{r} |L_i(v^*)| = r - 1$ であり、$r \ge 2$ の各レベルが空でない
+  ことと合わせて $|L_i(v^*)| = 1$ ($2 \le i \le r$) を得る。よって
+  $L_r(v^*) = \{z\}$ は 1 点集合である。ここで $L_{r+1}(v^*) \ne \emptyset$
+  から $w$ を取ると、$w$ の $B_r(v^*)$ 内の隣接点は $L_r(v^*) = \{z\}$ の中に
+  しかないから、ちょうど 1 個である。したがって
+  $G[B_r(v^*) \cup \{w\}]$ は木であり
+  $\mathrm{tree}(G) \ge \Delta + r + 1$。これは等号に矛盾する。
+\item $g = 4$: 左辺は $1 + \Delta$ なので、等号は
+  $\mathrm{tree}(G) = 1 + \Delta$ と同値である。
+\end{itemize}
+最後に、$\mathrm{tree}(G) = 1 + \Delta = 1 + \ell_{\max}(G)$ のとき、定理
+\ref{thm:star} の星がその大きさを達成しているので、最大誘導木として星が
+取れる。
+\end{proof}
+
+奇内周での等号を排除するのに使ったのが\textbf{パリティ}だけである点は
+注意に値する。切り捨て版 $(\ast)$ ではこの余裕が消えてしまい、たとえば
+$C_5$ は $(\ast)$ の等号を満たす ($\lfloor 5/2 \rfloor - 1 + 2 = 3 =
+\mathrm{tree}(C_5)$)。予想 \ref{conj:141} の有理数の形の方が、等号が
+内周 4 に限るという意味で\textbf{分類がきれいになる}。
+
+\subsection{Moore 型の強化}
+
+同じ球から、内周が大きいときには予想 \ref{conj:141} よりはるかに強い
+下界が出る。
+
+\begin{proposition}[Moore 型の下界]\label{prop:moore}
+$G$ を閉路をもつ連結グラフ、$g = \mathrm{girth}(G) \ge 4$、
+$r = \lfloor g/2 \rfloor - 1$、$\delta = \delta(G)$ とすると
+\[ \mathrm{tree}(G) \ \ge \ 1 + \Delta(G) \sum_{i=0}^{r-1} (\delta-1)^i . \]
+\end{proposition}
+
+\begin{proof}
+$1 \le i \le r-1$ と $u \in L_i(v^*)$ を取る。補題 \ref{lem:ball} の (a)(b) より
+$u$ は $L_i$ に隣接点をもたず、$L_{i-1}$ にちょうど 1 個もつ。残りはすべて
+$L_{i+1}$ に入るので、$u$ は $L_{i+1}$ に $\deg(u) - 1 \ge \delta - 1$ 個の
+隣接点 (以下「子」) をもつ。また (b) より $L_{i+1}$ の各点の親は一意なので、
+異なる $u$ の子は重ならない。よって
+$|L_{i+1}(v^*)| \ge (\delta-1)\,|L_i(v^*)|$ であり、
+$|L_1(v^*)| = \Delta$ と合わせて $|L_i(v^*)| \ge \Delta(\delta-1)^{i-1}$
+($1 \le i \le r$)。総和を取れば
+$|B_r(v^*)| \ge 1 + \Delta \sum_{i=0}^{r-1} (\delta-1)^i$ で、
+$G[B_r(v^*)]$ が木であることから主張を得る。
+\end{proof}
+
+たとえば $3$-正則で内周 $g$ のグラフでは $\delta = \Delta = 3$、
+$r = \lfloor g/2 \rfloor - 1$ なので
+$\mathrm{tree}(G) \ge 3 \cdot 2^{r} - 2$ となり、内周について\textbf{指数
+的}である。一方、予想 \ref{conj:141} が要求するのは
+$\tfrac{g}{2} + 2$ 程度、すなわち内周について\textbf{線形}にすぎない。
+最小次数が $3$ 以上のグラフでは、予想 \ref{conj:141} は真の姿から大きく
+弱められた形だったことになる。ただし命題 \ref{prop:moore} は定理
+\ref{thm:main} を含まない: $\delta = 1$ (懸垂点がある) のとき右辺は
+$1 + \Delta$ に潰れ、$r \ge 2$ では定理 \ref{thm:main} の方が強い。
+
+\section{機械照合}\label{sec:check}
+
+McKay \cite{mckay} の連結グラフの完全リスト ($n \le 10$) と木の完全リスト
+($11 \le n \le 20$)、および Meringer の GENREG \cite{genreg} による
+連結 $r$-正則グラフ ($(n, r) \in \{(12, 3), (14, 3), (16, 3), (18, 3), (11, 4), (12, 4), (13, 4), (12, 5), (11, 6)\}$) の合計 13,402,242 個に
+ついて、第 \ref{sec:proof} 節の主張を検証器に再計算させた。
+\textbf{(\ref{eq:int}) の破れは 1 個もない。}
+
+内周が $4$ 以上で球の補題が実際に働くのは 20,143 個
+(0.15\%) で、この全部について\textbf{全頂点}を中心に
+$B_r(v)$ を作り直し、木を誘導することを確かめた。同じグラフで
+$|B_r(v^*)| \ge \Delta + r$ (定理 \ref{thm:main}) と Moore 型の下界
+(命題 \ref{prop:moore}) も再計算した。走査に現れた最大の内周は $10$ で
+ある。内周の分布を表 \ref{tab:girth} に示す。
+
+等号は 480 個で成立し、残る 13,401,762 個では狭義に成り立った。
+定理 \ref{thm:eq} が予言するとおり、等号が成立した 480 個は\textbf{すべて内周 4 かつ }$\mathrm{tree}(G) = 1 + \Delta(G)$ であった。検証器はこの 480 個について最大誘導木を厳密に解き直し、記録された $(\mathrm{{girth}}, \Delta, \ell_{{\max}}, \mathrm{{tree}})$ の 4 つ組が再現することまで確かめている。
+
+木の族 ($11 \le n \le 20$、1,345,823 個) では等号が 1 個も現れない。これは定理 \ref{thm:eq} の直接の帰結である: 木は閉路をもたないので内周が 0 であり、系 \ref{cor:small} により差は常に 2 以上ある。
+
+等号グラフの最小の位数は $4$ で、\texttt{C]} などがある。走査した最大の位数 $10$ では 332 個ある。正則グラフにも等号は現れる。最小の例は $5$-正則・位数 $12$ の \texttt{KsaBrhkV@w?\textasciicircum{}} である。
+
+等号グラフはどの族についても graph6 の全リストが証明書に載っており、検証器はそのリストの外側では\textbf{狭義の}不等号が成り立つことまで確かめている。
+
+\begin{table}[htbp]
+\centering
+\caption{内周の分布 (全 13,402,242 個)。内周 $0$ は閉路をもたないグラフ、
+すなわち木を表す (本稿の走査対象は連結グラフに限る)。}\label{tab:girth}
+\begin{tabular}{lrr}
+\toprule
+内周 & 個数 & 割合 (\%) \\
+\midrule
+なし (木) & 1,346,023 & 10.043 \\
+$3$ & 12,036,076 & 89.806 \\
+$4$ & 19,146 & 0.143 \\
+$5$ & 863 & 0.006 \\
+$6$ & 101 & 0.001 \\
+$7$ & 22 & 0.000 \\
+$8$ & 8 & 0.000 \\
+$9$ & 2 & 0.000 \\
+$10$ & 1 & 0.000 \\
+\midrule
+合計 & 13,402,242 & 100.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{族ごとの内訳。「内周 $\ge 4$」は球の補題を検査した個数、
+「等号」は (\ref{eq:int}) が等号で成り立つ個数、「厳密計算」は貪欲では
+狭義に閉じず最大誘導木を厳密に解いた回数 (探索器の自己申告であり、
+検証器は再計算していない)。}\label{tab:fams}
+\begin{tabular}{lrrrrr}
+\toprule
+種別 & $n$ & 個数 & 内周 $\ge 4$ & 等号 & 厳密計算 \\
+\midrule
+連結グラフ & 2 & 1 & 0 & 0 & 0 \\
+連結グラフ & 3 & 2 & 0 & 0 & 0 \\
+連結グラフ & 4 & 6 & 1 & 1 & 1 \\
+連結グラフ & 5 & 21 & 3 & 2 & 2 \\
+連結グラフ & 6 & 112 & 13 & 5 & 5 \\
+連結グラフ & 7 & 853 & 48 & 12 & 12 \\
+連結グラフ & 8 & 11,117 & 244 & 32 & 39 \\
+連結グラフ & 9 & 261,080 & 1,333 & 95 & 142 \\
+連結グラフ & 10 & 11,716,571 & 9,726 & 332 & 1,264 \\
+木 & 11 & 235 & 0 & 0 & 0 \\
+木 & 12 & 551 & 0 & 0 & 0 \\
+木 & 13 & 1,301 & 0 & 0 & 0 \\
+木 & 14 & 3,159 & 0 & 0 & 0 \\
+木 & 15 & 7,741 & 0 & 0 & 0 \\
+木 & 16 & 19,320 & 0 & 0 & 0 \\
+木 & 17 & 48,629 & 0 & 0 & 0 \\
+木 & 18 & 123,867 & 0 & 0 & 0 \\
+木 & 19 & 317,955 & 0 & 0 & 0 \\
+木 & 20 & 823,065 & 0 & 0 & 0 \\
+3-正則 & 12 & 85 & 22 & 0 & 0 \\
+3-正則 & 14 & 509 & 110 & 0 & 0 \\
+3-正則 & 16 & 4,060 & 792 & 0 & 0 \\
+3-正則 & 18 & 41,301 & 7,805 & 0 & 0 \\
+4-正則 & 11 & 265 & 2 & 0 & 0 \\
+4-正則 & 12 & 1,544 & 12 & 0 & 0 \\
+4-正則 & 13 & 10,778 & 31 & 0 & 0 \\
+5-正則 & 12 & 7,848 & 1 & 1 & 1 \\
+6-正則 & 11 & 266 & 0 & 0 & 0 \\
+\midrule
+合計 & & 13,402,242 & 20,143 & 480 & 1,466 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{議論}\label{sec:disc}
+
+\subsection*{何が新しいか}
+
+予想 \ref{conj:141} は 2005 年の出題以来、DeLaViña の公開リスト
+\cite{wowii} で未解決のまま残っていた。本稿の寄与は次の 4 点である。
+
+\begin{enumerate}
+\item 予想 \ref{conj:141} を証明した (系 \ref{cor:main})。しかも Lean
+  形式化 \cite{formalconj} の切り捨て版 $(\ast)$ ではなく、DeLaViña の原形
+  である有理数のままの形で証明した。
+\item 等号を完全に特徴づけた (定理 \ref{thm:eq}): 内周 4 かつ最大誘導木が
+  星、と同値である。
+\item 同じ球から Moore 型の指数的下界を得た (命題 \ref{prop:moore})。これは
+  最小次数 $\ge 3$ のグラフで予想 \ref{conj:141} を大きく上回る。
+\item 証明の各段 (球が木であること、レベル数え、奇内周での 1 頂点の伸長、
+  Moore 型、等号の分類) を、13,402,242 個のグラフの上で、探索器と実装を
+  共有しない検証器に再計算させた。
+\end{enumerate}
+
+証明は初等的であり、道具は幅優先探索と内周の定義しか使っていない。
+これほど易しい主張が 20 年以上残っていたのは、Graffiti.pc の出力する予想の
+本数が多く、個別に手をつけられてこなかったためだと思われる。実際、隣接する
+予想 140 (星の下界) は\texttt{E} (容易) として片づけられている。本稿の証明は
+その予想 140 に球の補題を 1 つ足しただけである。
+
+\subsection*{限界}
+
+証明は完結しているが、\textbf{先行研究の網羅的な確認は行っていない}。
+1988 年以降のグラフ理論の文献のどこかに同等の主張が埋もれている可能性は
+排除できない。少なくとも出題者本人の解決済みリスト \cite{wowii} には
+2026 年 7 月 27 日時点で載っておらず、\texttt{formal-conjectures}
+\cite{formalconj} も未解決として扱っている。
+
+機械照合の側にも境界がある。検証器が再計算するのは第 \ref{sec:check} 節に
+挙げた量だけで、探索器が自己申告する費用 (厳密計算の回数) は検証の対象外で
+ある。走査した族の構成そのものは、検証器が自分の持つ宣言と突き合わせて
+過不足がないことを確かめている。
+
+球の補題そのものは新しくない。内周が大きいグラフの球が木に見えるという事実は
+Moore 限界 \cite{moore} の標準的な議論であり、本稿の $r$ の取り方
+($2r + 2 \le g$、すなわち $r = \lfloor g/2 \rfloor - 1$) と、Moore 限界で
+使う $r = \lfloor (g-1)/2 \rfloor$ は、\textbf{内周が奇数のとき} 1 だけ
+ずれる (偶数のときは一致する)。Moore 限界は「球の中の\textbf{頂点数}」を
+数えるので $2r + 1 \le g$ で足りるが、本稿は球が\textbf{木を誘導する}
+ことまで要求するので、$g$ が奇数のときはレベル内の辺を排除するために 1 段
+浅く取る必要がある。まさにこの 1 段を命題 \ref{prop:odd} が取り返している。
+この差が
+$\lfloor g/2 \rfloor - 1$ という、予想 \ref{conj:141} の左辺にちょうど
+現れる値を生んでいる。
+
+\subsection*{隣接する未解決予想}
+
+同じ WOWII の第 2 期には $\mathrm{tree}(G)$ の下界がほかにもあり、予想 142 と
+144 は本稿執筆時点で未解決である。これらは残余数や離心数を使うので球の補題が
+そのままは効かないが、本稿の等号分類 (定理 \ref{thm:eq}) が「最大誘導木が星に
+潰れるグラフ」を切り出しているので、その層に議論を集中できる可能性がある。
+
+\medskip
+\noindent
+機械照合は \texttt{python -m mar verify p0008\_wowii141\_girth\_tree} で再実行できる。
+
+
+\section*{再現性}
+本稿の主張はすべて、探索器とは独立に実装された検証器によって再検査されている。次のコマンドで再現できる。
+
+\begin{center}\texttt{python -m mar verify p0008\_wowii141\_girth\_tree}\end{center}
+
+\begin{center}\begin{tabular}{ll}\toprule
+証明書ダイジェスト & \texttt{76de2b9099790564} \\
+生成日時 (UTC) & 2026-07-27T01:15:18+00:00 \\
+Python & 3.10.11 \\
+実行環境 & Windows 11 (build 26200) \\
+リポジトリ版 & \texttt{2a58e2b} \\
+乱数種 & 0 \\
+探索時間 & 3228.6 秒 \\
+\bottomrule\end{tabular}\end{center}
+
+
+\begin{thebibliography}{99}
+\bibitem{wowii} E. DeLaViña, Written on the Wall II: Conjectures of Graffiti.pc, University of Houston--Downtown (Conjectures 140, 141; 2026-07-27 取得). \url{http://cms.dt.uh.edu/faculty/delavinae/research/wowII/}
+\bibitem{formalconj} Google DeepMind, formal-conjectures: FormalConjectures/WrittenOnTheWallII/GraphConjecture141.lean (2026-07-27 取得). \url{https://github.com/google-deepmind/formal-conjectures}
+\bibitem{ess1986} P. Erdős, M. Saks, V. T. Sós, Maximum induced trees in graphs, J. Combin. Theory Ser. B 41 (1986) 61--79.
+\bibitem{moore} A. J. Hoffman, R. R. Singleton, On Moore graphs with diameters 2 and 3, IBM J. Res. Develop. 4 (1960) 497--504.
+\bibitem{mckay} B. D. McKay, A. Piperno, Practical graph isomorphism II, J. Symbolic Comput. 60 (2014) 94--112. データ: Combinatorial Data. \url{https://users.cecs.anu.edu.au/~bdm/data/graphs.html}
+\bibitem{genreg} M. Meringer, Fast generation of regular graphs and construction of cages, J. Graph Theory 30 (1999) 137--146. \url{https://www.mathe2.uni-bayreuth.de/markus/reggraphs.html}
+\end{thebibliography}
+
+\end{document}

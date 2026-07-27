@@ -305,3 +305,189 @@ def test_alpha_is_not_bounded_by_the_induced_tree_number():
            for g in _graphs(8)
            if ck.alpha_and_i(g)[0] > ck.max_induced_tree_size(g)]
     assert bad == [("G?Bem[", 5, 4)]
+
+
+# ---------------------------------------------------------------------------
+# p0008: Written on the Wall II 予想 141 の証明
+#
+# 予想 141 は「girth/2 - 1 + l_max <= tree」。分母を払った整数形
+# ``girth - 2 + 2*l_max <= 2*tree`` で扱う。星の下界 (定理 3.1) は上の
+# ``test_star_bound_holds_for_every_connected_graph`` が既に守っている。
+# ---------------------------------------------------------------------------
+
+def _lmax(g):
+    """l_max(G) = max_v alpha(G[N(v)])."""
+    n, nbr = g
+    return max(ck.independence_number_on(g, nbr[v]) for v in range(n))
+
+
+def _ball(g, v, r):
+    """(B_r(v), [L_1, ..., L_r]) を幅優先探索で返す."""
+    _, nbr = g
+    seen = {v}
+    frontier = {v}
+    levels = []
+    for _ in range(r):
+        nxt = set()
+        for x in frontier:
+            nxt |= nbr[x] - seen
+        seen |= nxt
+        levels.append(nxt)
+        frontier = nxt
+    return seen, levels
+
+
+def _girth4_graphs(max_n=MAX_N):
+    """内周 4 以上の連結グラフを (g, girth, r) で流す (r = floor(girth/2) - 1)."""
+    for n in range(2, max_n + 1):
+        for g in _graphs(n):
+            girth = ck.girth(g)
+            if girth >= 4:
+                yield g, girth, girth // 2 - 1
+
+
+def test_triangle_free_makes_lmax_equal_to_max_degree():
+    """§3 の観察: 内周 >= 4 なら N(v) は独立集合なので l_max = Delta."""
+    seen = 0
+    for g, _girth, _r in _girth4_graphs():
+        assert _lmax(g) == max(len(s) for s in g[1]), ck.sets_to_graph6(g)
+        seen += 1
+    assert seen > 0
+
+
+def test_ball_of_radius_floor_half_girth_minus_one_induces_a_tree():
+    """補題 3.3: 2r + 2 <= girth なら **どの頂点** を中心にしても B_r(v) は木."""
+    seen = 0
+    for g, girth, r in _girth4_graphs():
+        assert 2 * r + 2 <= girth
+        for v in range(g[0]):
+            ball, _ = _ball(g, v, r)
+            assert ck.induces_tree(g, ball), (ck.sets_to_graph6(g), v, r)
+        seen += 1
+    assert seen > 0
+
+
+def test_ball_radius_cannot_be_rounded_up():
+    """半径を切り上げると補題 3.3 は偽になる。最小の反例は C_5 自身.
+
+    実装で ``ceil(girth/2) - 1`` と書いた版を落とすための回帰テスト。
+    """
+    c5 = (5, [{1, 4}, {0, 2}, {1, 3}, {2, 4}, {3, 0}])
+    assert ck.girth(c5) == 5
+    assert ck.induces_tree(c5, _ball(c5, 0, 5 // 2 - 1)[0])        # r = 1 は木
+    assert _ball(c5, 0, -(-5 // 2) - 1)[0] == {0, 1, 2, 3, 4}      # r = 2 は全体
+    assert not ck.induces_tree(c5, _ball(c5, 0, -(-5 // 2) - 1)[0])
+
+
+def test_level_counting_gives_the_main_bound():
+    """定理 3.4: ecc(v) >= r + 1 が全頂点で成り立ち、tree >= Delta + r."""
+    seen = 0
+    for g, _girth, r in _girth4_graphs():
+        n, nbr = g
+        delta = max(len(s) for s in nbr)
+        vstar = max(range(n), key=lambda v: len(nbr[v]))
+        for v in range(n):
+            _, levels = _ball(g, v, r + 1)
+            assert all(levels), (ck.sets_to_graph6(g), v)   # L_1..L_{r+1} が非空
+        ball, _ = _ball(g, vstar, r)
+        assert len(ball) >= delta + r, ck.sets_to_graph6(g)
+        assert ck.max_induced_tree_size(g) >= delta + r, ck.sets_to_graph6(g)
+        seen += 1
+    assert seen > 0
+
+
+def test_odd_girth_extends_the_ball_by_one_vertex():
+    """命題 3.5: 内周が奇数なら L_{r+1} の点が 1 個だけ親をもち、木が 1 伸びる."""
+    seen = 0
+    for g, girth, r in _girth4_graphs():
+        if girth % 2 == 0:
+            continue
+        n, nbr = g
+        delta = max(len(s) for s in nbr)
+        vstar = max(range(n), key=lambda v: len(nbr[v]))
+        ball, levels = _ball(g, vstar, r + 1)
+        inner = ball - levels[r]
+        for w in levels[r]:
+            assert len(nbr[w] & inner) == 1, (ck.sets_to_graph6(g), w)
+            assert ck.induces_tree(g, inner | {w}), ck.sets_to_graph6(g)
+        assert ck.max_induced_tree_size(g) >= delta + r + 1, ck.sets_to_graph6(g)
+        seen += 1
+    assert seen > 0
+
+
+def test_conjecture141_holds_in_rational_form():
+    """系 3.6: girth - 2 + 2*l_max <= 2*tree が全連結グラフで成り立つ.
+
+    切り上げ版ではなく DeLaViña の原形 (有理数のまま) を照合する。
+    """
+    seen = 0
+    for n in range(2, MAX_N + 1):
+        for g in _graphs(n):
+            girth = ck.girth(g)
+            lhs2 = girth - 2 + 2 * _lmax(g)
+            assert lhs2 <= 2 * ck.max_induced_tree_size(g), ck.sets_to_graph6(g)
+            seen += 1
+    assert seen > 0
+
+
+def test_equality_holds_exactly_at_girth_four_stars():
+    """定理 3.7: 等号 <=> girth = 4 かつ tree = 1 + Delta (両方向)."""
+    hits = 0
+    for n in range(2, MAX_N + 1):
+        for g in _graphs(n):
+            girth = ck.girth(g)
+            delta = max(len(s) for s in g[1])
+            tree = ck.max_induced_tree_size(g)
+            lhs = (girth - 2 + 2 * _lmax(g)) == 2 * tree
+            rhs = girth == 4 and tree == 1 + delta
+            assert lhs == rhs, ck.sets_to_graph6(g)
+            hits += lhs
+    assert hits > 0
+
+
+def test_odd_girth_equality_is_blocked_by_parity():
+    """定理 3.7 の証明で使うパリティ: 内周が奇数なら左辺は奇数で等号は不可能."""
+    for g, girth, _r in _girth4_graphs():
+        if girth % 2 == 1:
+            assert (girth - 2 + 2 * _lmax(g)) % 2 == 1, ck.sets_to_graph6(g)
+
+
+def test_moore_type_lower_bound():
+    """命題 3.8: |B_r(v*)| >= 1 + Delta * sum_{i<r} (delta-1)^i."""
+    seen = 0
+    for g, _girth, r in _girth4_graphs():
+        n, nbr = g
+        degrees = [len(s) for s in nbr]
+        delta, dmin = max(degrees), min(degrees)
+        vstar = degrees.index(delta)
+        ball, _ = _ball(g, vstar, r)
+        moore = 1 + delta * sum((dmin - 1) ** i for i in range(r))
+        assert len(ball) >= moore, (ck.sets_to_graph6(g), len(ball), moore)
+        seen += 1
+    assert seen > 0
+
+
+def test_heawood_graph_beats_conjecture141_exponentially():
+    """命題 3.8 の効き方: 内周 6 の 3-正則グラフでは予想 141 が大きく弱い.
+
+    Heawood グラフ (LCF ``[5,-5]^7``) は n = 14, girth = 6, 3-正則。
+    予想 141 の要求は tree >= 5 だが、球だけで tree >= 10 が出る。
+    """
+    nbr = [set() for _ in range(14)]
+    for i in range(14):
+        nbr[i].add((i + 1) % 14)
+        nbr[(i + 1) % 14].add(i)
+        j = (i + 5) % 14 if i % 2 == 0 else (i - 5) % 14
+        nbr[i].add(j)
+        nbr[j].add(i)
+    g = (14, nbr)
+
+    assert all(len(s) == 3 for s in nbr)
+    assert ck.girth(g) == 6
+    r = 6 // 2 - 1
+    assert r == 2
+    ball, _ = _ball(g, 0, r)
+    assert ck.induces_tree(g, ball)
+    assert len(ball) == 1 + 3 * (1 + 2) == 10      # Moore 型の下界に一致
+    assert (6 - 2 + 2 * _lmax(g)) == 10            # 予想 141 は 2*tree >= 10
+    assert 2 * len(ball) == 20                     # 実際は 2*tree >= 20
