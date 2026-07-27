@@ -491,3 +491,230 @@ def test_heawood_graph_beats_conjecture141_exponentially():
     assert len(ball) == 1 + 3 * (1 + 2) == 10      # Moore 型の下界に一致
     assert (6 - 2 + 2 * _lmax(g)) == 10            # 予想 141 は 2*tree >= 10
     assert 2 * len(ball) == 20                     # 実際は 2*tree >= 20
+
+
+# ---------------------------------------------------------------------------
+# p0009: Written on the Wall II 予想 2 (葉数と局所独立数の平均)
+#
+# 主張は 2*(mean_v alpha(G[N(v)]) - 1) <= L_s(G)。整数形は
+# ``n*L_s >= 2S - 2n`` (S = sum_v alpha(G[N(v)]))。葉数 L_s は
+# 「全域木がもつ葉の最大個数」で、ここでは定義どおり総当たりする。
+# ---------------------------------------------------------------------------
+
+#: 葉数を総当たりする上限位数 (n = 8 は数十秒かかるので既定から外す)。
+P9_MAX_N = 7
+
+
+def _is_connected_dominating(g, core: set[int]) -> bool:
+    """core が空でなく、G[core] が連結で、外の点が core に隣接するか."""
+    n, nbr = g
+    if not core:
+        return False
+    start = next(iter(core))
+    seen = {start}
+    stack = [start]
+    while stack:
+        x = stack.pop()
+        for y in nbr[x] & core:
+            if y not in seen:
+                seen.add(y)
+                stack.append(y)
+    if seen != core:
+        return False
+    return all(nbr[w] & core for w in range(n) if w not in core)
+
+
+def _leaf_number_via_cds(g) -> int:
+    """L_s(G) = n - gamma_c(G) を部分集合の総当たりで求める (n >= 3)."""
+    n, _ = g
+    for size in range(1, n):
+        for core in itertools.combinations(range(n), size):
+            if _is_connected_dominating(g, set(core)):
+                return n - size
+    return 0
+
+
+def _leaf_number_via_spanning_trees(g) -> int:
+    """全域木を全部作って葉の最大個数を数える (定義そのまま。小さい n 専用)."""
+    n, _ = g
+    edges = ck.edge_list(g)
+    best = 0
+    for comb in itertools.combinations(edges, n - 1):
+        parent = list(range(n))
+
+        def find(x):
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        acyclic = True
+        for u, v in comb:
+            ru, rv = find(u), find(v)
+            if ru == rv:
+                acyclic = False
+                break
+            parent[ru] = rv
+        if not acyclic:
+            continue
+        deg = [0] * n
+        for u, v in comb:
+            deg[u] += 1
+            deg[v] += 1
+        best = max(best, sum(1 for d in deg if d == 1))
+    return best
+
+
+def _best_edge_union(g) -> int:
+    """f(G) = max_{uv in E} |N(u) 合併 N(v)| (予想 B' の左辺)."""
+    _, nbr = g
+    return max(len(nbr[u] | nbr[v]) for u, v in ck.edge_list(g))
+
+
+def _p9_graphs(max_n=P9_MAX_N):
+    for n in range(3, max_n + 1):
+        for g in _graphs(n):
+            yield g
+
+
+def test_p0009_leaf_number_definitions_agree():
+    """命題 2.1: 葉集合 <-> 連結支配集合の補集合。n >= 3 で 2 実装が一致する."""
+    seen = 0
+    for n in range(3, 7):
+        for g in _graphs(n):
+            assert _leaf_number_via_cds(g) == _leaf_number_via_spanning_trees(g), \
+                ck.sets_to_graph6(g)
+            seen += 1
+    assert seen > 0
+
+
+def test_p0009_k2_is_the_exception_to_the_identity():
+    """注意 2.2: K_2 だけは L_s = 2 なのに n - gamma_c = 1 になる."""
+    k2 = (2, [{1}, {0}])
+    assert _leaf_number_via_spanning_trees(k2) == 2      # 辺 1 本、両端が葉
+    assert _leaf_number_via_cds(k2) == 1                 # gamma_c(K_2) = 1
+    assert ck.indep_neighbors_sum(k2) == 2               # l(v) = 1 が 2 個
+    assert 2 * 2 >= 2 * 2 - 2 * 2                        # (*) は成立する
+    assert _best_edge_union(k2) == 2                     # B' は等号 (2S/n = 2)
+    # 検証器の厳密葉数もこの例外を返す (補集合の探索は 1 を返してしまう)
+    from mar.problems.p0009_wowii2_leaf_local_indep import _leaf_number
+    assert _leaf_number(k2) == 2
+
+
+def test_p0009_integer_form_is_equivalent_to_the_original():
+    """(*) n*L_s >= 2S - 2n が 2*(mean l - 1) <= L_s と同値であること."""
+    from mar.problems.p0009_wowii2_leaf_local_indep import need_doubled
+    seen = 0
+    for g in _p9_graphs(6):
+        n, _ = g
+        s = ck.indep_neighbors_sum(g)
+        leaves = _leaf_number_via_cds(g)
+        original = 2 * (Fraction(s, n) - 1) <= leaves
+        integer = n * leaves >= 2 * s - 2 * n
+        assert original == integer, ck.sets_to_graph6(g)
+        assert need_doubled(n, s) == 2 * s - 2 * n       # 共有実装の見張り
+        seen += 1
+    assert seen > 0
+
+
+def test_p0009_double_star_bound_holds_for_every_edge():
+    """定理 3.2: **すべての辺** uv で L_s(G) >= |N(u) 合併 N(v)| - 2."""
+    seen = tight = 0
+    for g in _p9_graphs():
+        _, nbr = g
+        leaves = _leaf_number_via_cds(g)
+        for u, v in ck.edge_list(g):
+            union = len(nbr[u] | nbr[v])
+            assert leaves >= union - 2, (ck.sets_to_graph6(g), u, v)
+        if leaves == _best_edge_union(g) - 2:
+            tight += 1
+        seen += 1
+    assert seen > 0
+    assert tight > 0                    # 下界が達成されるグラフも実在する
+
+
+def test_p0009_leaf_number_is_at_least_max_degree():
+    """系 3.3: 最大次数の頂点に星を立てて延長すれば L_s >= Delta."""
+    seen = 0
+    for g in _p9_graphs():
+        _, nbr = g
+        assert _leaf_number_via_cds(g) >= max(len(s) for s in nbr), \
+            ck.sets_to_graph6(g)
+        seen += 1
+    assert seen > 0
+
+
+def test_p0009_zones_close_the_conjecture():
+    """定理 5.1: 自明帯と Delta 帯では予想 2 が成り立つ (帯の判定も突き合わせる)."""
+    from mar.problems.p0009_wowii2_leaf_local_indep import zone_of
+    counts = {"trivial": 0, "delta": 0, "hard": 0}
+    for g in _p9_graphs():
+        n, nbr = g
+        s = ck.indep_neighbors_sum(g)
+        delta = max(len(x) for x in nbr)
+        zone = zone_of(n, s, delta)
+        assert zone == ("trivial" if 2 * s <= 4 * n else
+                        "delta" if 2 * s <= n * (delta + 2) else "hard")
+        counts[zone] += 1
+        leaves = _leaf_number_via_cds(g)
+        if zone == "trivial":
+            assert leaves >= 2 >= 2 * Fraction(s, n) - 2
+        elif zone == "delta":
+            assert leaves >= delta >= 2 * Fraction(s, n) - 2
+    assert counts["trivial"] > 0 and counts["delta"] > 0
+    assert counts["hard"] > 0          # 帯だけでは閉じない層が実在する
+
+
+def test_p0009_triangle_free_graphs_satisfy_bprime():
+    """定理 4.3: 三角形がなければ B' が Cauchy--Schwarz で出る (各段を確認)."""
+    seen = 0
+    for n in range(3, MAX_N + 1):
+        for g in _graphs(n):
+            _, nbr = g
+            edges = ck.edge_list(g)
+            if any(nbr[u] & nbr[v] for u, v in edges):
+                continue                                  # 三角形がある
+            deg = [len(s) for s in nbr]
+            m = len(edges)
+            s = ck.indep_neighbors_sum(g)
+            assert s == sum(deg)                          # l(v) = deg(v)
+            assert all(len(nbr[u] | nbr[v]) == deg[u] + deg[v]
+                       for u, v in edges)                 # 共通近傍がない
+            assert sum(deg[u] + deg[v] for u, v in edges) == sum(d * d
+                                                                 for d in deg)
+            assert Fraction(sum(d * d for d in deg)) >= Fraction(4 * m * m, n)
+            assert n * _best_edge_union(g) >= 2 * s       # B' 本体
+            seen += 1
+    assert seen > 0
+
+
+def test_p0009_bprime_implies_the_conjecture():
+    """系 4.2: B' が成り立つグラフでは予想 2 も成り立つ (帰着の確認)."""
+    seen = 0
+    for g in _p9_graphs():
+        n, _ = g
+        s = ck.indep_neighbors_sum(g)
+        if n * _best_edge_union(g) < 2 * s:
+            continue                                      # B' の反例 (無いはず)
+        assert n * _leaf_number_via_cds(g) >= 2 * s - 2 * n, ck.sets_to_graph6(g)
+        seen += 1
+    assert seen > 0
+
+
+def test_p0009_conjecture_and_bprime_hold_with_the_expected_equality_sets():
+    """予想 2 と B' が n <= 7 で成立し、等号グラフが論文の表と一致する."""
+    equal2, equal_bp = [], []
+    for g in _p9_graphs():
+        n, _ = g
+        s = ck.indep_neighbors_sum(g)
+        leaves = _leaf_number_via_cds(g)
+        assert n * leaves >= 2 * s - 2 * n, ck.sets_to_graph6(g)
+        f = _best_edge_union(g)
+        assert n * f >= 2 * s, ck.sets_to_graph6(g)
+        if n * leaves == 2 * s - 2 * n:
+            equal2.append(ck.sets_to_graph6(g))
+        if n * f == 2 * s:
+            equal_bp.append(ck.sets_to_graph6(g))
+    # C_4, C_5, C_6, K_{3,3}, C_7 (n <= 7)
+    assert equal2 == ["C]", "DUW", "EEh_", "EFz_", "FCp`_"]
+    assert equal_bp == ["C]", "DUW", "EEh_", "EFz_", "FCp`_"]

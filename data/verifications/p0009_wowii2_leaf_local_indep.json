@@ -1,0 +1,77 @@
+{
+  "certificate_digest": "f7ad2d8e997f1dc4",
+  "checks": [
+    {
+      "detail": "0 件",
+      "name": "反例リストは空",
+      "passed": true
+    },
+    {
+      "detail": "0 件",
+      "name": "予想 B' の反例リストは空",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "走査範囲が宣言どおりの 28 族である (族を落とした証明書を弾く)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証人ファイルの SHA-256 と長さが証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "13,402,242 個すべてで証人 L の補集合が連結支配集合である (ゆえに Ls >= |L|)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "同じ 13,402,242 個で n|L| >= 2S - 2n (予想 2)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "同じ 13,402,242 個で |L| >= max_(uv in E)|N(u) 合併 N(v)| - 2 (定理 3.2 の機械照合)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "同じ 13,402,242 個で n*max_(uv in E)|N(u) 合併 N(v)| >= 2S (予想 4.1 = B')",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "帯 (trivial / delta / hard) の分布が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "走査したグラフ数が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "列挙個数が検証器の持つ公表値 (OEIS A001349 / A000055 / A002851 / A006820-A006822) と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "等号 13 個で葉数をこれ以上増やせないことを連結支配集合の探索で確かめ、残り全部で狭義成立",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証明書の合計 (論文の見出し数) が族ごとの集計と一致",
+      "passed": true
+    }
+  ],
+  "ok": true,
+  "platform": "Windows 11 (build 26200)",
+  "problem_id": "p0009_wowii2_leaf_local_indep",
+  "python": "3.10.11",
+  "seconds": 2041.4,
+  "verified_at": "2026-07-27T03:49:12+00:00",
+  "verifier_hash": "9e02d97b84e92c26"
+}

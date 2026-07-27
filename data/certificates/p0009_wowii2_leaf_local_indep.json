@@ -1,0 +1,1123 @@
+{
+  "claim": "連結グラフ 13,402,242 個すべてで WOWII 予想 2 が成立し、等号は 13 個で成立する。本稿の予想 B' も反例 0 個で成立する。",
+  "data": {
+    "bprime_counterexamples": [],
+    "conjecture": "n*Ls(G) >= 2*S(G) - 2n  (S = sum_v alpha(G[N(v)]))",
+    "conjecture_bprime": "予想 4.1 (本稿): max_{uv in E} |N(u) 合併 N(v)| >= 2*S(G)/n",
+    "conjecture_original": "2*(mean_v alpha(G[N(v)]) - 1) <= Ls(G)",
+    "counterexamples": [],
+    "data_source": "B. McKay, connected graphs (graph6) と trees (edge lists) / M. Meringer, GENREG regular graphs",
+    "equality_list_cap": 200000,
+    "families": [
+      {
+        "bprime_equal": 1,
+        "bprime_min_slack": [
+          0,
+          "A_",
+          2,
+          2
+        ],
+        "count": 1,
+        "counts": {
+          "strict": 1
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "graphs",
+        "n": 2,
+        "source_expected": 1,
+        "tag": "graphs_02",
+        "tier_hist": {
+          "double_star": 1
+        },
+        "witness_file": "p0009_graphs_02.bin.gz",
+        "witness_records": 1,
+        "witness_sha256": "6f866c4984235525e0631a16920a676efcfd9656c08598a1d60370c4e20912a1",
+        "zone_hist": {
+          "trivial": 1
+        }
+      },
+      {
+        "bprime_equal": 0,
+        "bprime_min_slack": [
+          1,
+          "BW",
+          3,
+          4
+        ],
+        "count": 2,
+        "counts": {
+          "strict": 2
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "graphs",
+        "n": 3,
+        "source_expected": 2,
+        "tag": "graphs_03",
+        "tier_hist": {
+          "double_star": 2
+        },
+        "witness_file": "p0009_graphs_03.bin.gz",
+        "witness_records": 2,
+        "witness_sha256": "d0b3e4847c7c9a272d13949d9a1aa5078b6945b7f212831e6e6702a4cc48921e",
+        "zone_hist": {
+          "trivial": 2
+        }
+      },
+      {
+        "bprime_equal": 1,
+        "bprime_min_slack": [
+          0,
+          "C]",
+          4,
+          8
+        ],
+        "count": 6,
+        "counts": {
+          "equal": 1,
+          "strict": 5
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {
+          "C]": [
+            2,
+            8,
+            2,
+            4
+          ]
+        },
+        "equality_examples": [
+          "C]"
+        ],
+        "equality_graphs": [
+          "C]"
+        ],
+        "exact_calls": 1,
+        "label": "graphs",
+        "n": 4,
+        "source_expected": 6,
+        "tag": "graphs_04",
+        "tier_hist": {
+          "double_star": 5,
+          "exact": 1
+        },
+        "witness_file": "p0009_graphs_04.bin.gz",
+        "witness_records": 6,
+        "witness_sha256": "a6f9d052581b694fc696d551c426556c4dfc48fd90356b27167160e7fea5033c",
+        "zone_hist": {
+          "trivial": 6
+        }
+      },
+      {
+        "bprime_equal": 1,
+        "bprime_min_slack": [
+          0,
+          "DUW",
+          4,
+          10
+        ],
+        "count": 21,
+        "counts": {
+          "equal": 1,
+          "strict": 20
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {
+          "DUW": [
+            2,
+            10,
+            2,
+            4
+          ]
+        },
+        "equality_examples": [
+          "DUW"
+        ],
+        "equality_graphs": [
+          "DUW"
+        ],
+        "exact_calls": 1,
+        "label": "graphs",
+        "n": 5,
+        "source_expected": 21,
+        "tag": "graphs_05",
+        "tier_hist": {
+          "double_star": 20,
+          "exact": 1
+        },
+        "witness_file": "p0009_graphs_05.bin.gz",
+        "witness_records": 21,
+        "witness_sha256": "e4335e168a33146492ecf98ce79187173ec17bbfd33708b7e30cf9a3fa8391e4",
+        "zone_hist": {
+          "delta": 1,
+          "trivial": 20
+        }
+      },
+      {
+        "bprime_equal": 2,
+        "bprime_min_slack": [
+          0,
+          "EEh_",
+          4,
+          12
+        ],
+        "count": 112,
+        "counts": {
+          "equal": 2,
+          "strict": 110
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {
+          "EEh_": [
+            2,
+            12,
+            2,
+            4
+          ],
+          "EFz_": [
+            4,
+            18,
+            3,
+            6
+          ]
+        },
+        "equality_examples": [
+          "EEh_",
+          "EFz_"
+        ],
+        "equality_graphs": [
+          "EEh_",
+          "EFz_"
+        ],
+        "exact_calls": 2,
+        "label": "graphs",
+        "n": 6,
+        "source_expected": 112,
+        "tag": "graphs_06",
+        "tier_hist": {
+          "double_star": 110,
+          "exact": 2
+        },
+        "witness_file": "p0009_graphs_06.bin.gz",
+        "witness_records": 112,
+        "witness_sha256": "8360775132ce9f2c33b68ad6eea4d6182883834135fd319fae82ae321a6748c5",
+        "zone_hist": {
+          "delta": 14,
+          "hard": 2,
+          "trivial": 96
+        }
+      },
+      {
+        "bprime_equal": 1,
+        "bprime_min_slack": [
+          0,
+          "FCp`_",
+          4,
+          14
+        ],
+        "count": 853,
+        "counts": {
+          "equal": 1,
+          "strict": 852
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {
+          "FCp`_": [
+            2,
+            14,
+            2,
+            4
+          ]
+        },
+        "equality_examples": [
+          "FCp`_"
+        ],
+        "equality_graphs": [
+          "FCp`_"
+        ],
+        "exact_calls": 1,
+        "label": "graphs",
+        "n": 7,
+        "source_expected": 853,
+        "tag": "graphs_07",
+        "tier_hist": {
+          "double_star": 852,
+          "exact": 1
+        },
+        "witness_file": "p0009_graphs_07.bin.gz",
+        "witness_records": 853,
+        "witness_sha256": "6fe8ff7efd8295fe26c646c518cc1b818cefec11693d5fbd7d6309826a554843",
+        "zone_hist": {
+          "delta": 276,
+          "hard": 7,
+          "trivial": 570
+        }
+      },
+      {
+        "bprime_equal": 4,
+        "bprime_min_slack": [
+          0,
+          "G?qa`_",
+          4,
+          16
+        ],
+        "count": 11117,
+        "counts": {
+          "equal": 3,
+          "strict": 11114
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {
+          "G?qa`_": [
+            2,
+            16,
+            2,
+            4
+          ],
+          "G?zTb_": [
+            4,
+            24,
+            3,
+            6
+          ],
+          "G?~vf_": [
+            6,
+            32,
+            4,
+            8
+          ]
+        },
+        "equality_examples": [
+          "G?qa`_",
+          "G?zTb_",
+          "G?~vf_"
+        ],
+        "equality_graphs": [
+          "G?qa`_",
+          "G?zTb_",
+          "G?~vf_"
+        ],
+        "exact_calls": 3,
+        "label": "graphs",
+        "n": 8,
+        "source_expected": 11117,
+        "tag": "graphs_08",
+        "tier_hist": {
+          "double_star": 11113,
+          "exact": 3,
+          "greedy": 1
+        },
+        "witness_file": "p0009_graphs_08.bin.gz",
+        "witness_records": 11117,
+        "witness_sha256": "b9fc82760451af564e6fdc2d5a9f7b18d27401b11ed15d6e857730b60d671dad",
+        "zone_hist": {
+          "delta": 6507,
+          "hard": 23,
+          "trivial": 4587
+        }
+      },
+      {
+        "bprime_equal": 1,
+        "bprime_min_slack": [
+          0,
+          "H?bB@_W",
+          4,
+          18
+        ],
+        "count": 261080,
+        "counts": {
+          "equal": 1,
+          "strict": 261079
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {
+          "H?bB@_W": [
+            2,
+            18,
+            2,
+            4
+          ]
+        },
+        "equality_examples": [
+          "H?bB@_W"
+        ],
+        "equality_graphs": [
+          "H?bB@_W"
+        ],
+        "exact_calls": 1,
+        "label": "graphs",
+        "n": 9,
+        "source_expected": 261080,
+        "tag": "graphs_09",
+        "tier_hist": {
+          "double_star": 261079,
+          "exact": 1
+        },
+        "witness_file": "p0009_graphs_09.bin.gz",
+        "witness_records": 261080,
+        "witness_sha256": "27f48925f59057c171d9b1a5e58c7e83f2d78bf9d66f795dc8c6f82e8b8338d8",
+        "zone_hist": {
+          "delta": 215593,
+          "hard": 234,
+          "trivial": 45253
+        }
+      },
+      {
+        "bprime_equal": 10,
+        "bprime_min_slack": [
+          0,
+          "I?BDA_gE?",
+          4,
+          20
+        ],
+        "count": 11716571,
+        "counts": {
+          "equal": 3,
+          "strict": 11716568
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {
+          "I?BDA_gE?": [
+            2,
+            20,
+            2,
+            4
+          ],
+          "I?BvUqw]?": [
+            6,
+            40,
+            4,
+            8
+          ],
+          "I?B~vrw}?": [
+            8,
+            50,
+            5,
+            10
+          ]
+        },
+        "equality_examples": [
+          "I?BDA_gE?",
+          "I?BvUqw]?",
+          "I?B~vrw}?"
+        ],
+        "equality_graphs": [
+          "I?BDA_gE?",
+          "I?BvUqw]?",
+          "I?B~vrw}?"
+        ],
+        "exact_calls": 3,
+        "label": "graphs",
+        "n": 10,
+        "source_expected": 11716571,
+        "tag": "graphs_10",
+        "tier_hist": {
+          "double_star": 11716567,
+          "exact": 3,
+          "greedy": 1
+        },
+        "witness_file": "p0009_graphs_10.bin.gz",
+        "witness_records": 11716571,
+        "witness_sha256": "f39e485036a26cf2d935fbb52fb2bfdcbb2063cdbf34f812c2d21f0996a09238",
+        "zone_hist": {
+          "delta": 11190131,
+          "hard": 2478,
+          "trivial": 523962
+        }
+      },
+      {
+        "bprime_equal": 0,
+        "bprime_min_slack": [
+          4,
+          "J?AAD?oEAO?",
+          4,
+          20
+        ],
+        "count": 235,
+        "counts": {
+          "strict": 235
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "trees",
+        "n": 11,
+        "source_expected": 235,
+        "tag": "trees_11",
+        "tier_hist": {
+          "double_star": 235
+        },
+        "witness_file": "p0009_trees_11.bin.gz",
+        "witness_records": 235,
+        "witness_sha256": "4a93255b5c0723a7732d230386bf73eceb11d49e930bbd6cbdd44bf1e2dee9b6",
+        "zone_hist": {
+          "trivial": 235
+        }
+      },
+      {
+        "bprime_equal": 0,
+        "bprime_min_slack": [
+          4,
+          "K??CB@OI?gP?",
+          4,
+          22
+        ],
+        "count": 551,
+        "counts": {
+          "strict": 551
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "trees",
+        "n": 12,
+        "source_expected": 551,
+        "tag": "trees_12",
+        "tier_hist": {
+          "double_star": 551
+        },
+        "witness_file": "p0009_trees_12.bin.gz",
+        "witness_records": 551,
+        "witness_sha256": "458f084347156477577fde2b3c82fde2efc2e901ef6917c29e3f11b8e61c1e63",
+        "zone_hist": {
+          "trivial": 551
+        }
+      },
+      {
+        "bprime_equal": 0,
+        "bprime_min_slack": [
+          4,
+          "L??CAA_K?o@_P?",
+          4,
+          24
+        ],
+        "count": 1301,
+        "counts": {
+          "strict": 1301
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "trees",
+        "n": 13,
+        "source_expected": 1301,
+        "tag": "trees_13",
+        "tier_hist": {
+          "double_star": 1301
+        },
+        "witness_file": "p0009_trees_13.bin.gz",
+        "witness_records": 1301,
+        "witness_sha256": "bb8d7a6208387956b8389827565d6b0d8110c471581c22e050bf737a10e20510",
+        "zone_hist": {
+          "trivial": 1301
+        }
+      },
+      {
+        "bprime_equal": 0,
+        "bprime_min_slack": [
+          4,
+          "M???C@_S@OA_A_`??",
+          4,
+          26
+        ],
+        "count": 3159,
+        "counts": {
+          "strict": 3159
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "trees",
+        "n": 14,
+        "source_expected": 3159,
+        "tag": "trees_14",
+        "tier_hist": {
+          "double_star": 3159
+        },
+        "witness_file": "p0009_trees_14.bin.gz",
+        "witness_records": 3159,
+        "witness_sha256": "a81ac3d9f82aca3bb7c15ca2d9e868b9f0c01b1effd078584532c3e16295029b",
+        "zone_hist": {
+          "trivial": 3159
+        }
+      },
+      {
+        "bprime_equal": 0,
+        "bprime_min_slack": [
+          4,
+          "N???C@?g@_B?B?@_GO?",
+          4,
+          28
+        ],
+        "count": 7741,
+        "counts": {
+          "strict": 7741
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "trees",
+        "n": 15,
+        "source_expected": 7741,
+        "tag": "trees_15",
+        "tier_hist": {
+          "double_star": 7741
+        },
+        "witness_file": "p0009_trees_15.bin.gz",
+        "witness_records": 7741,
+        "witness_sha256": "f7ccd84a247a016dd9b8bbc6b6964767fed72fd8e7ae6e1a5af784a7559a2163",
+        "zone_hist": {
+          "trivial": 7741
+        }
+      },
+      {
+        "bprime_equal": 0,
+        "bprime_min_slack": [
+          4,
+          "O????A?WA_D?D?A_?gCC?",
+          4,
+          30
+        ],
+        "count": 19320,
+        "counts": {
+          "strict": 19320
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "trees",
+        "n": 16,
+        "source_expected": 19320,
+        "tag": "trees_16",
+        "tier_hist": {
+          "double_star": 19320
+        },
+        "witness_file": "p0009_trees_16.bin.gz",
+        "witness_records": 19320,
+        "witness_sha256": "6728e45d0124df69751c92ee672476e60002a298d0d6583219b4eae2fbc7df1c",
+        "zone_hist": {
+          "trivial": 19320
+        }
+      },
+      {
+        "bprime_equal": 0,
+        "bprime_min_slack": [
+          4,
+          "P????A?OD?E?E?B??o?E?OO?",
+          4,
+          32
+        ],
+        "count": 48629,
+        "counts": {
+          "strict": 48629
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "trees",
+        "n": 17,
+        "source_expected": 48629,
+        "tag": "trees_17",
+        "tier_hist": {
+          "double_star": 48629
+        },
+        "witness_file": "p0009_trees_17.bin.gz",
+        "witness_records": 48629,
+        "witness_sha256": "eb177dc9d3f33670ed92d04f17265b0d01e19738ffd5f0f7c6c538a9b2e8c65c",
+        "zone_hist": {
+          "trivial": 48629
+        }
+      },
+      {
+        "bprime_equal": 0,
+        "bprime_min_slack": [
+          4,
+          "Q??????_B?I?I?D?@O?I??gA@??",
+          4,
+          34
+        ],
+        "count": 123867,
+        "counts": {
+          "strict": 123867
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "trees",
+        "n": 18,
+        "source_expected": 123867,
+        "tag": "trees_18",
+        "tier_hist": {
+          "double_star": 123867
+        },
+        "witness_file": "p0009_trees_18.bin.gz",
+        "witness_records": 123867,
+        "witness_sha256": "51e9e719a7f8604448453d30b1ca87a23fcb99dd78a9f328db6710d4673e4b3f",
+        "zone_hist": {
+          "trivial": 123867
+        }
+      },
+      {
+        "bprime_equal": 0,
+        "bprime_min_slack": [
+          4,
+          "RhCGGC@?K??@?@??_?G?@??C??G??G",
+          4,
+          36
+        ],
+        "count": 317955,
+        "counts": {
+          "strict": 317955
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "trees",
+        "n": 19,
+        "source_expected": 317955,
+        "tag": "trees_19",
+        "tier_hist": {
+          "double_star": 317955
+        },
+        "witness_file": "p0009_trees_19.bin.gz",
+        "witness_records": 317955,
+        "witness_sha256": "fd3f0968ba627928091c08ce09de6d4bb0d1dc9d4f3d17a1b6e5f6030ff2bb99",
+        "zone_hist": {
+          "trivial": 317955
+        }
+      },
+      {
+        "bprime_equal": 0,
+        "bprime_min_slack": [
+          4,
+          "ShCGGC@?G?o??@??_?G?@??C??G??G??C",
+          4,
+          38
+        ],
+        "count": 823065,
+        "counts": {
+          "strict": 823065
+        },
+        "degree": 0,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "trees",
+        "n": 20,
+        "source_expected": 823065,
+        "tag": "trees_20",
+        "tier_hist": {
+          "double_star": 823065
+        },
+        "witness_file": "p0009_trees_20.bin.gz",
+        "witness_records": 823065,
+        "witness_sha256": "8ff177291dcba3d4216a893c48d0f502f2b53f03de0ed05df656084fc7cc7e11",
+        "zone_hist": {
+          "trivial": 823065
+        }
+      },
+      {
+        "bprime_equal": 22,
+        "bprime_min_slack": [
+          0,
+          "Ks\\__GA?_B_M",
+          6,
+          36
+        ],
+        "count": 85,
+        "counts": {
+          "strict": 85
+        },
+        "degree": 3,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "regular",
+        "n": 12,
+        "source_expected": 85,
+        "tag": "reg3_12",
+        "tier_hist": {
+          "double_star": 77,
+          "greedy": 8
+        },
+        "witness_file": "p0009_reg3_12.bin.gz",
+        "witness_records": 85,
+        "witness_sha256": "1a298fbb46d007e8b59404db13821e53619402f39462776eb2239369104f4542",
+        "zone_hist": {
+          "delta": 37,
+          "hard": 45,
+          "trivial": 3
+        }
+      },
+      {
+        "bprime_equal": 110,
+        "bprime_min_slack": [
+          0,
+          "Ms\\_gC@?O@?C?F?F?",
+          6,
+          42
+        ],
+        "count": 509,
+        "counts": {
+          "strict": 509
+        },
+        "degree": 3,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "regular",
+        "n": 14,
+        "source_expected": 509,
+        "tag": "reg3_14",
+        "tier_hist": {
+          "double_star": 493,
+          "greedy": 16
+        },
+        "witness_file": "p0009_reg3_14.bin.gz",
+        "witness_records": 509,
+        "witness_sha256": "fb842b04f3d0a0de07e18a45e1bc055f9795219a219ac455d5d38250898dec95",
+        "zone_hist": {
+          "delta": 135,
+          "hard": 371,
+          "trivial": 3
+        }
+      },
+      {
+        "bprime_equal": 792,
+        "bprime_min_slack": [
+          0,
+          "Os\\_gC@?O@_C?C?A??w?M",
+          6,
+          48
+        ],
+        "count": 4060,
+        "counts": {
+          "strict": 4060
+        },
+        "degree": 3,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "regular",
+        "n": 16,
+        "source_expected": 4060,
+        "tag": "reg3_16",
+        "tier_hist": {
+          "double_star": 4022,
+          "greedy": 38
+        },
+        "witness_file": "p0009_reg3_16.bin.gz",
+        "witness_records": 4060,
+        "witness_sha256": "4caf575b0514ebd87eca4e44a68cbb3c747076a82e1ffbb8b4bb83a3bdec2925",
+        "zone_hist": {
+          "delta": 789,
+          "hard": 3266,
+          "trivial": 5
+        }
+      },
+      {
+        "bprime_equal": 7805,
+        "bprime_min_slack": [
+          0,
+          "Qs\\_gC@?O@_E?A?@??O?C??[?@o",
+          6,
+          54
+        ],
+        "count": 41301,
+        "counts": {
+          "strict": 41301
+        },
+        "degree": 3,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "regular",
+        "n": 18,
+        "source_expected": 41301,
+        "tag": "reg3_18",
+        "tier_hist": {
+          "double_star": 41218,
+          "greedy": 83
+        },
+        "witness_file": "p0009_reg3_18.bin.gz",
+        "witness_records": 41301,
+        "witness_sha256": "becd128761a5dfa838811100206b37a56c86b329985c7afc61ba2c6a66032eef",
+        "zone_hist": {
+          "delta": 7489,
+          "hard": 33801,
+          "trivial": 11
+        }
+      },
+      {
+        "bprime_equal": 2,
+        "bprime_min_slack": [
+          0,
+          "Js`rR?XEOL_",
+          8,
+          44
+        ],
+        "count": 265,
+        "counts": {
+          "strict": 265
+        },
+        "degree": 4,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "regular",
+        "n": 11,
+        "source_expected": 265,
+        "tag": "reg4_11",
+        "tier_hist": {
+          "double_star": 264,
+          "greedy": 1
+        },
+        "witness_file": "p0009_reg4_11.bin.gz",
+        "witness_records": 265,
+        "witness_sha256": "b3af17d3d7cbbec9699cd8822126608617df1f7cd6982b920f6ea9f808bfbefc",
+        "zone_hist": {
+          "delta": 190,
+          "hard": 73,
+          "trivial": 2
+        }
+      },
+      {
+        "bprime_equal": 12,
+        "bprime_min_slack": [
+          0,
+          "Ks`zB?WE?F_]",
+          8,
+          48
+        ],
+        "count": 1544,
+        "counts": {
+          "strict": 1544
+        },
+        "degree": 4,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "regular",
+        "n": 12,
+        "source_expected": 1544,
+        "tag": "reg4_12",
+        "tier_hist": {
+          "double_star": 1539,
+          "greedy": 5
+        },
+        "witness_file": "p0009_reg4_12.bin.gz",
+        "witness_records": 1544,
+        "witness_sha256": "e712143ce40bf0b3dd0be10e1a8d7f32e5d22b8fafd9f7d18b132951d3662179",
+        "zone_hist": {
+          "delta": 1005,
+          "hard": 532,
+          "trivial": 7
+        }
+      },
+      {
+        "bprime_equal": 31,
+        "bprime_min_slack": [
+          0,
+          "Ls`rb?WB?S?N?]",
+          8,
+          52
+        ],
+        "count": 10778,
+        "counts": {
+          "strict": 10778
+        },
+        "degree": 4,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "regular",
+        "n": 13,
+        "source_expected": 10778,
+        "tag": "reg4_13",
+        "tier_hist": {
+          "double_star": 10772,
+          "greedy": 6
+        },
+        "witness_file": "p0009_reg4_13.bin.gz",
+        "witness_records": 10778,
+        "witness_sha256": "fc520bbefad2fa88fefedd1debafc44201835731cd73f7cb1b5a9fe281f832f8",
+        "zone_hist": {
+          "delta": 5853,
+          "hard": 4920,
+          "trivial": 5
+        }
+      },
+      {
+        "bprime_equal": 1,
+        "bprime_min_slack": [
+          0,
+          "KsaBrhkV@w?^",
+          10,
+          60
+        ],
+        "count": 7848,
+        "counts": {
+          "equal": 1,
+          "strict": 7847
+        },
+        "degree": 5,
+        "equality_complete": true,
+        "equality_data": {
+          "KsaBrhkV@w?^": [
+            8,
+            60,
+            5,
+            10
+          ]
+        },
+        "equality_examples": [
+          "KsaBrhkV@w?^"
+        ],
+        "equality_graphs": [
+          "KsaBrhkV@w?^"
+        ],
+        "exact_calls": 1,
+        "label": "regular",
+        "n": 12,
+        "source_expected": 7848,
+        "tag": "reg5_12",
+        "tier_hist": {
+          "double_star": 7847,
+          "exact": 1
+        },
+        "witness_file": "p0009_reg5_12.bin.gz",
+        "witness_records": 7848,
+        "witness_sha256": "37b222d397c682f9cd80df4fea7b66420dde50617bfc5007c445c4d20adb670b",
+        "zone_hist": {
+          "delta": 7499,
+          "hard": 343,
+          "trivial": 6
+        }
+      },
+      {
+        "bprime_equal": 0,
+        "bprime_min_slack": [
+          31,
+          "J}rE@{~N`{_",
+          11,
+          45
+        ],
+        "count": 266,
+        "counts": {
+          "strict": 266
+        },
+        "degree": 6,
+        "equality_complete": true,
+        "equality_data": {},
+        "equality_examples": [],
+        "equality_graphs": [],
+        "exact_calls": 0,
+        "label": "regular",
+        "n": 11,
+        "source_expected": 266,
+        "tag": "reg6_11",
+        "tier_hist": {
+          "double_star": 266
+        },
+        "witness_file": "p0009_reg6_11.bin.gz",
+        "witness_records": 266,
+        "witness_sha256": "7ea7ca9b27373b3994ba3ed126102061b5aac9e9235893a9391091f3838bf9c0",
+        "zone_hist": {
+          "delta": 263,
+          "hard": 1,
+          "trivial": 2
+        }
+      }
+    ],
+    "source": "E. DeLaVina, Written on the Wall II, Conjecture 2",
+    "theorem_double_star": "定理 3.2: 連結グラフの任意の辺 uv で Ls(G) >= |N(u) 合併 N(v)| - 2",
+    "totals": {
+      "bprime_counterexamples": 0,
+      "bprime_equality": 8796,
+      "counterexamples": 0,
+      "equality": 13,
+      "exact_calls": 13,
+      "families": 28,
+      "graphs": 13402242,
+      "strict": 13402229
+    },
+    "witness_format": "族ごとの gzip 圧縮バイナリ列。1 グラフあたり 4 バイト = little-endian uint32 1 個で、ある全域木の葉集合のビットマスク。列挙順に並ぶ。",
+    "zone_totals": {
+      "delta": 11435782,
+      "hard": 46096,
+      "trivial": 1920364
+    },
+    "zones": "trivial: 2S <= 4n / delta: 2S <= n(Delta+2) / hard: それ以外"
+  },
+  "digest": "f7ad2d8e997f1dc4",
+  "kind": "partial-proof-with-exhaustive-machine-check",
+  "problem_id": "p0009_wowii2_leaf_local_indep",
+  "provenance": {
+    "created_at": "2026-07-27T03:14:36+00:00",
+    "git_rev": "4239d05",
+    "notes": "各グラフに全域木の葉集合を 1 つ付けた。最大の |N(u) 合併 N(v)| を与える辺の二重星を全域木へ延長して作り、それで狭義に閉じないグラフだけ貪欲・厳密に上げている。等号グラフは葉数を厳密に解いて確定させた。",
+    "platform": "Windows 11 (build 26200)",
+    "python": "3.10.11",
+    "search_seconds": 1468.6392769813538,
+    "search_seed": 0
+  }
+}

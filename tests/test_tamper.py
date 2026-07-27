@@ -33,6 +33,7 @@ P0005 = "p0005_wowii_induced_tree"
 P0006 = "p0006_wowii194_hamiltonian"
 P0007 = "p0007_wowii200_star_tree"
 P0008 = "p0008_wowii141_girth_tree"
+P0009 = "p0009_wowii2_leaf_local_indep"
 #: 元データの走査が軽く、かつ等号グラフを含む族。
 P0002_FAMILIES = ("subcubic_06", "subcubic_08")
 #: 反例は $n \ge 9$ にしか無いので、ここで検査するのは比と証人の側。
@@ -48,6 +49,8 @@ P0006_FAMILIES = ("graphs_06", "graphs_07", "reg3_12")
 P0007_FAMILIES = ("graphs_06", "graphs_07", "reg3_12")
 #: 等号 (内周 4) と奇内周のグラフがどちらも現れ、かつ数秒で走る族。
 P0008_FAMILIES = ("graphs_06", "graphs_07", "reg3_12")
+#: 等号 (C_6, K_{3,3}, C_7) と 3 つの帯がすべて現れ、かつ数秒で走る族。
+P0009_FAMILIES = ("graphs_06", "graphs_07", "reg3_12")
 
 
 def _prepare(pid: str, keep, tmp_path, monkeypatch):
@@ -1749,6 +1752,325 @@ def test_p0008_wrong_published_count_is_detected(girth):
 def test_p0008_inflated_totals_are_detected(girth):
     """合計だけ水増しした証明書 (論文の見出し数の偽装) を弾く."""
     cert, prob, _ = girth
+    cert.data["totals"]["graphs"] += 1000
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "合計" in _failed(report)
+
+
+# ----------------------------------------------------------------- p0009
+
+
+@pytest.fixture()
+def leafy(tmp_path, monkeypatch):
+    """p0009 を軽い 3 族に縮める (走査範囲の宣言も同じ 3 族に差し替える)."""
+    mod = importlib.import_module(f"mar.problems.{P0009}")
+    monkeypatch.setattr(mod, "GRAPH_ORDERS", [6, 7])
+    monkeypatch.setattr(mod, "TREE_ORDERS", [])
+    monkeypatch.setattr(mod, "REGULAR_FAMILIES", [(12, 3)])
+    cert, prob, wdir = _prepare(P0009, P0009_FAMILIES, tmp_path, monkeypatch)
+    _p0009_retotal(cert)
+    return cert, prob, wdir
+
+
+def _p0009_retotal(cert: Certificate) -> None:
+    """縮めた族に合わせて合計と帯の分布を作り直す."""
+    fams = cert.data["families"]
+    cert.data["totals"] = {
+        "graphs": sum(f["count"] for f in fams),
+        "families": len(fams),
+        "equality": sum(f["counts"].get("equal", 0) for f in fams),
+        "strict": sum(f["counts"].get("strict", 0) for f in fams),
+        "counterexamples": sum(f["counts"].get("fail", 0) for f in fams),
+        "bprime_counterexamples": len(cert.data.get("bprime_counterexamples",
+                                                    [])),
+        "bprime_equality": sum(f.get("bprime_equal", 0) for f in fams),
+        "exact_calls": sum(f["exact_calls"] for f in fams),
+    }
+    hist: dict[str, int] = {}
+    for f in fams:
+        for k, v in f.get("zone_hist", {}).items():
+            hist[k] = hist.get(k, 0) + v
+    cert.data["zone_totals"] = hist
+
+
+def _p0009_graphs(fam: dict):
+    """検証器が読むのと同じ順序で族のグラフを返す."""
+    import mar.checkgraph as ck
+    from mar.problems.p0009_wowii2_leaf_local_indep import _verifier_source
+
+    return list(_verifier_source(ck, fam))
+
+
+def _p0009_need(g) -> int:
+    """右辺 2S - 2n をテスト側で独立に計算する."""
+    import mar.checkgraph as ck
+
+    n, _ = g
+    return 2 * ck.indep_neighbors_sum(g) - 2 * n
+
+
+def _p0009_fmax(g) -> int:
+    """f(G) = max_(uv in E) |N(u) 合併 N(v)| をテスト側で計算する."""
+    import mar.checkgraph as ck
+
+    _, nbr = g
+    return max(len(nbr[u] | nbr[v]) for u, v in ck.edge_list(g))
+
+
+def _p0009_connected_subset(g, core: set[int]) -> bool:
+    """G[core] が連結か (検証器の実装を借りずに判定する)."""
+    _, nbr = g
+    if not core:
+        return False
+    start = next(iter(core))
+    seen = {start}
+    stack = [start]
+    while stack:
+        x = stack.pop()
+        for y in nbr[x] & core:
+            if y not in seen:
+                seen.add(y)
+                stack.append(y)
+    return seen == core
+
+
+def _p0009_equality(cert: Certificate):
+    """等号グラフを 1 つ (族, graph6) で返す."""
+    for fam in cert.data["families"]:
+        for g6 in fam.get("equality_graphs", []):
+            return fam, g6
+    return None, None
+
+
+def test_p0009_clean_certificate_verifies(leafy):
+    cert, prob, _ = leafy
+    report = prob.verify(cert)
+    assert report.ok, _failed(report)
+
+
+def test_p0009_bit_flip_in_witness_is_detected(leafy):
+    cert, prob, wdir = leafy
+    _flip_first_byte(wdir / _fam(cert, "graphs_06")["witness_file"])
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "SHA-256" in _failed(report)
+
+
+def test_p0009_empty_witness_is_detected(leafy):
+    """葉 0 個の証人は (葉集合ではあるが) 下界に届かない."""
+    cert, prob, wdir = leafy
+    fam = _fam(cert, "graphs_06")
+    graphs = _p0009_graphs(fam)
+    index = next(i for i, g in enumerate(graphs) if _p0009_need(g) > 0)
+    _rewrite_witness(wdir, fam, index, 0)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "下界に届かない" in _detail(report, "予想 2")
+
+
+def test_p0009_witness_below_the_double_star_bound_is_detected(leafy):
+    """右辺が 0 以下でも、定理 3.2 の下界を割る証人は別枠で弾く.
+
+    予想 2 の不等式だけを見ている検証器はこれを通してしまう。論文が
+    「証人は必ず二重星以上」と謳っている以上、そこも検査対象にする。
+    """
+    cert, prob, wdir = leafy
+    fam = _fam(cert, "graphs_06")
+    graphs = _p0009_graphs(fam)
+    index = next(i for i, g in enumerate(graphs)
+                 if _p0009_need(g) <= 0 and _p0009_fmax(g) >= 3)
+    _rewrite_witness(wdir, fam, index, 0)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "二重星" in _detail(report, "定理 3.2 の機械照合")
+
+
+def test_p0009_witness_with_empty_complement_is_detected(leafy):
+    """全頂点を葉と主張する証人 (補集合が空) を弾く."""
+    cert, prob, wdir = leafy
+    fam = _fam(cert, "graphs_06")
+    _rewrite_witness(wdir, fam, 0, (1 << fam["n"]) - 1)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "補集合が空" in _detail(report, "連結支配集合")
+
+
+def test_p0009_witness_with_disconnected_core_is_detected(leafy):
+    """補集合が連結でない証人 (全域木の葉集合になれない) を弾く."""
+    cert, prob, wdir = leafy
+    fam = _fam(cert, "graphs_06")
+    graphs = _p0009_graphs(fam)
+    n = fam["n"]
+    found = None
+    for i, g in enumerate(graphs):
+        for mask in range(1, 1 << n):
+            core = {w for w in range(n) if not (mask >> w) & 1}
+            if core and not _p0009_connected_subset(g, core):
+                found = (i, mask)
+                break
+        if found:
+            break
+    assert found, "補集合が非連結になる証人を作れる族でないとテストにならない"
+    _rewrite_witness(wdir, fam, found[0], found[1])
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "補集合が連結でない" in _detail(report, "連結支配集合")
+
+
+def test_p0009_witness_with_out_of_range_vertex_is_detected(leafy):
+    """存在しない頂点を立てた証人を弾く (ビット幅の検査)."""
+    cert, prob, wdir = leafy
+    fam = _fam(cert, "graphs_06")
+    _rewrite_witness(wdir, fam, 0, 1 << (fam["n"] + 1))
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "範囲外" in _detail(report, "連結支配集合")
+
+
+def test_p0009_hidden_equality_graph_is_detected(leafy):
+    """等号グラフを 1 個隠すと、証人で狭義が閉じないことが露見する."""
+    cert, prob, _ = leafy
+    fam, hidden = _p0009_equality(cert)
+    assert hidden, "等号グラフが族に無いとテストにならない"
+    fam["equality_graphs"].remove(hidden)
+    fam["equality_data"].pop(hidden, None)
+    fam["equality_examples"] = [g6 for g6 in fam["equality_examples"]
+                                if g6 != hidden]
+    fam["counts"]["equal"] -= 1
+    fam["counts"]["strict"] += 1
+    _p0009_retotal(cert)
+    report = prob.verify(cert)
+    assert not report.ok
+    detail = _detail(report, "等号")
+    assert "等号リストに無いのに" in detail and hidden in detail
+
+
+def test_p0009_false_equality_claim_is_detected(leafy):
+    """狭義成立のグラフを等号リストに入れると、証人の大きさで露見する."""
+    import mar.checkgraph as ck
+
+    cert, prob, _ = leafy
+    fam = _fam(cert, "graphs_06")
+    listed = set(fam["equality_graphs"])
+    innocent = next(g6 for g6 in (ck.sets_to_graph6(g)
+                                  for g in _p0009_graphs(fam))
+                    if g6 not in listed)
+    fam["equality_graphs"].append(innocent)
+    fam["counts"]["equal"] += 1
+    fam["counts"]["strict"] -= 1
+    _p0009_retotal(cert)
+    report = prob.verify(cert)
+    assert not report.ok
+    detail = _detail(report, "等号")
+    assert "等号リストにあるが" in detail and innocent in detail
+
+
+def test_p0009_phantom_equality_data_is_detected(leafy):
+    """等号リストに無いグラフを等号データに紛れ込ませると落ちる.
+
+    論文の等号表は ``equality_data`` を読むので、ここが等号リストと
+    ずれていると「検証済み」と書かれた行が検査を素通りしてしまう。
+    """
+    import mar.checkgraph as ck
+
+    cert, prob, _ = leafy
+    fam = _fam(cert, "graphs_06")
+    listed = set(fam["equality_graphs"])
+    phantom = next(g6 for g6 in (ck.sets_to_graph6(g)
+                                 for g in _p0009_graphs(fam))
+                   if g6 not in listed)
+    fam["equality_data"][phantom] = [2, 12, 2, 4]
+    report = prob.verify(cert)
+    assert not report.ok
+    detail = _detail(report, "等号")
+    assert "等号リスト外" in detail and phantom in detail
+
+
+def test_p0009_witness_path_outside_the_directory_is_detected(leafy):
+    """証人の置き場所を証明書に指定させない (パストラバーサルの遮断)."""
+    cert, prob, wdir = leafy
+    fam = _fam(cert, "graphs_06")
+    shutil.copy2(wdir / fam["witness_file"],
+                 wdir.parent / fam["witness_file"])
+    fam["witness_file"] = f"../{fam['witness_file']}"
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "規約と違う" in _detail(report, "SHA-256")
+
+
+def test_p0009_absurd_witness_record_count_is_detected(leafy):
+    """証人の個数を桁違いに大きく主張しても、展開前に頭打ちで弾く."""
+    cert, prob, _ = leafy
+    _fam(cert, "graphs_06")["witness_records"] = 10 ** 9
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "範囲外" in _detail(report, "SHA-256")
+
+
+def test_p0009_tampered_equality_data_is_detected(leafy):
+    """等号グラフの 4 つ組 (葉数, S, Delta, f) を書き換えると落ちる."""
+    cert, prob, _ = leafy
+    fam, g6 = _p0009_equality(cert)
+    assert g6, "等号グラフが族に無いとテストにならない"
+    fam["equality_data"][g6] = [fam["equality_data"][g6][0], 99, 99, 99]
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "等号データが再現しない" in _detail(report, "等号")
+
+
+def test_p0009_dropped_family_is_detected(leafy):
+    """族を 1 つ落とした証明書 (走査範囲の偽装) を弾く."""
+    cert, prob, _ = leafy
+    cert.data["families"] = [f for f in cert.data["families"]
+                             if f["tag"] != "graphs_07"]
+    _p0009_retotal(cert)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "graphs_07" in _detail(report, "走査範囲")
+
+
+def test_p0009_wrong_zone_histogram_is_detected(leafy):
+    """帯 (trivial / delta / hard) の分布を 1 個ずらすと落ちる.
+
+    帯は論文の主定理 5.1 が「予想を閉じた割合」の根拠なので、証人と
+    独立に数え直していないと見出しの数字だけ偽装できてしまう。
+    """
+    cert, prob, _ = leafy
+    fam = _fam(cert, "graphs_06")
+    key = next(k for k, v in fam["zone_hist"].items() if v > 0)
+    fam["zone_hist"][key] -= 1
+    fam["zone_hist"]["hard" if key != "hard" else "trivial"] = (
+        fam["zone_hist"].get("hard" if key != "hard" else "trivial", 0) + 1)
+    _p0009_retotal(cert)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "帯" in _failed(report)
+
+
+def test_p0009_wrong_bprime_equality_count_is_detected(leafy):
+    """予想 B' の等号数を偽ると、検証器の数え直しと合わなくなる."""
+    cert, prob, _ = leafy
+    fam = _fam(cert, "graphs_06")
+    fam["bprime_equal"] += 1
+    _p0009_retotal(cert)
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "B' の等号数" in _detail(report, "B'")
+
+
+def test_p0009_wrong_published_count_is_detected(leafy):
+    """証明書の期待個数を偽ると、検証器が自前で持つ公表値と食い違う."""
+    cert, prob, _ = leafy
+    _fam(cert, "graphs_06")["source_expected"] = 111
+    report = prob.verify(cert)
+    assert not report.ok
+    assert "公表値" in _failed(report)
+
+
+def test_p0009_inflated_totals_are_detected(leafy):
+    """合計だけ水増しした証明書 (論文の見出し数の偽装) を弾く."""
+    cert, prob, _ = leafy
     cert.data["totals"]["graphs"] += 1000
     report = prob.verify(cert)
     assert not report.ok
