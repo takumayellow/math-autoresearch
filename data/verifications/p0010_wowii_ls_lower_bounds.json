@@ -1,0 +1,92 @@
+{
+  "certificate_digest": "7f07e4c78df9772d",
+  "checks": [
+    {
+      "detail": "0 件",
+      "name": "反例リストは空",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "走査範囲が宣言どおりの 27 族である (族を落とした証明書を弾く)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証人ファイルの SHA-256 と長さが証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "13,402,241 個すべてで証人 L の補集合が連結支配集合 (すなわち L_s >= |L|)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "同じ 13,402,241 個で 10 本の予想と補題 L1 がすべて成立",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "2 本の補題を 13,402,241 個で機械照合 (境界補題: S = 全頂点・全辺・全球で |N(S)\\S| <= |L|、層落差補題: 全頂点で drop(v) <= |L|)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証明した 3 本 (161・162・157) の各段を 13,402,241 個で再計算",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "予想 172 を G^2 の距離で読むと 25 個で証人が右辺に届かない (証明書の主張 25 と一致)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "うち 16 個は葉数を厳密に最大化しても届かない真の反例 (G^2 読み、証明書の主張 16 と一致)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "予想 172 を G の距離で読むと 1,110 個で証人が右辺に届かない (証明書の主張 1110 と一致)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "うち 891 個は葉数を厳密に最大化しても届かない真の反例 (G 読み、証明書の主張 891 と一致)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "反例定理の反例族 T_k を k = 5..24 で再構成し、L_s = 4 と右辺の値を厳密に照合",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "走査したグラフ数が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "列挙個数が検証器の持つ公表値 (OEIS A001349 / A000055 / A002851 / A006820-A006822) と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "族ごとの内訳 (成立数・等号数・補題で閉じた数) が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証明書の合計 (論文の見出し数) が族ごとの集計と一致",
+      "passed": true
+    }
+  ],
+  "ok": true,
+  "platform": "Windows 11 (build 26200)",
+  "problem_id": "p0010_wowii_ls_lower_bounds",
+  "python": "3.10.11",
+  "seconds": 5153.6,
+  "verified_at": "2026-07-27T12:39:00+00:00",
+  "verifier_hash": "c802cafa7ae836a9"
+}
