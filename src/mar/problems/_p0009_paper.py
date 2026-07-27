@@ -279,17 +279,21 @@ def build(cert) -> dict[str, str]:
         "\\emph{Written on the Wall II} 予想 2 (以下、予想 "
         "\\ref{conj:wowii2}) は "
         "$2(\\overline{\\ell}(G) - 1) \\le L_s(G)$ を主張する。"
-        "本稿は 4 つの寄与を与える。第 1 に\\textbf{二重星定理}: 連結グラフの"
+        "出発点は\\textbf{二重星定理}: 連結グラフの"
         "\\textbf{任意の辺} $uv$ に対し "
         "$L_s(G) \\ge |N(u) \\cup N(v)| - 2$ (定理 \\ref{thm:doublestar})。"
-        "証明は「部分木を全域木へ延長しても葉は減らない」という一行の補題だけを"
-        "使う。第 2 に、この定理が予想 \\ref{conj:wowii2} を"
+        "これは出題者自身がリスト \\cite{wowii} の予想 178 の注記で"
+        "「容易に導ける」と述べている\\textbf{既知}の下界であり、本稿では"
+        "自己完結のために「部分木を全域木へ延長しても葉は減らない」という"
+        "一行の補題からの証明を与える。"
+        "本稿の寄与は次の 3 つである。第 1 に、この定理が予想 "
+        "\\ref{conj:wowii2} を"
         "\\textbf{全域木の最適化を含まない局所的な}"
         "主張へ帰着させることを指摘し、その主張を予想 B' "
         "$\\max_{uv \\in E} |N(u) \\cup N(v)| \\ge 2\\overline{\\ell}(G)$ "
         "として提出する (予想 \\ref{conj:bprime})。B' は予想 "
         "\\ref{conj:wowii2} を含意する (系 \\ref{cor:bprime})。"
-        "第 3 に\\textbf{共分散定理} (定理 \\ref{thm:cov}): 次数と局所独立数の"
+        "第 2 に\\textbf{共分散定理} (定理 \\ref{thm:cov}): 次数と局所独立数の"
         "共分散が非負、すなわち $\\sum_v (\\deg v - \\overline{d})\\ell(v) "
         "\\ge 0$ ならば、B' より強い平均版 A (予想 \\ref{conj:avg}) が"
         "成り立つ。核心は補題 \\ref{lem:sumbound} "
@@ -298,7 +302,7 @@ def build(cert) -> dict[str, str]:
         "分解する。三角形をもたないグラフは $\\ell = \\deg$ で共分散が分散に"
         "なるので、この定理の系として 2 行で片づく (系 "
         "\\ref{cor:trianglefree})。"
-        "第 4 に、自明帯 $\\overline{\\ell} \\le 2$ と $\\Delta$ 帯 "
+        "第 3 に、自明帯 $\\overline{\\ell} \\le 2$ と $\\Delta$ 帯 "
         "$2\\overline{\\ell} \\le \\Delta + 2$ で予想 \\ref{conj:wowii2} を"
         "証明し "
         "(定理 \\ref{thm:zones})、これらと共分散帯を合わせると走査範囲の "
@@ -357,15 +361,20 @@ DeLaViña--Fajtlowicz--Waller \\cite{{dfw2005}} で解決されたが、予想
 局所量とは結びついていない。
 
 \\medskip
+\\noindent\\textbf{{出発点 (既知)}}。連結グラフの\\textbf{{すべての辺}} $uv$ で
+$L_s(G) \\ge |N(u) \\cup N(v)| - 2$ が成り立つ (定理
+\\ref{{thm:doublestar}}、以下\\textbf{{二重星定理}})。これは新しい主張では
+\\emph{{ない}}: リスト \\cite{{wowii}} の予想 178 (2005 年 8 月 8 日) の注記に
+「$L_s(G) \\ge \\max\\{{|N(e)|: e \\in E\\}} - 2$ …は容易に導ける」と
+出題者自身が書いている。本稿は自己完結のため証明を与えたうえで、この既知の
+下界を予想 \\ref{{conj:wowii2}} に対して\\emph{{使い切る}}とどこまで行けるかを
+問う。
+
+\\medskip
 \\noindent\\textbf{{本稿の寄与}}。予想 \\ref{{conj:wowii2}} は一般には証明できて
-いない。得られたのは次の 4 つである。
+いない。得られたのは次の 3 つである。
 
 \\begin{{enumerate}}
-\\item \\textbf{{二重星定理}} (定理 \\ref{{thm:doublestar}}): 連結グラフの
-  \\textbf{{すべての辺}} $uv$ で $L_s(G) \\ge |N(u) \\cup N(v)| - 2$。
-  三角形をもたないグラフで使われてきた二重星の議論を、
-  $\\deg u + \\deg v$ ではなく\\textbf{{近傍の合併}}で数えることによって、
-  三角形の有無によらない形に持ち上げたものである。
 \\item \\textbf{{局所版予想 B'}} (予想 \\ref{{conj:bprime}}、本稿が提出):
   連結グラフは $\\max_{{uv \\in E}} |N(u) \\cup N(v)| \\ge 2\\overline{{\\ell}}(G)$
   を満たす。二重星定理と合わせると予想 \\ref{{conj:wowii2}} が出る
@@ -461,6 +470,16 @@ $|N(u) \\cup N(v)|$ が $\\deg u + \\deg v$ ではなく\\textbf{{合併}}であ
 要点である。三角形があると $\\deg u + \\deg v$ は共通近傍を二重に数えてしまい
 偽の下界になるが、合併ならその心配がない。同じ頂点に星を立てるだけの議論と
 比べると、$u$ と $v$ の近傍が食い違っている分だけ得をしている。
+
+\\medskip
+\\noindent\\textbf{{出典についての注意}}。定理 \\ref{{thm:doublestar}} は本稿の
+新しい結果では\\emph{{ない}}。リスト \\cite{{wowii}} の予想 178 (2005 年 8 月
+8 日付) の注記に、出題者自身が
+「$L_s(G) \\ge \\max\\{{|N(e)| : e \\in E(G)\\}} - 2$ …は容易に導ける
+(easily deduced)」と書いている。上の証明は自己完結のために置いたもので、
+本稿の寄与は\\emph{{この既知の下界を予想 \\ref{{conj:wowii2}} に対して
+使い切る}}こと (第 \\ref{{sec:bprime}} 節以降) にある。次の系も同様に古典的
+である。
 
 \\begin{{corollary}}\\label{{cor:delta}}
 連結グラフ $G$ に対し $L_s(G) \\ge \\Delta(G)$。
@@ -822,9 +841,11 @@ $\\max_{{uv \\in E}}|N(u) \\cup N(v)|$。{dash_note}}}\\label{{tab:eq}}
 \\subsection*{{何が新しいか}}
 
 \\begin{{enumerate}}
-\\item 定理 \\ref{{thm:doublestar}} は、二重星の議論を三角形の有無によらない形
-  ($\\deg u + \\deg v$ ではなく $|N(u) \\cup N(v)|$) に整えたものである。
-  証明は補題 \\ref{{lem:extend}} 1 つで済み、$L_s$ の下界としてすぐ使える。
+\\item 定理 \\ref{{thm:doublestar}} 自体は既知である (リスト \\cite{{wowii}} の
+  予想 178 の注記)。新しいのは\\textbf{{使い方}}のほうで、この下界を予想
+  \\ref{{conj:wowii2}} の右辺にそのまま突き当てると、$L_s$ という大域量が
+  消えて辺 1 本の近傍だけの主張 (予想 \\ref{{conj:bprime}}) が残る。
+  既知の道具でも、どこに当てるかで残るものが変わる。
 \\item 予想 \\ref{{conj:bprime}} と、それより強い予想 \\ref{{conj:avg}} は
   本稿が提出する新しい主張で、どちらも予想 \\ref{{conj:wowii2}} を含意
   しながら $L_s$ を含まない。とくに予想 \\ref{{conj:avg}} は
@@ -866,7 +887,11 @@ $l(n,4)$ の下界は原論文 \\cite{{storer,kw1991}} の主張を採ったも�
 追ってはいない (帯の判定式が下界から従うことだけは上で確かめた)。表
 \\ref{{tab:zones}} で 2 種類の帯を分けて数えているのはこのためである。
 
-先行研究の網羅的な確認も行っていない。とくに Mukwembi \\cite{{mukwembi}} の
+先行研究の網羅的な確認も行っていない。実際、初稿では定理
+\\ref{{thm:doublestar}} を本稿の寄与として数えていたが、リスト
+\\cite{{wowii}} の他項目 (予想 178 の注記) に同じ下界が「容易に導ける」と
+書かれているのを後から見つけて取り下げた。同じことが以下でも起こり得る。
+とくに Mukwembi \\cite{{mukwembi}} の
 定理の正確な主張は原論文で突き合わせておらず、系
 \\ref{{cor:trianglefree}} が扱う三角形なしの場合が既知である可能性がある。
 本文でその可能性を明示したのはこのためである。予想
