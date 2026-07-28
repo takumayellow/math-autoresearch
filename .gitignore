@@ -10,3 +10,8 @@ data/scratch/
 # 外部データ (McKay / GENREG / arXiv ソース) は再取得可能なので追跡しない
 data/graphs/
 data/refs/
+
+# X の資格情報。絶対に追跡しない (data/announce/posted.json は投稿記録なので追跡する)
+.env
+.env.*
+data/announce/schedule.log

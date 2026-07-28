@@ -11,6 +11,7 @@ python -m mar search  p0001_xxx --budget 600
 python -m mar verify  --all              # 全証明書を独立に再検査
 python -m mar paper   p0001_xxx          # 日本語 PDF を生成
 python -m mar run     p0001_xxx          # search → verify → paper
+python -m mar announce --all             # 成果の投稿文 (既定は下書き表示のみ)
 ```
 
 ## 設計原則
@@ -43,11 +44,14 @@ src/mar/
   problems/          1 問題 1 モジュール (pNNNN_*.py), 本文は _pNNNN_paper.py
   search/            探索エンジン (グラフ列挙, 不変量, 再現可能な証人書き出し)
   report/            LaTeX 生成 (jlreq + luatexja + 原ノ味フォント, lualatex)
+  announce/          成果の告知 (X 投稿文の組み立て・投稿台帳・API クライアント)
 data/certificates/   証明書 JSON
 data/witnesses/      証人のサイドカー (バイナリ)
 data/verifications/  検証記録 (証明書ダイジェストつき。paper の再検証省略に使う)
+data/announce/       投稿台帳 (どの成果をどの証明書の版で投稿したか)
 papers/<problem_id>/ main.tex / main.pdf / preview/*.png
 tools/pdf2png.py     組版の目視確認用
+tools/announce_schedule.py  1 日 1 件だけ投稿する Windows タスクの登録
 docs/methodology.md  研究自動化の方法論と、実際に踏んだ落とし穴
 tests/test_tamper.py     改竄した証明書が検証で落ちることの回帰テスト
 tests/test_hand_proofs.py 論文本文の手証明を元データの総当たりで照合
@@ -69,6 +73,35 @@ PYTHONPATH=src python -m pytest tests/ -q     # 数十秒 (小さい族に縮め
 - Python 3.10 + sympy / numpy / networkx (探索側のみ)
 - TinyTeX (`lualatex`, jlreq, luatexja, 原ノ味フォント)
 - PDF 目視確認に PyMuPDF (`pip install pymupdf`)
+
+## 成果の告知 (`mar announce`)
+
+**成果が出た問題だけ**を X に流す。ここでの成果とは「証明書があり、**その証明書と
+今の検証器コードに対する** PASS 記録があり、論文 PDF がビルドされている」もので、
+判定は `mar paper --use-record` と同じ条件を使う。探索をやり直して未検証になった
+問題は自動的に対象から外れる。
+
+```
+python -m mar announce --all              # 未投稿の成果すべての下書きを表示
+python -m mar announce p0008_wowii141_girth_tree
+python -m mar announce --next --post      # 未投稿のうち 1 件だけ実際に投稿
+python tools/announce_schedule.py --at 19:00   # 毎日 1 件流す OS タスクを登録
+```
+
+設計原則 5 (数値を直書きしない) は投稿文にも適用する。**投稿文に現れる数はすべて
+証明書の `claim` からそのまま引く**。手で書いてよいのは数を含まない見出しだけで、
+これはテストで機械的に強制する (`tests/test_announce.py`)。X の 280 単位 (日本語は
+1 文字 2 単位、URL は 23 単位) に収まらない分は、**文の途中では切らずに**スレッドの
+返信へ回す。同じ成果を二度流さないよう、投稿台帳の鍵は
+`(problem_id, certificate_digest)` にしてある — 探索をやり直して結果が変われば
+digest が変わるので、「更新版」として投稿できる。
+
+投稿には X API v2 (`tweepy`) と OAuth1 の資格情報 4 つ
+(`TWITTER_API_KEY` / `TWITTER_API_SECRET` / `TWITTER_ACCESS_TOKEN` /
+`TWITTER_ACCESS_TOKEN_SECRET`) が要る。`.env` 形式で `$MAR_X_ENV` → リポジトリの
+`.env.local` → `~/dev/studyai/` の順に探す。**資格情報はリポジトリに置かない**
+(`.gitignore` 済み)。API を使わずに予約投稿したい場合は
+`~/dev/studyai/tools/x_poster/buffer_auto.py` (Playwright で Buffer に積む) が使える。
 
 ## 現在の問題
 

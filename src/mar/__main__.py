@@ -9,6 +9,8 @@
     python -m mar paper   p0001_xxx
     python -m mar run     p0001_xxx          # search → verify → paper
     python -m mar verify --all               # 全証明書の再検査
+    python -m mar announce --all             # 投稿文の下書き (既定は投稿しない)
+    python -m mar announce --next --post     # 未投稿の成果を 1 件だけ投稿
 """
 
 from __future__ import annotations
@@ -159,6 +161,79 @@ def cmd_new(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_announce(args: argparse.Namespace) -> int:
+    """検証が通った成果の投稿文を作る (既定は下書き表示のみ)."""
+    from . import announce
+    from .announce import state, xclient
+
+    if args.problem_id:
+        targets = [args.problem_id]
+    else:
+        targets = announce.ready_problems()
+        skipped = [(pid, announce.readiness(pid)[1])
+                   for pid in iter_problem_modules() if pid not in targets]
+        for pid, why in skipped:
+            print(f"[skip] {pid}: {why}")
+
+    posts = []
+    for pid in targets:
+        try:
+            posts.append(announce.build_post(pid))
+        except (ValueError, KeyError) as exc:
+            print(f"[skip] {exc}", file=sys.stderr)
+            if args.problem_id:
+                return 1
+    if not args.problem_id:
+        posts = [p for p in posts if p.already_posted is None]
+        if args.next:
+            posts = posts[:1]
+
+    if not posts:
+        print("投稿対象がない (未投稿の成果なし)。")
+        return 0
+
+    posted = 0
+    for post in posts:
+        mark = "投稿済" if post.already_posted else "未投稿"
+        print(f"\n=== {post.problem_id}  digest={post.certificate_digest}  "
+              f"[{mark}] {post.weighted_length}/280"
+              + (f" +返信 {len(post.replies)} 通" if post.replies else ""))
+        print(post.text)
+        for i, reply in enumerate(post.replies, 2):
+            print(f"--- ({i} 通目)")
+            print(reply)
+        if post.image:
+            print(f"(添付: {post.image})")
+        if not args.post:
+            continue
+        if post.already_posted and not args.force:
+            print("この証明書版はすでに投稿済み (--force で再投稿)。")
+            continue
+        try:
+            result = xclient.post_thread(post.all_texts(),
+                                         None if args.no_image else post.image)
+        except Exception as exc:  # tweepy の 403/429 等もログを汚さず止める
+            print(f"\n投稿できない: {type(exc).__name__}: {exc}", file=sys.stderr)
+            print("資格情報は .env 形式で置く (リポジトリには入れない):\n"
+                  "  TWITTER_API_KEY / TWITTER_API_SECRET /\n"
+                  "  TWITTER_ACCESS_TOKEN / TWITTER_ACCESS_TOKEN_SECRET",
+                  file=sys.stderr)
+            return 1
+        state.append(state.PostRecord(
+            problem_id=post.problem_id,
+            certificate_digest=post.certificate_digest,
+            posted_at=state.now_iso(), text=post.text,
+            tweet_id=result["id"], tweet_url=result["url"],
+            tweet_ids=tuple(result["ids"])))
+        print(f"投稿した: {result['url']}")
+        posted += 1
+    if not args.post:
+        print("\n(下書きのみ。実際に投稿するには --post を付ける)")
+    elif posted:
+        print(f"\n{posted} 件投稿し、台帳 {state.LEDGER_PATH} に記録した。")
+    return 0
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     for step in (cmd_search, cmd_verify, cmd_paper):
         rc = step(args)
@@ -205,6 +280,20 @@ def main(argv: list[str] | None = None) -> int:
     sp.add_argument("--deep", action="store_true",
                     help="大きい族も含めて全数を独立実装で再計算する (遅い)")
     sp.set_defaults(func=cmd_verify)
+
+    sp = sub.add_parser("announce", help="検証が通った成果を X に投稿する")
+    sp.add_argument("problem_id", nargs="?")
+    sp.add_argument("--all", action="store_true",
+                    help="未投稿の成果をすべて対象にする (既定)")
+    sp.add_argument("--next", action="store_true",
+                    help="未投稿のうち先頭の 1 件だけを対象にする")
+    sp.add_argument("--post", action="store_true",
+                    help="実際に投稿する (既定は下書き表示のみ)")
+    sp.add_argument("--force", action="store_true",
+                    help="同じ証明書版でも再投稿する")
+    sp.add_argument("--no-image", action="store_true", dest="no_image",
+                    help="論文 1 ページ目の画像を添付しない")
+    sp.set_defaults(func=cmd_announce)
 
     args = ap.parse_args(argv)
     if args.cmd == "verify" and not args.all and not args.problem_id:
