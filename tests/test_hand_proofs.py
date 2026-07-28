@@ -1931,3 +1931,296 @@ def test_p0012_verifier_checks_do_not_fire_on_the_truth():
         _verify_residual_check(q, resid)
     assert not bad
     assert resid["c19"] > 0
+
+
+# --------------------------------------------------------------------------
+# p0014 (WOWII 40/58/59/61/63/64/65/66/91, 森数の下界)
+# --------------------------------------------------------------------------
+
+P14_MAX_N = 8
+
+_P14_CACHE: dict[str, dict] = {}
+
+
+def _p14_graphs(max_n=P14_MAX_N):
+    for n in range(2, max_n + 1):
+        yield from _graphs(n)
+
+
+def _p14_components(nbr, sub: set[int]) -> int:
+    """G[sub] の連結成分数 (定義どおり探索する)."""
+    seen: set[int] = set()
+    comp = 0
+    for start in sub:
+        if start in seen:
+            continue
+        comp += 1
+        seen.add(start)
+        stack = [start]
+        while stack:
+            u = stack.pop()
+            for w in nbr[u] & sub:
+                if w not in seen:
+                    seen.add(w)
+                    stack.append(w)
+    return comp
+
+
+def _p14_induces_forest(nbr, sub: set[int]) -> bool:
+    """G[sub] が森か (辺数 = |sub| - 成分数 を確かめる)."""
+    edges = sum(len(nbr[v] & sub) for v in sub) // 2
+    return edges == len(sub) - _p14_components(nbr, sub)
+
+
+def _p14_f(g) -> int:
+    """f(G) を部分集合の総当たりで求める (探索器も検証器も使わない)."""
+    n, nbr = g
+    for size in range(n, -1, -1):
+        for sub in itertools.combinations(range(n), size):
+            if _p14_induces_forest(nbr, set(sub)):
+                return size
+    return 0
+
+
+def _p14_p(g) -> int:
+    """p(G): 頂点素な道で V(G) を覆う最小本数 (定義どおりの DP)."""
+    n, nbr = g
+    # ends[mask] = mask をちょうど覆うハミルトン道の終点の集合 (ビット)
+    ends = [0] * (1 << n)
+    for v in range(n):
+        ends[1 << v] = 1 << v
+    for mask in range(1, 1 << n):
+        if not ends[mask]:
+            continue
+        for last in range(n):
+            if not ends[mask] >> last & 1:
+                continue
+            for w in nbr[last]:
+                if not mask >> w & 1:
+                    ends[mask | 1 << w] |= 1 << w
+    inf = n + 1
+    dp = [inf] * (1 << n)
+    dp[0] = 0
+    for mask in range(1, 1 << n):
+        low = (mask & -mask).bit_length() - 1
+        sub = mask
+        while sub:
+            if sub >> low & 1 and ends[sub] and dp[mask ^ sub] + 1 < dp[mask]:
+                dp[mask] = dp[mask ^ sub] + 1
+            sub = (sub - 1) & mask
+    return dp[(1 << n) - 1]
+
+
+def _p14_mode_min(values: list[int]) -> int | None:
+    """最頻値のうち最小のもの (values が空なら None)."""
+    if not values:
+        return None
+    best = max(values.count(v) for v in set(values))
+    return min(v for v in set(values) if values.count(v) == best)
+
+
+def _p14_dist_min(dist, group: list[int]) -> int:
+    """group 内の相異なる 2 点の最小距離。1 点以下なら 0 と読む."""
+    if len(group) <= 1:
+        return 0
+    return min(dist[u][v] for u, v in itertools.combinations(group, 2))
+
+
+def _p14_ceil_sqrt(x: int) -> int:
+    root = math.isqrt(x)
+    return root if root * root == x else root + 1
+
+
+def _p14_invariants(g) -> dict:
+    """論文の記号を定義から直接計算する (問題モジュールは読まない)."""
+    key = ck.sets_to_graph6(g)
+    if key in _P14_CACHE:
+        return _P14_CACHE[key]
+    n, nbr = g
+    deg = [len(nbr[v]) for v in range(n)]
+    m = sum(deg) // 2
+    dist = ck.all_pairs_distance(g)
+    lo, hi = min(deg), max(deg)
+    ell = [ck.independence_number_on(g, nbr[v]) for v in range(n)]
+    ell_avg = Fraction(sum(ell), n)
+    q = {
+        "n": n,
+        "m": m,
+        "f": _p14_f(g),
+        "b": _p12_b(g),
+        "p": _p14_p(g),
+        "alpha": ck.alpha_and_i(g)[0],
+        "res": ck.residue(g),
+        "diam": ck.diameter(g),
+        "Delta": hi,
+        "deg_avg": Fraction(2 * m, n),
+        "ell_avg": ell_avg,
+        "L": math.ceil(ell_avg),
+        "mode_min": _p14_mode_min(deg),
+        "em": _p14_mode_min([d for d in deg if d % 2 == 0]),
+        "de_min": min(sum(1 for u in range(n) if dist[v][u] % 2 == 0)
+                      for v in range(n)),
+        "dmin_A": _p14_dist_min(dist, [v for v in range(n) if deg[v] == lo]),
+        "dmin_M": _p14_dist_min(dist, [v for v in range(n) if deg[v] == hi]),
+    }
+    _P14_CACHE[key] = q
+    return q
+
+
+def _p14_holds(key: str, q: dict) -> bool | None:
+    """予想 key が q で成り立つか (適用外なら None)."""
+    f, b = q["f"], q["b"]
+    if key == "c40":
+        return f >= math.ceil(Fraction(q["p"] + b + 1, 2))
+    if key == "c58":
+        return f >= math.ceil(Fraction(b) / q["ell_avg"])
+    if key == "c59":
+        return f >= _p14_ceil_sqrt(q["res"] * b)
+    if key == "c61":
+        return f >= q["res"] + math.ceil(Fraction(q["diam"], 3))
+    if key == "c63":
+        return f >= math.ceil(Fraction(q["de_min"] + b + 1, 3))
+    if key == "c64":
+        return f >= _p14_ceil_sqrt(q["alpha"] * (1 + q["n"] % q["Delta"]))
+    if key == "c65":
+        return f >= q["dmin_A"] + math.ceil(Fraction(q["dmin_M"], 3))
+    if key in ("c66", "c66a"):
+        if q["em"] is None:
+            return None
+        ratio = Fraction(q["em"]) / q["deg_avg"]
+        return f >= (2 * math.ceil(ratio) if key == "c66"
+                     else math.ceil(2 * ratio))
+    if key == "c91":
+        return b <= 1 + Fraction(f * q["L"], 2)
+    raise AssertionError(key)
+
+
+def _p14_hypothesis(key: str, q: dict) -> bool:
+    """命題 5 の十分条件 (論文の本文どおり)."""
+    if key == "c40":
+        return q["p"] <= 1
+    if key == "c58":
+        return q["ell_avg"] >= 2
+    if key == "c59":
+        return q["res"] * (2 * q["f"] - 2) <= q["f"] ** 2
+    if key == "c61":
+        return q["diam"] <= 3
+    if key == "c63":
+        return q["de_min"] <= q["f"] + 1
+    if key == "c64":
+        return q["Delta"] <= q["alpha"] + 2 or q["n"] % q["Delta"] == 0
+    if key == "c65":
+        return q["dmin_M"] <= 3
+    if key == "c66a":
+        return q["m"] >= q["em"] * (q["Delta"] + 1) or q["m"] == q["n"] - 1
+    if key == "c91":
+        return q["f"] * (4 - q["L"]) <= 6
+    raise AssertionError(key)
+
+
+def _p14_star(k: int):
+    """K_{1,k} を頂点 0 を中心にして作る."""
+    nbr = [set(range(1, k + 1))] + [{0} for _ in range(k)]
+    return (k + 1, nbr)
+
+
+def test_p0014_verifier_forest_number_matches_brute_force():
+    """検証器の f(G) が定義どおりの総当たりと一致する."""
+    seen = 0
+    for g in _p14_graphs():
+        assert ck.max_induced_forest_size(g) == _p14_f(g), \
+            ck.sets_to_graph6(g)
+        seen += 1
+    assert seen > 0
+
+
+def test_p0014_theorem_b_le_2f_minus_2():
+    """定理 1: 辺をもつ連結グラフで b <= 2f-2 (等号も実際に起きる)."""
+    tight = 0
+    for g in _p14_graphs():
+        q = _p14_invariants(g)
+        assert q["b"] <= 2 * q["f"] - 2, ck.sets_to_graph6(g)
+        tight += q["b"] == 2 * q["f"] - 2
+    assert tight > 0
+
+
+def test_p0014_lemma_alpha_and_residue():
+    """補題 2: alpha < n なら f >= alpha+1、かつ res <= alpha."""
+    for g in _p14_graphs():
+        q = _p14_invariants(g)
+        assert q["res"] <= q["alpha"], ck.sets_to_graph6(g)
+        assert q["alpha"] < q["n"], ck.sets_to_graph6(g)
+        assert q["f"] >= q["alpha"] + 1, ck.sets_to_graph6(g)
+
+
+def test_p0014_lemma_geodesic():
+    """補題 3: f >= diam+1、および f >= dist min(S)+1 (S = A, M)."""
+    for g in _p14_graphs():
+        q = _p14_invariants(g)
+        assert q["f"] >= q["diam"] + 1, ck.sets_to_graph6(g)
+        assert q["f"] >= q["dmin_A"] + 1, ck.sets_to_graph6(g)
+        assert q["f"] >= q["dmin_M"] + 1, ck.sets_to_graph6(g)
+
+
+def test_p0014_lemma_dist_even_min():
+    """補題 4: dist_even_min <= n - Delta."""
+    for g in _p14_graphs():
+        q = _p14_invariants(g)
+        assert q["de_min"] <= q["n"] - q["Delta"], ck.sets_to_graph6(g)
+
+
+def test_p0014_partial_hypotheses_imply_the_conjectures():
+    """命題 5: 十分条件が成り立てば予想も成り立つ (仮定は実際に発火する)."""
+    keys = ["c40", "c58", "c59", "c61", "c63", "c64", "c65", "c66a", "c91"]
+    fired = dict.fromkeys(keys, 0)
+    for g in _p14_graphs():
+        q = _p14_invariants(g)
+        for key in keys:
+            if key == "c66a" and q["em"] is None:
+                continue
+            if not _p14_hypothesis(key, q):
+                continue
+            fired[key] += 1
+            assert _p14_holds(key, q), (key, ck.sets_to_graph6(g))
+    assert all(fired[key] > 0 for key in keys), fired
+
+
+def test_p0014_literal_reading_of_66_is_false_on_even_stars():
+    """定理 6: 逐語の読みは K_{1,k} (k 偶数) で破れ、別読みは等号になる."""
+    for k in range(2, 13, 2):
+        q = _p14_invariants(_p14_star(k))
+        assert (q["n"], q["m"], q["f"], q["em"]) == (k + 1, k, k + 1, k)
+        assert _p14_holds("c66", q) is False
+        assert _p14_holds("c66a", q) is True
+        ratio = Fraction(q["em"]) / q["deg_avg"]
+        assert 2 * math.ceil(ratio) == k + 2      # 逐語
+        assert math.ceil(2 * ratio) == k + 1      # 別読み = f
+
+
+def test_p0014_literal_reading_of_66_fails_already_at_order_three():
+    """注意 7 の根拠: 最小の反例は P_3 = K_{1,2} (位数 3)."""
+    bad = [g for g in _p14_graphs()
+           if _p14_holds("c66", _p14_invariants(g)) is False]
+    assert bad, "逐語の読みの反例が無い"
+    assert min(n for n, _ in bad) == 3
+    smallest = [g for g in bad if g[0] == 3]
+    assert len(smallest) == 1
+    _, nbr = smallest[0]
+    assert sorted(len(s) for s in nbr) == [1, 1, 2]
+
+
+def test_p0014_star_closed_forms():
+    """命題 9: 星の閉じた形と、予想 40・59・61 がちょうど等号になること."""
+    for k in range(2, 13):
+        q = _p14_invariants(_p14_star(k))
+        assert q["f"] == k + 1
+        assert q["b"] == k + 1
+        assert q["p"] == k - 1
+        assert q["alpha"] == k
+        assert q["res"] == k
+        assert q["diam"] == 2
+        assert q["ell_avg"] == Fraction(2 * k, k + 1)
+        # 等号: 右辺がちょうど f になる
+        assert math.ceil(Fraction(q["p"] + q["b"] + 1, 2)) == q["f"]
+        assert _p14_ceil_sqrt(q["res"] * q["b"]) == q["f"]
+        assert q["res"] + math.ceil(Fraction(q["diam"], 3)) == q["f"]

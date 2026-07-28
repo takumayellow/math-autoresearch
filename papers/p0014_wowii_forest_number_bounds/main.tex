@@ -1,0 +1,616 @@
+% !TEX program = lualatex
+% 自動生成: mar.report.latex — 手で編集した場合は再生成で上書きされる
+\documentclass[paper=a4,fontsize=10.5pt,jafontsize=10.5pt]{jlreq}
+
+\usepackage{luatexja}
+\usepackage[haranoaji]{luatexja-preset}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[margin=25mm]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  frame=single,
+  showstringspaces=false,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  captionpos=b,
+}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{定理}[section]
+\newtheorem{proposition}[theorem]{命題}
+\newtheorem{lemma}[theorem]{補題}
+\newtheorem{corollary}[theorem]{系}
+\newtheorem{conjecture}[theorem]{予想}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{定義}
+\newtheorem{example}[theorem]{例}
+\newtheorem{remark}[theorem]{注意}
+\newtheorem{observation}[theorem]{観察}
+
+\renewcommand{\proofname}{証明}
+
+\title{森数 f(G) の下界: WOWII 予想 40・58・59・61・63・64・65・66 と上界 91}
+\author{自動研究パイプライン \texttt{mar}（Claude Opus 5 + 検証器）}
+\date{2026年07月28日}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+DeLaViña の Graffiti.pc が生成した予想集 Written on the Wall II (WOWII)
+\cite{wowii} には\textbf{森数} $f(G)$ (誘導部分グラフが森になる頂点集合の最大
+濃度) の下界を与える予想が並ぶ。本稿はそのうち状態が \texttt{O} (未解決) の 8 本
+(40, 58, 59, 61, 63, 64, 65, 66) と、$f$ による二部数 $b(G)$ の上界 1 本 (91) を
+扱う。第一に\textbf{予想 66 の括弧の読みを決定する}。原文の
+\texttt{2*CEIL[em/deg\_avg]} は係数 $2$ が天井関数の外とも内とも読めるが、外に
+読むと星 $K_{1,k}$ ($k$ 偶数) が反例になり、内に読むと同じ族でちょうど等号に
+なる。Graffiti.pc は自身のデータベース上で成立する不等式しか出力しないから、
+\textbf{原文が意味しているのは内の読み}だと判断できる。第二に、$b(G) \le 2f(G) - 2$ と 2 つの初等的な
+補題から\textbf{扱う 9 本すべてに仮定つきの証明を与える}。仮定は 6 本が
+$p \le 1$、$\mathrm{diam} \le 3$ のように $f$ を含まない不変量の不等式で、
+残る 3 本 (59・63・91) は $f$ 自身を含む。\textbf{どの予想がどれだけ残って
+いるか}を仮定が破れるグラフの個数として数え上げる。第三に 420,526 個のグラフに対する
+\textbf{証人つき網羅検証}を与える。$f$, $b$, $p$ の決定はいずれも NP 困難だが、
+誘導森を張る頂点集合・二部部分グラフの $2$ 彩色・頂点素な奇閉路の族・道被覆の
+頂点列を証人にすれば下界と上界が多項式時間で確認でき、213,260 個 (50.7\%) は厳密解を計算せずに閉じられる。走査範囲
+では予想 40・58・59・61・63・64・65・66 (別読み)・91 のいずれにも反例が無く、本稿の定理・命題の破れも
+0 件だった。
+\end{abstract}
+
+\noindent\textbf{キーワード:} graph-theory、graffiti、forest-number、exhaustive
+
+
+\section{はじめに}\label{sec:intro}
+
+$G$ を位数 $n = |V(G)| \ge 2$ の連結な単純グラフとする。頂点部分集合 $W$ で
+$G[W]$ が森になるもののうち最大の濃度を\textbf{森数} $f(G)$ という。
+$V(G) \setminus W$ はいわゆる帰還頂点集合 (decycling set) だから、$f(G)$ の
+決定は NP 困難である \cite{karp1972}。同じく $G[W]$ が二部になる最大濃度
+$b(G)$ (\textbf{二部数}) と、$V(G)$ を頂点素な道で覆うのに必要な最小本数
+$p(G)$ (\textbf{道被覆数}) の決定も NP 困難である \cite{gj1979}。
+
+DeLaViña の Graffiti.pc が生成した予想集 Written on the Wall II (WOWII)
+\cite{wowii} には $f(G)$ の下界を与える予想が多数並ぶ。本稿が扱うのは、
+状態が \texttt{O} (未解決) の 8 本と、$f$ を用いた $b$ の上界 1 本である
+(表 \ref{tab:conj})。
+
+\begin{table}[htbp]
+\centering
+\caption{扱う 9 本の予想と走査結果。予想 40--66 は $f(G) \ge$ 右辺、予想 91
+だけは $b(G) \le$ 右辺である。「狭義」「等号」「反例」は走査した 420,526 個
+のグラフでの内訳 (予想 66 は偶数次数をもたない 13,043 個を除く)。}
+\label{tab:conj}
+\begin{tabular}{llrrr}
+\toprule
+WOWII & 右辺 & 狭義 & 等号 & 反例 \\
+\midrule
+40 & $\lceil (p(G)+b(G)+1)/2 \rceil$ & 413,496 & 7,030 & 0 \\
+58 & $\lceil b(G)/\ell_{\mathrm{avg}}(G) \rceil$ & 420,466 & 60 & 0 \\
+59 & $\lceil \sqrt{\mathrm{res}(G)\,b(G)} \rceil$ & 406,143 & 14,383 & 0 \\
+61 & $\mathrm{res}(G) + \lceil \mathrm{diam}(G)/3 \rceil$ & 418,796 & 1,730 & 0 \\
+63 & $\lceil (\mathrm{dist_{even}min}(G) + b(G) + 1)/3 \rceil$ & 418,619 & 1,907 & 0 \\
+64 & $\lceil \sqrt{\alpha(G)\,(1 + (n \bmod \Delta(G)))} \rceil$ & 418,802 & 1,724 & 0 \\
+65 & $\mathrm{dist\,min}(A) + \lceil \mathrm{dist\,min}(M)/3 \rceil$ & 420,220 & 306 & 0 \\
+66 (別読み) & $\lceil 2\,\mathrm{em}(G)/\overline{d}(G) \rceil$ & 407,422 & 61 & 0 \\
+91 & $1 + f(G)\lceil \ell_{\mathrm{avg}}(G) \rceil/2$ & 414,086 & 6,440 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+本稿の寄与は 4 つである。
+
+\begin{enumerate}
+\item \textbf{予想 66 の括弧の読みの決定} (定理 \ref{thm:66}、注意
+  \ref{cor:66})。
+\item \textbf{基本不等式 $b \le 2f-2$ と 2 つの補題からの部分的解決}
+  (定理 \ref{thm:b2f}、補題 \ref{lem:alpha}・\ref{lem:geo}、命題
+  \ref{prop:partial})。扱う 9 本すべてに仮定つきの証明を与える。
+\item \textbf{証人つき網羅検証} (定理 \ref{thm:main})。420,526 個のグラフを
+  走査し、各グラフに 4 種の証人を付けた 420,526 件の記録を残す。
+\item \textbf{星族の閉じた形} (命題 \ref{prop:star})。$K_{1,k}$ 上で予想
+  40・59・61 と予想 66 (別読み) がちょうど等号になり、これらが定数項まで
+  改善できないことを示す。
+\end{enumerate}
+
+\section{準備}\label{sec:prelim}
+
+記号は WOWII の定義ページ \cite{wowii} に従う。$m = |E(G)|$、
+$\overline{d} = 2m/n$ を平均次数、$\delta$, $\Delta$ を最小次数・最大次数、
+$\alpha$ を独立数、$\mathrm{diam}$ を直径とする。$\mathrm{res}(G)$ は
+\textbf{残余} (次数列に Havel--Hakimi の操作を尽くしたときに残る $0$ の個数)、
+$\ell(v) = \alpha(G[N(v)])$ は\textbf{局所独立数}で
+$\ell_{\mathrm{avg}} = \frac{1}{n}\sum_{v} \ell(v)$、
+$L = \lceil \ell_{\mathrm{avg}} \rceil$ と略記する。
+$\mathrm{dist_{even}}(v)$ は $v$ からの距離が偶数である頂点の個数 ($v$ 自身を
+含む) で、その最小値を $\mathrm{dist_{even}min}(G)$ と書く。
+$\mathrm{mode_{min}}(G)$ は次数列の最頻値のうち最小のもの、$\mathrm{em}(G)$ は
+偶数次数だけを見たときの同じ量である (偶数次数が無いグラフでは 66 を飛ばす)。$A$, $M$ はそれぞれ
+最小次数・最大次数をもつ頂点の集合であり、頂点集合 $S$ に対し
+$\mathrm{dist\,min}(S) = \min\{\mathrm{dist}(u,v) : u, v \in S,\ u \ne v\}$
+とする。$|S| \le 1$ のとき最小をとる対が無いので、本稿は
+$\mathrm{dist\,min}(S) = 0$ と読む (第 \ref{sec:limits} 節参照)。
+
+独立集合は空グラフを誘導し、空グラフは森だから、つねに $\alpha \le f$ で
+ある。また森は二部だから $f \le b$ である。
+
+\section{基本不等式}\label{sec:basic}
+
+\begin{theorem}\label{thm:b2f}
+$G$ を辺をもつ連結グラフとすると $b(G) \le 2f(G) - 2$、すなわち
+$f(G) \ge \lceil b(G)/2 \rceil + 1$ である。
+\end{theorem}
+
+\begin{proof}
+$W$ を $|W| = b(G)$ なる誘導二部部分グラフの頂点集合とし、$G[W]$ の二部分割を
+$W = A \sqcup B$、$|A| \ge |B|$ とする。$A$ は独立集合だから $|A| \ge b/2$ で
+ある。$G$ は連結で辺をもつので、$A$ のある頂点に隣接する頂点 $u \notin A$ が
+とれる。$A$ は独立だから、$A \cup \{u\}$ が誘導するのは $u$ を中心とする星と
+($u$ に隣接しない $A$ の頂点からなる) 孤立点であり、これは森である。よって $f \ge |A| + 1 \ge b/2 + 1$ となる。$f$ は
+整数だから $f \ge \lceil b/2 \rceil + 1$、書き直して $b \le 2f - 2$ を得る。
+\end{proof}
+
+\begin{remark}\label{rem:credit}
+定理 \ref{thm:b2f} は新しい結果ではない。WOWII の予想 40 には出題者自身の注記
+「\textit{For a connected graph on more than one vertex it is easily shown that
+$f(G) \ge b(G)/2 + 1$}」があり \cite{wowii}、同じ不等式が「容易に示せる」もの
+として述べられている。本稿がこれを改めて明示するのは、第 \ref{sec:partial}
+節の部分的解決のうち 40・58・59・63・91 の 5 本がこの 1 本から出るためで
+ある (残る 61・64・65・66 は下の補題だけで出る)。
+\end{remark}
+
+次の 3 つも初等的である。前 2 つは命題 \ref{prop:partial} で繰り返し使い、
+3 つ目は予想 63 の仮定に現れる量の上界を与える。
+
+\begin{lemma}\label{lem:alpha}
+$\alpha(G) < n$ ならば $f(G) \ge \alpha(G) + 1$ である。また
+$\mathrm{res}(G) \le \alpha(G)$ \cite{fms1991} なので、このとき
+$f(G) \ge \mathrm{res}(G) + 1$ でもある。
+\end{lemma}
+
+\begin{proof}
+$S$ を最大独立集合とする。$\alpha < n$ だから $u \notin S$ がとれ、$G$ は連結
+なので $S$ の頂点に隣接する $u$ を選べる。$S \cup \{u\}$ が誘導するのは $u$ を
+中心とする星と孤立点で、これは森だから $f \ge \alpha + 1$。残余が独立数を超えないことは
+Favaron--Mahéo--Saclé \cite{fms1991} による。
+\end{proof}
+
+\begin{lemma}\label{lem:geo}
+$f(G) \ge \mathrm{diam}(G) + 1$ であり、任意の頂点集合 $S$ に対し
+$f(G) \ge \mathrm{dist\,min}(S) + 1$ である。
+\end{lemma}
+
+\begin{proof}
+$u, v$ を距離 $t \ge 1$ の 2 頂点とすると、$u$--$v$ の最短道は誘導道である
+(近道になる弦があれば距離が縮む)。誘導道は誘導森だから $f \ge t + 1$。
+$t = \mathrm{diam}$ とすれば前半、$t = \mathrm{dist\,min}(S)$ とすれば後半を
+得る。$|S| \le 1$ のときは $\mathrm{dist\,min}(S) = 0$ と読むので $f \ge 1$
+となり、やはり成り立つ。
+\end{proof}
+
+\begin{lemma}\label{lem:deven}
+$\mathrm{dist_{even}min}(G) \le n - \Delta(G)$ である。
+\end{lemma}
+
+\begin{proof}
+$v$ を最大次数の頂点とすると $N(v)$ の $\Delta$ 個の頂点は $v$ から距離 $1$ に
+あるので、$v$ から偶数距離にある頂点は高々 $n - \Delta$ 個である。
+\end{proof}
+
+\section{予想 66 の括弧の読み}\label{sec:reading}
+
+WOWII の予想 66 は \texttt{f(G) >= 2*CEIL[even\_mode\_min(G)/deg\_avg(G)]} と
+書かれている。係数 $2$ が天井関数の外にあるのか内にあるのかは、この表記からは
+決まらない。2 通りの読み
+\begin{equation}\label{eq:readings}
+  \text{(逐語)}\ \ 2\left\lceil \frac{\mathrm{em}}{\overline{d}} \right\rceil,
+  \qquad
+  \text{(別読み)}\ \ \left\lceil \frac{2\,\mathrm{em}}{\overline{d}}
+  \right\rceil
+\end{equation}
+は一般には一致しない。同じ表記は予想 53
+(\texttt{2*CEIL[mode\_min/deg\_avg]}、ページ上の状態は \texttt{F}) にも現れる。
+
+\begin{theorem}\label{thm:66}
+逐語の読みは偽である。$k \ge 2$ を偶数とすると星 $K_{1,k}$ が反例であり、反例
+は無限に存在する。一方、別読みは同じ族でちょうど等号になる。
+\end{theorem}
+
+\begin{proof}
+$G = K_{1,k}$ とすると $n = k+1$、$m = k$、$\overline{d} = 2k/(k+1)$ である。
+次数列は $k$ が 1 個と $1$ が $k$ 個だから、$k$ が偶数のとき偶数次数は $k$ だけ
+であり $\mathrm{em} = k$ となる。星は木なので $f = n = k+1$。逐語の右辺は
+\[
+  2\left\lceil \frac{k}{2k/(k+1)} \right\rceil
+  = 2\left\lceil \frac{k+1}{2} \right\rceil = k + 2 > k + 1 = f,
+\]
+別読みの右辺は $\lceil 2k(k+1)/(2k) \rceil = k+1 = f$ である。
+\end{proof}
+
+\begin{remark}\label{cor:66}
+予想 66 の原文が意味しているのは別読みだと判断できる。Graffiti.pc は自身の
+データベース上で成立する不等式だけを出力する \cite{wowii, dg2008}。逐語の
+読みは位数 3 の $P_3 = K_{1,2}$ で既に破れるから、$P_3$ を含むデータベースを
+使う限り、逐語の読みがプログラムの出力でありえない。これは原文の表記から
+導かれる論証ではなく、生成手続きの性質に基づく推論である
+(第 \ref{sec:limits} 節)。
+\end{remark}
+
+証明書が記録した反例のうち位数が最小のものは位数 $3$ の \texttt{BW} で、$f = 3$、$\mathrm{em} = 2$、$\overline{d} = 4/3$ に対して逐語の右辺は $4$ になる。位数・辺数・$\Delta$・$\alpha$・$\mathrm{res}$・$f$・$b$・$\mathrm{diam}$ のいずれもが $K_{1,2}$ の値と一致する。
+走査した 420,526 個のグラフでは、逐語の読みの反例は 54 個、別読みの
+反例は 0 個である。位数 $10$ 以上の木の中に現れた逐語の読みの反例は位数 $11$、$13$、$15$ の 3 個で、いずれも記録された不変量が $K_{1,n-1}$ の閉じた形と一致する。
+予想 53 についても同じ現象が起きる。逐語の読みには 50 個の反例があり、
+別読みには 0 個である。逐語の読みの反例のうち位数が最小のものは位数 $5$・辺数 $7$ の \texttt{DT\{} で、$\mathrm{mode_{min}} = 3$、$f = 3$ に対し右辺は $4$ である。ただしページ上の状態 \texttt{F} が
+どちらの読みに対する反証なのかは原文からは決まらないので、本稿は 53 を
+\textbf{対照}として両方の読みを併記するにとどめる (表 \ref{tab:reading})。
+
+\begin{table}[htbp]
+\centering
+\caption{2 通りの読みの比較。「本体」は走査した 420,526 個のグラフ、
+「星族」は $K_{1,k}$ ($2 \le k \le 40$) での件数。いずれも偶数
+次数をもたないグラフは 66 の判定から外している。}
+\label{tab:reading}
+\begin{tabular}{rllrrrr}
+\toprule
+& & & \multicolumn{2}{c}{本体} & \multicolumn{2}{c}{星族} \\
+\cmidrule(lr){4-5} \cmidrule(lr){6-7}
+WOWII & 読み & 右辺 & 等号 & 反例 & 等号 & 反例 \\
+\midrule
+66 & 逐語 & $2\lceil \mathrm{em}(G)/\overline{d}(G) \rceil$ & 3,013 & 54 & 0 & 20 \\
+66 & 別読み & $\lceil 2\,\mathrm{em}(G)/\overline{d}(G) \rceil$ & 61 & 0 & 20 & 0 \\
+53 & 逐語 & $2\lceil \mathrm{mode_{min}}(G)/\overline{d}(G) \rceil$ & 2,749 & 50 & 0 & 0 \\
+53 & 別読み & $\lceil 2\,\mathrm{mode_{min}}(G)/\overline{d}(G) \rceil$ & 58 & 0 & 0 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{仮定つきの解決}\label{sec:partial}
+
+\begin{proposition}\label{prop:partial}
+$G$ を辺をもつ連結グラフとする。以下が成り立つ。
+\begin{enumerate}
+\item[(40)] $p \le 1$ ならば $f \ge \lceil (p + b + 1)/2 \rceil$。
+\item[(58)] $\ell_{\mathrm{avg}} \ge 2$ ならば
+  $f \ge \lceil b/\ell_{\mathrm{avg}} \rceil$。
+\item[(59)] $\mathrm{res}\,(2f-2) \le f^2$ ならば
+  $f \ge \lceil \sqrt{\mathrm{res} \cdot b} \rceil$。
+\item[(61)] $\mathrm{diam} \le 3$ ならば
+  $f \ge \mathrm{res} + \lceil \mathrm{diam}/3 \rceil$。
+\item[(63)] $\mathrm{dist_{even}min} \le f + 1$ ならば
+  $f \ge \lceil (\mathrm{dist_{even}min} + b + 1)/3 \rceil$。
+\item[(64)] $\Delta \le \alpha + 2$ または $\Delta \mid n$ ならば
+  $f \ge \lceil \sqrt{\alpha\,(1 + (n \bmod \Delta))} \rceil$。
+\item[(65)] $\mathrm{dist\,min}(M) \le 3$ ならば
+  $f \ge \mathrm{dist\,min}(A) + \lceil \mathrm{dist\,min}(M)/3 \rceil$。
+\item[(66)] $m \ge \mathrm{em}\,(\Delta + 1)$ または $G$ が木ならば
+  $f \ge \lceil 2\,\mathrm{em}/\overline{d} \rceil$ (別読み)。
+\item[(91)] $f\,(4 - L) \le 6$ ならば $b \le 1 + fL/2$。とくに $L \ge 4$ なら
+  仮定は不要である。
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+以下、定理 \ref{thm:b2f} の $b \le 2f-2$ を繰り返し使う。$G$ は連結で辺をもつ
+ので $\alpha < n$ であり、補題 \ref{lem:alpha} が使える。
+
+(40) $p \le 1$ なら $(p + b + 1)/2 \le (b+2)/2 \le f$ であり、$f$ は整数だから
+天井をとってもよい。
+
+(58) $\ell_{\mathrm{avg}} \ge 2$ なら
+$b/\ell_{\mathrm{avg}} \le b/2 \le f - 1$ であり、$f-1$ は整数だから
+$\lceil b/\ell_{\mathrm{avg}} \rceil \le f - 1 < f$。
+
+(59) $b \le 2f-2$ より $\mathrm{res} \cdot b \le \mathrm{res}\,(2f-2) \le f^2$。
+両辺の平方根をとって $\lceil \sqrt{\mathrm{res} \cdot b} \rceil \le f$。
+
+(61) $\mathrm{diam} \le 3$ なら $\lceil \mathrm{diam}/3 \rceil = 1$ であり、
+補題 \ref{lem:alpha} から $\mathrm{res} + 1 \le \alpha + 1 \le f$。
+
+(63) 仮定と $b \le 2f-2$ より
+$\mathrm{dist_{even}min} + b + 1 \le (f+1) + (2f-2) + 1 = 3f$ だから、$3$ で
+割って天井をとれば $f$ を超えない。
+
+(64) $\Delta \mid n$ のときは $n \bmod \Delta = 0$ なので右辺は
+$\lceil \sqrt{\alpha} \rceil \le \alpha \le f$。$\Delta \le \alpha + 2$ の
+ときは $1 + (n \bmod \Delta) \le \Delta \le \alpha + 2$ だから
+$\alpha\,(1 + (n \bmod \Delta)) \le \alpha(\alpha+2) < (\alpha+1)^2$ であり、
+右辺は $\alpha + 1$ 以下、補題 \ref{lem:alpha} より $f$ 以下である。
+
+(65) $\mathrm{dist\,min}(M) \le 3$ なら右辺は $\mathrm{dist\,min}(A) + 1$ 以下
+であり、補題 \ref{lem:geo} の $S = A$ の場合そのものである。
+
+(66) まず $G$ が木でないとする。貪欲に独立集合を取れば
+$\alpha \ge n/(\Delta+1)$ であり、仮定 $m \ge \mathrm{em}\,(\Delta+1)$ から
+$2\,\mathrm{em}/\overline{d} = \mathrm{em} \cdot n/m \le n/(\Delta+1) \le
+\alpha$ となる。$\alpha$ は整数だから天井をとっても $\alpha \le f$ を超え
+ない。$G$ が木のときは $m = n-1$、$f = n$ であり、
+$\mathrm{em} \le \Delta \le n-1$ から
+$\mathrm{em} \cdot n/(n-1) \le n = f$。
+
+(91) 定理 \ref{thm:b2f} より $b \le 2f-2$ だから、$2f - 2 \le 1 + fL/2$ を
+示せばよい。これは $4f - 4 \le 2 + fL$、すなわち $f\,(4-L) \le 6$ と同値で
+ある。$L \ge 4$ なら左辺は $0$ 以下なので仮定は自動的に満たされる。
+\end{proof}
+
+\begin{remark}\label{rem:credit40}
+(40) は注意 \ref{rem:credit} で引いた出題者の注記と同じ内容である。本稿の寄与
+はそこではなく、\textbf{同じ道具立てが残り 8 本にも効くこと}と、
+\textbf{仮定が破れる範囲がどれだけ残るか}を数え上げたこと
+(第 \ref{sec:coverage} 節) にある。
+\end{remark}
+
+\section{網羅検証の設計}\label{sec:design}
+
+$f$, $b$, $p$ はいずれも NP 困難だが、\textbf{下界と上界はそれぞれ短い証人で
+確認できる}。本稿はグラフごとに次の 4 つを記録する。
+
+\begin{itemize}
+\item \textbf{誘導森の頂点集合}: 森であることの確認は $O(n+m)$ で、
+  $f \ge |W|$ という\textbf{下界}を与える。
+\item \textbf{$2$ 彩色}: 誘導部分グラフが二部であることの確認も $O(n+m)$ で、
+  $b \ge |W|$ という下界を与える。
+\item \textbf{頂点素な奇閉路の族}: $k$ 本取れれば、誘導二部部分グラフは各
+  奇閉路から 1 頂点以上落とさねばならないので $b \le n - k$ という
+  \textbf{上界}が出る。
+\item \textbf{道被覆の頂点列}: 頂点の並べ替えと切れ目の位置で表す。連続する
+  2 頂点が隣接することを確認すれば $p \le (\text{切れ目の数}) + 1$ という上界
+  が出る。
+\end{itemize}
+
+1 グラフあたりの記録は 1 グラフ 24 バイト: forest\_mask(u16), bip\_mask(u16), oct\_labels(u64, 4bit/頂点), path\_order(u64, 4bit/頂点), path\_cuts(u16), p\_value(u8), flags(u8) である。
+
+\begin{remark}[二層走査の健全性]\label{rem:twotier}
+証人が与えるのは $f$ の下界 $f_{\mathrm{lo}}$、$b$ の上界 $b_{\mathrm{hi}}$、
+$p$ の上界 $p_{\mathrm{hi}}$ である。表 \ref{tab:conj} の右辺はいずれも $b$ と
+$p$ について単調非減少であり、下界の予想は左辺が $f$、上界の予想 91 は左辺が
+$b$ で右辺が $f$ について単調非減少だから、この 3 つ組で「狭義に成立」が言えれ
+ば真の値でも狭義に成立する。逆に等号と反例は真の値でしか判定できない。そこで
+\textbf{狭義が言えなかったグラフ、定理・命題の確認が閉じなかったグラフ、被覆
+判定 (第 \ref{sec:coverage} 節) が上下界だけでは決まらなかったグラフだけを
+厳密計算に落とす}。走査全体で 213,260 個 (50.7\%) が証人だけで閉じ、
+厳密計算の呼び出しは 414,946 回だった。木は全頂点集合が森かつ二部なので
+$f = b = n$ が即座に決まり、厳密計算は 1 回も要らない。
+\end{remark}
+
+\textbf{検証器は探索器とコードを共有しない}。検証側は独立に実装したモジュール
+\texttt{checkgraph} だけを使い、二部数は奇閉路による分枝限定で、道被覆数は
+部分集合 DP で計算し直す (探索側とは別のアルゴリズムである)。予想 61 の右辺は
+\texttt{checkgraph} 側の独立実装とも突き合わせる。さらに連結グラフと木の族に
+ついては、走査したグラフの個数を McKay の公表個数 \cite{mckay} と照合する。
+
+\section{結果}\label{sec:results}
+
+\begin{theorem}\label{thm:main}
+表 \ref{tab:fams} の 420,526 個のグラフすべてについて、予想 40・58・59・61・63・64・65・66 (別読み)・91 は
+成立する。また定理 \ref{thm:b2f}、補題 \ref{lem:alpha}・\ref{lem:geo}・
+\ref{lem:deven}、命題 \ref{prop:partial} の 9 項目のいずれにも破れが無い。
+\end{theorem}
+
+\begin{proof}
+証明書 (\texttt{p0014\_wowii\_forest\_number\_bounds}) の証人記録を検証器が読み直した結果である。各グラフに
+ついて、森の証人が実際に森を誘導すること、$2$ 彩色が実際に二部であること、
+奇閉路の証人が実際に二部でないこと、道被覆の頂点列が実際に道の列であることを
+確認し、厳密値が必要なグラフでは $f$, $b$, $p$ を検証側の独立実装で計算し直す。
+定理・命題の破れは 0 件、上下界だけでは判定できずに保留となったものは
+0 件である。
+\end{proof}
+
+\begin{table}[htbp]
+\centering
+\caption{走査した族。「速い経路」は証人だけで閉じた個数、「厳密計算」は
+$f$, $b$, $p$ の厳密解を求めた延べ回数。合計 236 秒。}
+\label{tab:fams}
+\begin{tabular}{llrrrr}
+\toprule
+族 & $n$ & 個数 & 速い経路 & 厳密計算 & 秒 \\
+\midrule
+連結グラフ (完全リスト) & 2 & 1 & 1 (100\%) & 0 & 0.0 \\
+連結グラフ (完全リスト) & 3 & 2 & 1 (50\%) & 2 & 0.0 \\
+連結グラフ (完全リスト) & 4 & 6 & 2 (33\%) & 8 & 0.0 \\
+連結グラフ (完全リスト) & 5 & 21 & 7 (33\%) & 29 & 0.0 \\
+連結グラフ (完全リスト) & 6 & 112 & 41 (37\%) & 148 & 0.0 \\
+連結グラフ (完全リスト) & 7 & 853 & 391 (46\%) & 941 & 0.2 \\
+連結グラフ (完全リスト) & 8 & 11,117 & 4,962 (45\%) & 12,375 & 2.6 \\
+連結グラフ (完全リスト) & 9 & 261,080 & 81,091 (31\%) & 360,235 & 89.9 \\
+木 (完全リスト) & 10 & 106 & 106 (100\%) & 0 & 0.0 \\
+木 (完全リスト) & 11 & 235 & 235 (100\%) & 0 & 0.0 \\
+木 (完全リスト) & 12 & 551 & 551 (100\%) & 0 & 0.1 \\
+木 (完全リスト) & 13 & 1,301 & 1,301 (100\%) & 0 & 0.3 \\
+木 (完全リスト) & 14 & 3,159 & 3,159 (100\%) & 0 & 1.2 \\
+木 (完全リスト) & 15 & 7,741 & 7,741 (100\%) & 0 & 6.1 \\
+木 (完全リスト) & 16 & 19,320 & 19,320 (100\%) & 0 & 40.4 \\
+$\Delta \le 4$ & 10 & 89,402 & 76,834 (86\%) & 25,190 & 62.2 \\
+$3$-正則 & 10 & 19 & 16 (84\%) & 7 & 0.0 \\
+$3$-正則 & 12 & 85 & 84 (99\%) & 2 & 0.0 \\
+$3$-正則 & 14 & 509 & 506 (99\%) & 6 & 0.3 \\
+$3$-正則 & 16 & 4,060 & 4,059 (100\%) & 2 & 2.6 \\
+$4$-正則 & 10 & 59 & 8 (14\%) & 103 & 0.1 \\
+$4$-正則 & 11 & 265 & 91 (34\%) & 349 & 0.3 \\
+$4$-正則 & 12 & 1,544 & 1,409 (91\%) & 277 & 1.2 \\
+$4$-正則 & 13 & 10,778 & 10,222 (95\%) & 1,115 & 6.1 \\
+$5$-正則 & 10 & 60 & 3 (5\%) & 114 & 0.1 \\
+$5$-正則 & 12 & 7,848 & 1,115 (14\%) & 13,467 & 21.6 \\
+$6$-正則 & 10 & 21 & 0 (0\%) & 42 & 0.0 \\
+$6$-正則 & 11 & 266 & 4 (2\%) & 524 & 0.7 \\
+$7$-正則 & 10 & 5 & 0 (0\%) & 10 & 0.0 \\
+\midrule
+合計 & & 420,526 & 213,260 (51\%) & 414,946 & 236 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+走査したのは、位数 $9$ 以下の連結グラフ全体 (273,192 個)、位数
+$10$ 以上 $16$ 以下の木全体 (32,413 個)、位数 $10$ で最大次数
+$4$ 以下の連結グラフ全体 (89,402 個。位数 10 の連結グラフ 11,716,571
+個を走査して絞り込んだ)、$(n, r) \in \{(10, 3), (12, 3), (14, 3), (16, 3), (10, 4), (11, 4), (12, 4), (13, 4), (10, 5), (12, 5), (10, 6), (11, 6), (10, 7)\}$ の連結 $r$-正則グラフ
+全体 (25,519 個) である。グラフのリストは B. D. McKay の連結グラフ完全リスト (graph\{n\}c.g6)、木は B. D. McKay の木リスト (tree\{n\}.\{d\}.txt)、
+正則グラフは GENREG の shortcode ファイル (reg/\{n\}\_\{r\}\_3.scd) から取った \cite{mckay, genreg}。
+
+\begin{remark}[族は互いに素ではない]\label{rem:overlap}
+表 \ref{tab:fams} の個数は\emph{走査した延べ数}である。位数 $16$ 以下の
+木や位数 10 で最大次数 4 以下のグラフのように、複数の族に同時に属するグラフは
+ある。検証器は族ごとに独立に走査するので、同じグラフを 2 度検査しても件数の
+照合は崩れず、定理 \ref{thm:main} の主張も変わらない。
+\end{remark}
+
+\section{等号グラフ: 星族}\label{sec:star}
+
+\begin{proposition}\label{prop:star}
+$k \ge 2$ とし $G = K_{1,k}$ とすると、$f = b = k+1$、$p = k-1$、
+$\alpha = \mathrm{res} = k$、$\mathrm{diam} = 2$、
+$\ell_{\mathrm{avg}} = 2k/(k+1)$ である。このとき予想 40・59・61 はちょうど
+等号であり、$k$ が偶数なら予想 66 (別読み) もちょうど等号である。
+\end{proposition}
+
+\begin{proof}
+星は木なので $f = b = n = k+1$。葉は互いに隣接しないから $\alpha = k$ であり、
+次数列 $(k, 1, \dots, 1)$ に Havel--Hakimi を 1 回適用すると $0$ が $k$ 個残る
+ので $\mathrm{res} = k$。中心を通る道は葉を 2 枚しか拾えないから
+$p = k-1$ である。予想 40 の右辺は
+$\lceil (p + b + 1)/2 \rceil = \lceil (2k+1)/2 \rceil = k+1 = f$。
+予想 59 の右辺は
+$\lceil \sqrt{k(k+1)} \rceil = k+1$ ($k^2 < k(k+1) < (k+1)^2$ による)、
+予想 61 の右辺は $\mathrm{res} + \lceil 2/3 \rceil = k+1$ である。予想 66
+(別読み) は定理 \ref{thm:66} で見たとおり $k$ が偶数のとき $k+1 = f$ になる。
+\end{proof}
+
+証明書は $K_{1,k}$ ($2 \le k \le 40$、39 個) を独立に
+構成して扱う 9 本すべてを分類する (表 \ref{tab:star})。このうち位数が
+$16$ 以下の 14 個は木または連結グラフの完全リストに既に含まれ
+ており、残る 25 個 ($k \ge 16$) は走査範囲の外にある。等号が
+$k$ によらず続くことが、これら 3 本 (と別読みの 66) が\textbf{定数項まで改善
+できない}ことの根拠である。
+
+\begin{table}[htbp]
+\centering
+\caption{星族 $K_{1,k}$ ($2 \le k \le 40$) での分類。予想 66 は
+$k$ が偶数の 20 個だけが判定対象になる。}
+\label{tab:star}
+\begin{tabular}{rl}
+\toprule
+WOWII & 内訳 \\
+\midrule
+40 & 等号 39 \\
+58 & 等号 1、狭義 38 \\
+59 & 等号 39 \\
+61 & 等号 39 \\
+63 & 狭義 39 \\
+64 & 狭義 39 \\
+65 & 狭義 39 \\
+66 (別読み) & 等号 20 \\
+91 & 狭義 39 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{十分条件はどこまで届くか}\label{sec:coverage}
+
+命題 \ref{prop:partial} は 9 本すべてに証明を与えるが、いずれも仮定つきで
+ある。\textbf{残っているのは仮定が破れる部分だけ}なので、走査した各グラフに
+ついて仮定の成否を数えた (表 \ref{tab:cover})。「成立」は命題
+\ref{prop:partial} がそのグラフを覆う個数、「不成立」は覆わない個数、「不明」
+は証人の上下界だけでは仮定の成否が決まらなかった個数、「適用外」は偶数次数が
+無く予想 66 の判定から外れた個数である。括弧内は適用外を除いた母数に対する
+「成立」の割合を表す。
+
+\begin{table}[htbp]
+\centering
+\caption{命題 \ref{prop:partial} の仮定が走査範囲を覆う割合。}
+\label{tab:cover}
+\begin{tabular}{llrrrr}
+\toprule
+WOWII & 仮定 & 成立 & 不成立 & 不明 & 適用外 \\
+\midrule
+40 & $p \le 1$ & 353,862 (84.1\%) & 32,879 & 33,785 & 0 \\
+58 & $\ell_{\mathrm{avg}} \ge 2$ & 354,800 (84.4\%) & 65,726 & 0 & 0 \\
+59 & $\mathrm{res}\,(2f-2) \le f^2$ & 410,168 (97.5\%) & 10,358 & 0 & 0 \\
+61 & $\mathrm{diam} \le 3$ & 304,123 (72.3\%) & 116,403 & 0 & 0 \\
+63 & $\mathrm{dist_{even}min} \le f + 1$ & 420,526 (100.0\%) & 0 & 0 & 0 \\
+64 & $\Delta \le \alpha + 2$ または $\Delta \mid n$ & 298,671 (71.0\%) & 121,855 & 0 & 0 \\
+65 & $\mathrm{dist\,min}(M) \le 3$ & 419,458 (99.7\%) & 1,068 & 0 & 0 \\
+66 (別読み) & $m \ge \mathrm{em}\,(\Delta + 1)$ または $G$ が木 & 141,311 (34.7\%) & 266,172 & 0 & 13,043 \\
+91 & $f\,(4 - L) \le 6$ & 204,789 (48.7\%) & 215,737 & 0 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+注目すべきは予想 63 で、走査した 420,526 個のグラフが\textbf{すべて}命題 \ref{prop:partial} の仮定を満たす。つまりこの範囲では網羅検証は命題以上の情報を与えておらず、逆にいえば予想 63 を一般に解くには、仮定が破れるグラフを走査範囲の外に探すか、仮定 ($\mathrm{dist_{even}min} \le f + 1$) 自体を無条件に証明することになる。後者ができれば予想 63 は完全に解決する。
+
+仮定が最も届かないのは予想 66 (別読み) で、覆えたのは 141,311 個 (34.7\%) にとどまる。命題 \ref{prop:partial} の (66) は $m$ が $\mathrm{em}$ に比べて十分大きいことを要求するので、疎で偶数次数の多いグラフには届かない。
+
+「不明」が残るのは予想 40 だけで、合計 33,785 個である。これは仮定に道被覆数 $p$ が現れ、証人が与えるのは $p$ の上界だけだからである。$p$ の厳密計算は状態数 $2^n \cdot n$ の部分集合 DP で行うため、予想の判定に不要なグラフでは省いた。省いたグラフでは\textbf{仮定が成り立つかどうかが未確定なだけ}であり、予想 40 自体の成否とは無関係である (表 \ref{tab:conj} のとおり反例は無い)。
+
+
+
+\section{限界}\label{sec:limits}
+
+本稿が\textbf{一般に証明した}のは、定理 \ref{thm:b2f}、補題
+\ref{lem:alpha}・\ref{lem:geo}・\ref{lem:deven}、定理 \ref{thm:66} (逐語の
+読みが偽であること)、命題 \ref{prop:partial} の 9 項目、命題 \ref{prop:star}
+である。これらは位数に制限がない。
+
+\textbf{一般には証明していない}のは、扱った 9 本の予想そのものである。定理
+\ref{thm:main} が言うのは表 \ref{tab:fams} の範囲で反例が無いことだけであり、
+その外については何も言えない。表 \ref{tab:cover} の「不成立」の列がそのまま
+残っている未解決部分である。
+
+いくつか注意しておく。
+
+\begin{itemize}
+\item 注意 \ref{cor:66} は「Graffiti.pc は成立する不等式しか出力しない」と
+  いう\emph{プログラムの性質}に基づく推論であり、原文の意図の証明ではない。
+  本稿は表 \ref{tab:reading} のとおり両方の読みを併記して報告する。
+\item $\mathrm{em}$ の読みにも曖昧さがある。本稿は\textbf{偶数次数だけを
+  取り出した列の最頻値のうち最小のもの}と読んだが、\textbf{次数列全体の
+  最頻値のうち偶数で最小のもの}という読みもありうる。後者を採ると
+  $K_{1,k}$ の次数列 $(k, 1, \dots, 1)$ の最頻値は $1$ (奇数) なので、
+  $k \ge 2$ の星はすべて予想 66 の判定対象から外れ、定理 \ref{thm:66} の
+  反例族は使えなくなる。本稿の走査はすべて前者の読みで行っている。
+\item $\mathrm{dist\,min}(S)$ を $|S| \le 1$ のとき $0$ と読んだ。
+  $\infty$ と読むと予想 65 は最大次数の頂点がただ 1 つのグラフのほとんどで
+  偽になり、予想として意味をなさない。この読みの選択は原文からは決まらない。
+\item 等号グラフの graph6 リストは族ごとに 2,000 件で打ち切っている。
+  打ち切りが起きたのは \texttt{deg4\_10}・\texttt{graphs\_09} の予想 40・53 (逐語)・59・66 (逐語)・91 で、表 \ref{tab:conj} の件数自体は打ち切りの影響を受けない (件数は数え上げであり、リストは例示のためのものである)。
+\item 予想 53 はページ上で既に \texttt{F} (反証済み) であり、本稿は対照として
+  両方の読みを走査したにすぎない。逐語の読みの反例 50 個が \texttt{F} の
+  根拠と同じものかどうかは確認していない。
+\item 走査は同型を除いた完全リストに対して行ったが、族どうしは互いに素では
+  ない (注意 \ref{rem:overlap})。表 \ref{tab:fams} の個数は延べ数である。
+\end{itemize}
+
+
+\section*{再現性}
+本稿の主張はすべて、探索器とは独立に実装された検証器によって再検査されている。次のコマンドで再現できる。
+
+\begin{center}\texttt{python -m mar verify p0014\_wowii\_forest\_number\_bounds}\end{center}
+
+\begin{center}\begin{tabular}{ll}\toprule
+証明書ダイジェスト & \texttt{d13e347d27d5b94b} \\
+生成日時 (UTC) & 2026-07-28T03:49:06+00:00 \\
+Python & 3.10.11 \\
+実行環境 & Windows 11 (build 26200) \\
+リポジトリ版 & \texttt{7e6f17a} \\
+乱数種 & 0 \\
+探索時間 & 236.1 秒 \\
+\bottomrule\end{tabular}\end{center}
+
+
+\begin{thebibliography}{99}
+\bibitem{wowii} E. DeLaViña, Written on the Wall II (Conjectures of Graffiti.pc), University of Houston-Downtown. http://cms.uhd.edu/faculty/delavinae/research/wowII/
+\bibitem{dg2008} E. DeLaViña and B. Gramajo, Two conjectures of Graffiti.pc on the forest number, Bulletin of the Institute of Combinatorics and its Applications 54 (2008) 93-102.
+\bibitem{karp1972} R. M. Karp, Reducibility among combinatorial problems, in: Complexity of Computer Computations, Plenum Press (1972) 85-103.
+\bibitem{fms1991} O. Favaron, M. Mahéo and J.-F. Saclé, On the residue of a graph, Journal of Graph Theory 15 (1991) 39-64.
+\bibitem{gj1979} M. R. Garey and D. S. Johnson, Computers and Intractability: A Guide to the Theory of NP-Completeness, W. H. Freeman (1979).
+\bibitem{mckay} B. D. McKay, Combinatorial Data: graphs and trees. https://users.cecs.anu.edu.au/~bdm/data/
+\bibitem{genreg} M. Meringer, Fast generation of regular graphs and construction of cages, Journal of Graph Theory 30 (1999) 137-146.
+\end{thebibliography}
+
+\end{document}

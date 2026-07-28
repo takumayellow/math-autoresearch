@@ -1766,3 +1766,271 @@ def leaf_number_with_mask(g: Graph, lower_mask: int) -> tuple[int, int]:
         if cds is not None:
             return n - size, full & ~cds
     return lower, lower_mask
+
+
+# ---------------------------------------------------------------------------
+# 森数バッチ (p0014): 次数の最頻値・偶距離・道被覆・奇閉路パッキング
+# ---------------------------------------------------------------------------
+
+def mode_min_degree(g: Graph) -> int:
+    r"""次数列の最小の最頻値 $\mathrm{mode}_{\min}(G)$ (WOWII 定義 [45])."""
+    deg = degrees(g)
+    best = max(deg.count(d) for d in set(deg))
+    return min(d for d in set(deg) if deg.count(d) == best)
+
+
+def even_mode_min_degree(g: Graph) -> int | None:
+    r"""偶数次数のうち最小の最頻値 (WOWII 定義 [50]).
+
+    偶数次数が 1 つも無いグラフでは定義されないので ``None`` を返す。
+    """
+    even = [d for d in degrees(g) if d % 2 == 0]
+    if not even:
+        return None
+    best = max(even.count(d) for d in set(even))
+    return min(d for d in set(even) if even.count(d) == best)
+
+
+def dist_even_counts(g: Graph) -> list[int]:
+    r"""各頂点 $v$ の $\mathrm{dist_{even}}(v)$ (WOWII 定義 [10]).
+
+    $v$ からの距離が偶数の頂点の個数。距離 0 の $v$ 自身を含む。
+    """
+    n, _ = g
+    out = []
+    for v in range(n):
+        dist = dist_to_set(g, 1 << v)
+        out.append(sum(1 for d in dist if d >= 0 and d % 2 == 0))
+    return out
+
+
+def _extend_path(adj: tuple[int, ...], path: list[int], remaining: int,
+                 at_head: bool) -> int:
+    """``path`` の端から、残次数最小の隣接頂点へ伸ばせるだけ伸ばす."""
+    while True:
+        x = path[0] if at_head else path[-1]
+        cand = adj[x] & remaining
+        if not cand:
+            return remaining
+        best_v, best_d = -1, len(adj) + 1
+        m = cand
+        while m:
+            b = m & -m
+            m ^= b
+            u = b.bit_length() - 1
+            d = _popcount(adj[u] & remaining)
+            if d < best_d:
+                best_v, best_d = u, d
+        remaining &= ~(1 << best_v)
+        if at_head:
+            path.insert(0, best_v)
+        else:
+            path.append(best_v)
+
+
+def greedy_path_cover(g: Graph) -> list[list[int]]:
+    r"""頂点素な道被覆を貪欲に作る (**上界のみ**).
+
+    残次数が最小の頂点から両側へ伸ばす、を繰り返し、最後に端点どうしが
+    隣接する道を繋ぎ合わせる。返るのは頂点列のリストで、各列は連続する 2 頂点
+    が必ず隣接する (検証側はそれを確かめるだけでよい)。
+    """
+    n, adj = g
+    remaining = (1 << n) - 1
+    paths: list[list[int]] = []
+    while remaining:
+        best_v, best_d = -1, n + 1
+        m = remaining
+        while m:
+            b = m & -m
+            m ^= b
+            v = b.bit_length() - 1
+            d = _popcount(adj[v] & remaining)
+            if d < best_d:
+                best_v, best_d = v, d
+        path = [best_v]
+        remaining &= ~(1 << best_v)
+        remaining = _extend_path(adj, path, remaining, False)
+        remaining = _extend_path(adj, path, remaining, True)
+        paths.append(path)
+    merged = True
+    while merged and len(paths) > 1:
+        merged = False
+        for i in range(len(paths)):
+            for j in range(i + 1, len(paths)):
+                head, tail = paths[i], paths[j]
+                for rev_a in (False, True):
+                    for rev_b in (False, True):
+                        xa = head[0] if rev_a else head[-1]
+                        xb = tail[-1] if rev_b else tail[0]
+                        if adj[xa] >> xb & 1:
+                            new = (head[::-1] if rev_a else head) + \
+                                  (tail[::-1] if rev_b else tail)
+                            paths = [p for k, p in enumerate(paths)
+                                     if k not in (i, j)] + [new]
+                            merged = True
+                            break
+                    if merged:
+                        break
+                if merged:
+                    break
+            if merged:
+                break
+    return paths
+
+
+def path_cover_number(g: Graph) -> int:
+    r"""道被覆数 $p(G)$ (WOWII 定義 [12]) を部分集合 DP で厳密に求める.
+
+    状態は (訪問済み集合, 最後の頂点) で、次の頂点へ移るとき辺が無ければ
+    道を 1 本増やす。$n \le 16$ 用。
+    """
+    n, adj = g
+    if n > 16:
+        raise ValueError(f"path_cover_number: n={n} は大きすぎる")
+    if n == 0:
+        return 0
+    full = (1 << n) - 1
+    inf = n + 1
+    dp = [[inf] * n for _ in range(1 << n)]
+    for v in range(n):
+        dp[1 << v][v] = 1
+    for s in range(1, 1 << n):
+        row = dp[s]
+        rest = full & ~s
+        if not rest:
+            continue
+        for v in range(n):
+            cur = row[v]
+            if cur >= inf:
+                continue
+            m = rest
+            while m:
+                b = m & -m
+                m ^= b
+                u = b.bit_length() - 1
+                cost = cur if adj[v] >> u & 1 else cur + 1
+                if cost < dp[s | b][u]:
+                    dp[s | b][u] = cost
+    return min(dp[full])
+
+
+def tree_path_cover_number(g: Graph) -> int:
+    r"""木の道被覆数 $p(T)$ を線形時間で求める.
+
+    $p = n - (\text{最大線形森の辺数})$ であり、木では「各頂点の次数が 2 以下
+    になるように辺を最大個数選ぶ」問題になる。根付き木の DP:
+    ``keep[v]`` は $v$ が親との辺を受け入れられる (子への辺が 1 本以下) 場合、
+    ``full_[v]`` は制限なし (子への辺が 2 本以下) の場合の最大辺数。
+    """
+    n, adj = g
+    if n <= 1:
+        return n
+    order = [0]
+    parent = [-1] * n
+    seen = 1
+    i = 0
+    while i < len(order):
+        x = order[i]
+        i += 1
+        m = adj[x] & ~seen
+        while m:
+            b = m & -m
+            m ^= b
+            y = b.bit_length() - 1
+            parent[y] = x
+            seen |= b
+            order.append(y)
+    if len(order) != n:
+        raise ValueError("tree_path_cover_number: 連結でない")
+    keep = [0] * n
+    full_ = [0] * n
+    for x in reversed(order):
+        base = 0
+        gains = []
+        m = adj[x]
+        while m:
+            b = m & -m
+            m ^= b
+            c = b.bit_length() - 1
+            if c == parent[x]:
+                continue
+            base += full_[c]
+            gains.append(keep[c] + 1 - full_[c])
+        gains = sorted((val for val in gains if val > 0), reverse=True)
+        keep[x] = base + (gains[0] if gains else 0)
+        full_[x] = base + sum(gains[:2])
+    return n - full_[0]
+
+
+def odd_cycle_mask(adj: tuple[int, ...], mask: int) -> int:
+    r"""$G[\mathrm{mask}]$ に奇閉路があれば、その頂点集合を返す (無ければ 0).
+
+    幅優先木を作り、深さの偶奇が等しい 2 頂点を結ぶ辺を見つけたら、その 2 頂点
+    から最近共通祖先までの木道と合わせて奇閉路にする。
+    """
+    rest = mask
+    while rest:
+        bit = rest & -rest
+        root = bit.bit_length() - 1
+        parent = {root: -1}
+        depth = {root: 0}
+        order = [root]
+        seen = bit
+        conflict = None
+        i = 0
+        while i < len(order) and conflict is None:
+            x = order[i]
+            i += 1
+            m = adj[x] & mask
+            while m:
+                b = m & -m
+                m ^= b
+                y = b.bit_length() - 1
+                if y not in depth:
+                    depth[y] = depth[x] + 1
+                    parent[y] = x
+                    seen |= b
+                    order.append(y)
+                elif (depth[y] - depth[x]) % 2 == 0:
+                    conflict = (x, y)
+                    break
+        if conflict is not None:
+            x, y = conflict
+            px = _root_path(parent, x)
+            py = _root_path(parent, y)
+            on_y = set(py)
+            arm_x = []
+            for v in px:
+                arm_x.append(v)
+                if v in on_y:
+                    break
+            lca = arm_x[-1]
+            out = 0
+            for v in arm_x:
+                out |= 1 << v
+            for v in py:
+                if v == lca:
+                    break
+                out |= 1 << v
+            return out
+        rest &= ~seen
+    return 0
+
+
+def odd_cycle_packing(g: Graph) -> list[int]:
+    r"""頂点素な奇閉路をできるだけ多く貪欲に取る.
+
+    各要素は奇閉路を含む頂点集合 (ビットマスク)。$k$ 本取れれば
+    $b(G) \le n - k$ が従う (誘導二部部分グラフは各奇閉路から 1 頂点以上
+    落とさねばならない)。**上界の証人**にしか使わない。
+    """
+    n, adj = g
+    rest = (1 << n) - 1
+    out = []
+    while True:
+        cyc = odd_cycle_mask(adj, rest)
+        if not cyc:
+            return out
+        out.append(cyc)
+        rest &= ~cyc

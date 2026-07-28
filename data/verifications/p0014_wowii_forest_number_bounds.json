@@ -1,0 +1,2392 @@
+{
+  "certificate_digest": "d13e347d27d5b94b",
+  "checks": [
+    {
+      "detail": "29 族",
+      "name": "族の数",
+      "passed": true
+    },
+    {
+      "detail": "p0014_graphs_02.bin.gz",
+      "name": "[graphs_02] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "f83142484b631b0b",
+      "name": "[graphs_02] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "24 バイト / 24 = 1",
+      "name": "[graphs_02] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "1 件すべて整合",
+      "name": "[graphs_02] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "1 / 1",
+      "name": "[graphs_02] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "1 (公表 1, OEIS A001349)",
+      "name": "[graphs_02] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "10 件",
+      "name": "[graphs_02] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[graphs_02] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_02] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_02] c53 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_02] c53a の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_02] c58 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_02] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_02] c61 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_02] c63 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_02] c65 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_02] c91 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[graphs_02] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "9 件",
+      "name": "[graphs_02] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_graphs_03.bin.gz",
+      "name": "[graphs_03] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "ad44545aee7c3c11",
+      "name": "[graphs_03] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "48 バイト / 24 = 2",
+      "name": "[graphs_03] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "2 件すべて整合",
+      "name": "[graphs_03] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "2 / 2",
+      "name": "[graphs_03] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "2 (公表 2, OEIS A001349)",
+      "name": "[graphs_03] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "24 件",
+      "name": "[graphs_03] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "{'c66': 1}",
+      "name": "[graphs_03] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "2 件",
+      "name": "[graphs_03] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_03] c53 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_03] c53a の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2 件",
+      "name": "[graphs_03] c58 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2 件",
+      "name": "[graphs_03] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2 件",
+      "name": "[graphs_03] c61 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_03] c63 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_03] c64 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_03] c65 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_03] c66 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2 件",
+      "name": "[graphs_03] c66a の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_03] c91 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[graphs_03] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "18 件",
+      "name": "[graphs_03] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_graphs_04.bin.gz",
+      "name": "[graphs_04] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "acc5000813a3017f",
+      "name": "[graphs_04] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "144 バイト / 24 = 6",
+      "name": "[graphs_04] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "6 件すべて整合",
+      "name": "[graphs_04] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "6 / 6",
+      "name": "[graphs_04] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "6 (公表 6, OEIS A001349)",
+      "name": "[graphs_04] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "68 件",
+      "name": "[graphs_04] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[graphs_04] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "5 件",
+      "name": "[graphs_04] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_04] c53 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_04] c53a の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2 件",
+      "name": "[graphs_04] c58 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "5 件",
+      "name": "[graphs_04] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "5 件",
+      "name": "[graphs_04] c61 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2 件",
+      "name": "[graphs_04] c63 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_04] c64 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "3 件",
+      "name": "[graphs_04] c65 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_04] c66 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2 件",
+      "name": "[graphs_04] c91 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[graphs_04] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "54 件",
+      "name": "[graphs_04] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_graphs_05.bin.gz",
+      "name": "[graphs_05] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "62764066e4ab5968",
+      "name": "[graphs_05] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "504 バイト / 24 = 21",
+      "name": "[graphs_05] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "21 件すべて整合",
+      "name": "[graphs_05] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "21 / 21",
+      "name": "[graphs_05] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "21 (公表 21, OEIS A001349)",
+      "name": "[graphs_05] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "252 件",
+      "name": "[graphs_05] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "{'c66': 5, 'c53': 3}",
+      "name": "[graphs_05] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "10 件",
+      "name": "[graphs_05] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2 件",
+      "name": "[graphs_05] c53 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "4 件",
+      "name": "[graphs_05] c53a の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "4 件",
+      "name": "[graphs_05] c58 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "13 件",
+      "name": "[graphs_05] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "11 件",
+      "name": "[graphs_05] c61 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2 件",
+      "name": "[graphs_05] c63 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2 件",
+      "name": "[graphs_05] c64 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "4 件",
+      "name": "[graphs_05] c65 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[graphs_05] c66 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "6 件",
+      "name": "[graphs_05] c66a の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "4 件",
+      "name": "[graphs_05] c91 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[graphs_05] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "189 件",
+      "name": "[graphs_05] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_graphs_06.bin.gz",
+      "name": "[graphs_06] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "09f047fc4927e89d",
+      "name": "[graphs_06] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "2688 バイト / 24 = 112",
+      "name": "[graphs_06] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "112 件すべて整合",
+      "name": "[graphs_06] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "112 / 112",
+      "name": "[graphs_06] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "112 (公表 112, OEIS A001349)",
+      "name": "[graphs_06] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "1318 件",
+      "name": "[graphs_06] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "{'c66': 3, 'c53': 5}",
+      "name": "[graphs_06] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "33 件",
+      "name": "[graphs_06] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "18 件",
+      "name": "[graphs_06] c53 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "6 件",
+      "name": "[graphs_06] c53a の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "4 件",
+      "name": "[graphs_06] c58 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "49 件",
+      "name": "[graphs_06] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "32 件",
+      "name": "[graphs_06] c61 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "6 件",
+      "name": "[graphs_06] c63 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "4 件",
+      "name": "[graphs_06] c64 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "12 件",
+      "name": "[graphs_06] c65 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "17 件",
+      "name": "[graphs_06] c66 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "3 件",
+      "name": "[graphs_06] c66a の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "17 件",
+      "name": "[graphs_06] c91 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[graphs_06] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "1008 件",
+      "name": "[graphs_06] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_graphs_07.bin.gz",
+      "name": "[graphs_07] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "26cbc1dcf8a2661b",
+      "name": "[graphs_07] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "20472 バイト / 24 = 853",
+      "name": "[graphs_07] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "853 件すべて整合",
+      "name": "[graphs_07] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "853 / 853",
+      "name": "[graphs_07] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "853 (公表 853, OEIS A001349)",
+      "name": "[graphs_07] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "10236 件",
+      "name": "[graphs_07] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "{'c66': 12, 'c53': 9}",
+      "name": "[graphs_07] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "124 件",
+      "name": "[graphs_07] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "88 件",
+      "name": "[graphs_07] c53 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "10 件",
+      "name": "[graphs_07] c53a の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "11 件",
+      "name": "[graphs_07] c58 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "251 件",
+      "name": "[graphs_07] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "100 件",
+      "name": "[graphs_07] c61 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "9 件",
+      "name": "[graphs_07] c63 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "21 件",
+      "name": "[graphs_07] c64 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "16 件",
+      "name": "[graphs_07] c65 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "86 件",
+      "name": "[graphs_07] c66 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "14 件",
+      "name": "[graphs_07] c66a の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "72 件",
+      "name": "[graphs_07] c91 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[graphs_07] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "7677 件",
+      "name": "[graphs_07] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_graphs_08.bin.gz",
+      "name": "[graphs_08] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "007bd8fdeea48679",
+      "name": "[graphs_08] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "266808 バイト / 24 = 11117",
+      "name": "[graphs_08] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "11117 件すべて整合",
+      "name": "[graphs_08] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "11117 / 11117",
+      "name": "[graphs_08] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "11117 (公表 11117, OEIS A001349)",
+      "name": "[graphs_08] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "132956 件",
+      "name": "[graphs_08] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "{'c66': 9, 'c53': 12}",
+      "name": "[graphs_08] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "657 件",
+      "name": "[graphs_08] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "420 件",
+      "name": "[graphs_08] c53 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "13 件",
+      "name": "[graphs_08] c53a の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "13 件",
+      "name": "[graphs_08] c58 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1684 件",
+      "name": "[graphs_08] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "338 件",
+      "name": "[graphs_08] c61 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "38 件",
+      "name": "[graphs_08] c63 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "84 件",
+      "name": "[graphs_08] c64 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "60 件",
+      "name": "[graphs_08] c65 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "263 件",
+      "name": "[graphs_08] c66 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "9 件",
+      "name": "[graphs_08] c66a の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "437 件",
+      "name": "[graphs_08] c91 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[graphs_08] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "100053 件",
+      "name": "[graphs_08] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_graphs_09.bin.gz",
+      "name": "[graphs_09] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "3cf43292736e31fe",
+      "name": "[graphs_09] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "6265920 バイト / 24 = 261080",
+      "name": "[graphs_09] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "261080 件すべて整合",
+      "name": "[graphs_09] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "261080 / 261080",
+      "name": "[graphs_09] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "261080 (公表 261080, OEIS A001349)",
+      "name": "[graphs_09] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "3132960 件",
+      "name": "[graphs_09] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "{'c66': 21, 'c53': 21}",
+      "name": "[graphs_09] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "2000 件",
+      "name": "[graphs_09] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2000 件",
+      "name": "[graphs_09] c53 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "22 件",
+      "name": "[graphs_09] c53a の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "23 件",
+      "name": "[graphs_09] c58 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2000 件",
+      "name": "[graphs_09] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1231 件",
+      "name": "[graphs_09] c61 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "161 件",
+      "name": "[graphs_09] c63 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1349 件",
+      "name": "[graphs_09] c64 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "104 件",
+      "name": "[graphs_09] c65 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2000 件",
+      "name": "[graphs_09] c66 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "24 件",
+      "name": "[graphs_09] c66a の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2000 件",
+      "name": "[graphs_09] c91 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[graphs_09] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "2349720 件",
+      "name": "[graphs_09] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_trees_10.bin.gz",
+      "name": "[trees_10] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "85a8cc3c6338bf5a",
+      "name": "[trees_10] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "2544 バイト / 24 = 106",
+      "name": "[trees_10] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "106 件すべて整合",
+      "name": "[trees_10] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "106 / 106",
+      "name": "[trees_10] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "106 (公表 106, OEIS A000055)",
+      "name": "[trees_10] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "1258 件",
+      "name": "[trees_10] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[trees_10] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_10] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_10] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_10] c61 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_10] c65 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[trees_10] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "954 件",
+      "name": "[trees_10] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_trees_11.bin.gz",
+      "name": "[trees_11] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "2ae8f0ffe336f917",
+      "name": "[trees_11] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "5640 バイト / 24 = 235",
+      "name": "[trees_11] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "235 件すべて整合",
+      "name": "[trees_11] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "235 / 235",
+      "name": "[trees_11] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "235 (公表 235, OEIS A000055)",
+      "name": "[trees_11] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "2820 件",
+      "name": "[trees_11] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "{'c66': 1}",
+      "name": "[trees_11] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_11] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_11] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_11] c61 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_11] c65 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_11] c66a の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[trees_11] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "2115 件",
+      "name": "[trees_11] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_trees_12.bin.gz",
+      "name": "[trees_12] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "db2ee147a6b03034",
+      "name": "[trees_12] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "13224 バイト / 24 = 551",
+      "name": "[trees_12] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "551 件すべて整合",
+      "name": "[trees_12] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "551 / 551",
+      "name": "[trees_12] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "551 (公表 551, OEIS A000055)",
+      "name": "[trees_12] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "6586 件",
+      "name": "[trees_12] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[trees_12] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_12] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_12] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_12] c61 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_12] c65 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[trees_12] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "4959 件",
+      "name": "[trees_12] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_trees_13.bin.gz",
+      "name": "[trees_13] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "c2131247ee12234c",
+      "name": "[trees_13] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "31224 バイト / 24 = 1301",
+      "name": "[trees_13] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "1301 件すべて整合",
+      "name": "[trees_13] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "1301 / 1301",
+      "name": "[trees_13] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "1301 (公表 1301, OEIS A000055)",
+      "name": "[trees_13] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "15612 件",
+      "name": "[trees_13] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "{'c66': 1}",
+      "name": "[trees_13] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_13] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_13] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_13] c61 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_13] c65 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_13] c66a の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[trees_13] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "11709 件",
+      "name": "[trees_13] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_trees_14.bin.gz",
+      "name": "[trees_14] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "143bb45f5a318839",
+      "name": "[trees_14] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "75816 バイト / 24 = 3159",
+      "name": "[trees_14] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "3159 件すべて整合",
+      "name": "[trees_14] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "3159 / 3159",
+      "name": "[trees_14] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "3159 (公表 3159, OEIS A000055)",
+      "name": "[trees_14] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "37844 件",
+      "name": "[trees_14] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[trees_14] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_14] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_14] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_14] c61 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_14] c65 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[trees_14] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "28431 件",
+      "name": "[trees_14] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_trees_15.bin.gz",
+      "name": "[trees_15] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "e11396344e9e7831",
+      "name": "[trees_15] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "185784 バイト / 24 = 7741",
+      "name": "[trees_15] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "7741 件すべて整合",
+      "name": "[trees_15] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "7741 / 7741",
+      "name": "[trees_15] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "7741 (公表 7741, OEIS A000055)",
+      "name": "[trees_15] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "92892 件",
+      "name": "[trees_15] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "{'c66': 1}",
+      "name": "[trees_15] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_15] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_15] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_15] c61 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_15] c65 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_15] c66a の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[trees_15] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "69669 件",
+      "name": "[trees_15] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_trees_16.bin.gz",
+      "name": "[trees_16] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "a3d5bb9fa29b8974",
+      "name": "[trees_16] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "463680 バイト / 24 = 19320",
+      "name": "[trees_16] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "19320 件すべて整合",
+      "name": "[trees_16] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "19320 / 19320",
+      "name": "[trees_16] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "19320 (公表 19320, OEIS A000055)",
+      "name": "[trees_16] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "231692 件",
+      "name": "[trees_16] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[trees_16] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_16] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_16] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_16] c61 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[trees_16] c65 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[trees_16] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "173880 件",
+      "name": "[trees_16] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_deg4_10.bin.gz",
+      "name": "[deg4_10] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "da4078b57d1fec91",
+      "name": "[deg4_10] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "2145648 バイト / 24 = 89402",
+      "name": "[deg4_10] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "89402 件すべて整合",
+      "name": "[deg4_10] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "89402 / 89402",
+      "name": "[deg4_10] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "1072642 件",
+      "name": "[deg4_10] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[deg4_10] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "56 件",
+      "name": "[deg4_10] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "28 件",
+      "name": "[deg4_10] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "3 件",
+      "name": "[deg4_10] c61 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "5 件",
+      "name": "[deg4_10] c63 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "98 件",
+      "name": "[deg4_10] c65 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2000 件",
+      "name": "[deg4_10] c91 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[deg4_10] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "804618 件",
+      "name": "[deg4_10] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_reg3_10.bin.gz",
+      "name": "[reg3_10] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "6102613e3c9353e4",
+      "name": "[reg3_10] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "456 バイト / 24 = 19",
+      "name": "[reg3_10] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "19 件すべて整合",
+      "name": "[reg3_10] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "19 / 19",
+      "name": "[reg3_10] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "19 (公表 19, OEIS A002851)",
+      "name": "[reg3_10] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "190 件",
+      "name": "[reg3_10] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[reg3_10] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[reg3_10] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "171 件",
+      "name": "[reg3_10] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_reg3_12.bin.gz",
+      "name": "[reg3_12] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "ad5ff53165de73fe",
+      "name": "[reg3_12] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "2040 バイト / 24 = 85",
+      "name": "[reg3_12] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "85 件すべて整合",
+      "name": "[reg3_12] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "85 / 85",
+      "name": "[reg3_12] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "85 (公表 85, OEIS A002851)",
+      "name": "[reg3_12] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "850 件",
+      "name": "[reg3_12] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[reg3_12] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[reg3_12] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "765 件",
+      "name": "[reg3_12] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_reg3_14.bin.gz",
+      "name": "[reg3_14] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "68f0810316232c30",
+      "name": "[reg3_14] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "12216 バイト / 24 = 509",
+      "name": "[reg3_14] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "509 件すべて整合",
+      "name": "[reg3_14] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "509 / 509",
+      "name": "[reg3_14] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "509 (公表 509, OEIS A002851)",
+      "name": "[reg3_14] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "5090 件",
+      "name": "[reg3_14] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[reg3_14] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[reg3_14] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "4581 件",
+      "name": "[reg3_14] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_reg3_16.bin.gz",
+      "name": "[reg3_16] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "15a5e149fd717731",
+      "name": "[reg3_16] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "97440 バイト / 24 = 4060",
+      "name": "[reg3_16] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "4060 件すべて整合",
+      "name": "[reg3_16] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "4060 / 4060",
+      "name": "[reg3_16] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "4060 (公表 4060, OEIS A002851)",
+      "name": "[reg3_16] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "40600 件",
+      "name": "[reg3_16] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[reg3_16] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[reg3_16] c91 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[reg3_16] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "36540 件",
+      "name": "[reg3_16] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_reg4_10.bin.gz",
+      "name": "[reg4_10] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "5b048c3c444f057f",
+      "name": "[reg4_10] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "1416 バイト / 24 = 59",
+      "name": "[reg4_10] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "59 件すべて整合",
+      "name": "[reg4_10] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "59 / 59",
+      "name": "[reg4_10] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "59 (公表 59, OEIS A006820)",
+      "name": "[reg4_10] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "708 件",
+      "name": "[reg4_10] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[reg4_10] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[reg4_10] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[reg4_10] c63 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2 件",
+      "name": "[reg4_10] c91 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[reg4_10] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "531 件",
+      "name": "[reg4_10] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_reg4_11.bin.gz",
+      "name": "[reg4_11] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "65983b0efdc2e2e0",
+      "name": "[reg4_11] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "6360 バイト / 24 = 265",
+      "name": "[reg4_11] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "265 件すべて整合",
+      "name": "[reg4_11] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "265 / 265",
+      "name": "[reg4_11] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "265 (公表 265, OEIS A006820)",
+      "name": "[reg4_11] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "3180 件",
+      "name": "[reg4_11] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[reg4_11] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "5 件",
+      "name": "[reg4_11] c63 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[reg4_11] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "2385 件",
+      "name": "[reg4_11] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_reg4_12.bin.gz",
+      "name": "[reg4_12] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "d829af8b0e0eba30",
+      "name": "[reg4_12] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "37056 バイト / 24 = 1544",
+      "name": "[reg4_12] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "1544 件すべて整合",
+      "name": "[reg4_12] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "1544 / 1544",
+      "name": "[reg4_12] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "1544 (公表 1544, OEIS A006820)",
+      "name": "[reg4_12] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "18528 件",
+      "name": "[reg4_12] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[reg4_12] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "4 件",
+      "name": "[reg4_12] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "4 件",
+      "name": "[reg4_12] c63 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "6 件",
+      "name": "[reg4_12] c91 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[reg4_12] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "13896 件",
+      "name": "[reg4_12] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_reg4_13.bin.gz",
+      "name": "[reg4_13] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "3bd003d4ce75bda9",
+      "name": "[reg4_13] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "258672 バイト / 24 = 10778",
+      "name": "[reg4_13] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "10778 件すべて整合",
+      "name": "[reg4_13] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "10778 / 10778",
+      "name": "[reg4_13] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "10778 (公表 10778, OEIS A006820)",
+      "name": "[reg4_13] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "129336 件",
+      "name": "[reg4_13] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[reg4_13] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "2 件",
+      "name": "[reg4_13] c91 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[reg4_13] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "97002 件",
+      "name": "[reg4_13] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_reg5_10.bin.gz",
+      "name": "[reg5_10] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "0928006edaaa457d",
+      "name": "[reg5_10] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "1440 バイト / 24 = 60",
+      "name": "[reg5_10] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "60 件すべて整合",
+      "name": "[reg5_10] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "60 / 60",
+      "name": "[reg5_10] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "60 (公表 60, OEIS A006821)",
+      "name": "[reg5_10] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "600 件",
+      "name": "[reg5_10] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[reg5_10] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "4 件",
+      "name": "[reg5_10] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "6 件",
+      "name": "[reg5_10] c63 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[reg5_10] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "540 件",
+      "name": "[reg5_10] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_reg5_12.bin.gz",
+      "name": "[reg5_12] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "416e6ff6ec7b0b2e",
+      "name": "[reg5_12] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "188352 バイト / 24 = 7848",
+      "name": "[reg5_12] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "7848 件すべて整合",
+      "name": "[reg5_12] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "7848 / 7848",
+      "name": "[reg5_12] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "7848 (公表 7848, OEIS A006821)",
+      "name": "[reg5_12] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "78480 件",
+      "name": "[reg5_12] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[reg5_12] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "6 件",
+      "name": "[reg5_12] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1644 件",
+      "name": "[reg5_12] c63 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2 件",
+      "name": "[reg5_12] c91 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[reg5_12] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "70632 件",
+      "name": "[reg5_12] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_reg6_10.bin.gz",
+      "name": "[reg6_10] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "ab7d2e9ccaa7c3d2",
+      "name": "[reg6_10] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "504 バイト / 24 = 21",
+      "name": "[reg6_10] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "21 件すべて整合",
+      "name": "[reg6_10] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "21 / 21",
+      "name": "[reg6_10] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "21 (公表 21, OEIS A006822)",
+      "name": "[reg6_10] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "252 件",
+      "name": "[reg6_10] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[reg6_10] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "6 件",
+      "name": "[reg6_10] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "5 件",
+      "name": "[reg6_10] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "5 件",
+      "name": "[reg6_10] c63 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "13 件",
+      "name": "[reg6_10] c64 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[reg6_10] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "189 件",
+      "name": "[reg6_10] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_reg6_11.bin.gz",
+      "name": "[reg6_11] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "08cdf8e483f8df30",
+      "name": "[reg6_11] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "6384 バイト / 24 = 266",
+      "name": "[reg6_11] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "266 件すべて整合",
+      "name": "[reg6_11] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "266 / 266",
+      "name": "[reg6_11] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "266 (公表 266, OEIS A006822)",
+      "name": "[reg6_11] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "3192 件",
+      "name": "[reg6_11] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[reg6_11] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "14 件",
+      "name": "[reg6_11] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "16 件",
+      "name": "[reg6_11] c63 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "247 件",
+      "name": "[reg6_11] c64 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[reg6_11] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "2394 件",
+      "name": "[reg6_11] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "p0014_reg7_10.bin.gz",
+      "name": "[reg7_10] 証人ファイルがある",
+      "passed": true
+    },
+    {
+      "detail": "0d6532f2ea436cc3",
+      "name": "[reg7_10] 証人の SHA-256",
+      "passed": true
+    },
+    {
+      "detail": "120 バイト / 24 = 5",
+      "name": "[reg7_10] 証人のバイト数",
+      "passed": true
+    },
+    {
+      "detail": "5 件すべて整合",
+      "name": "[reg7_10] 証人の検査",
+      "passed": true
+    },
+    {
+      "detail": "5 / 5",
+      "name": "[reg7_10] グラフ数",
+      "passed": true
+    },
+    {
+      "detail": "5 (公表 5, OEIS A014377)",
+      "name": "[reg7_10] 公表個数との一致",
+      "passed": true
+    },
+    {
+      "detail": "50 件",
+      "name": "[reg7_10] 分類の再現",
+      "passed": true
+    },
+    {
+      "detail": "0",
+      "name": "[reg7_10] 反例数の再現",
+      "passed": true
+    },
+    {
+      "detail": "2 件",
+      "name": "[reg7_10] c40 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2 件",
+      "name": "[reg7_10] c59 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "1 件",
+      "name": "[reg7_10] c63 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "2 件",
+      "name": "[reg7_10] c64 の等号グラフ",
+      "passed": true
+    },
+    {
+      "detail": "{}",
+      "name": "[reg7_10] 定理・命題の破れ",
+      "passed": true
+    },
+    {
+      "detail": "45 件",
+      "name": "[reg7_10] 十分条件の被覆",
+      "passed": true
+    },
+    {
+      "detail": "26 種のカウンタ",
+      "name": "合計の再集計",
+      "passed": true
+    },
+    {
+      "detail": "すべて 0",
+      "name": "定理・命題の反例数の再集計",
+      "passed": true
+    },
+    {
+      "detail": "すべて 0",
+      "name": "定理・命題の保留数の再集計",
+      "passed": true
+    },
+    {
+      "detail": "19 種のカウンタ",
+      "name": "十分条件の被覆の再集計",
+      "passed": true
+    },
+    {
+      "detail": "破れ 0 件 / 保留 0 件",
+      "name": "定理・命題 t1",
+      "passed": true
+    },
+    {
+      "detail": "破れ 0 件 / 保留 0 件",
+      "name": "定理・命題 t_alpha",
+      "passed": true
+    },
+    {
+      "detail": "破れ 0 件 / 保留 0 件",
+      "name": "定理・命題 t_res",
+      "passed": true
+    },
+    {
+      "detail": "破れ 0 件 / 保留 0 件",
+      "name": "定理・命題 t_geo",
+      "passed": true
+    },
+    {
+      "detail": "破れ 0 件 / 保留 0 件",
+      "name": "定理・命題 t_de",
+      "passed": true
+    },
+    {
+      "detail": "破れ 0 件 / 保留 0 件",
+      "name": "定理・命題 p40",
+      "passed": true
+    },
+    {
+      "detail": "破れ 0 件 / 保留 0 件",
+      "name": "定理・命題 p58",
+      "passed": true
+    },
+    {
+      "detail": "破れ 0 件 / 保留 0 件",
+      "name": "定理・命題 p59",
+      "passed": true
+    },
+    {
+      "detail": "破れ 0 件 / 保留 0 件",
+      "name": "定理・命題 p61",
+      "passed": true
+    },
+    {
+      "detail": "破れ 0 件 / 保留 0 件",
+      "name": "定理・命題 p63",
+      "passed": true
+    },
+    {
+      "detail": "破れ 0 件 / 保留 0 件",
+      "name": "定理・命題 p64",
+      "passed": true
+    },
+    {
+      "detail": "破れ 0 件 / 保留 0 件",
+      "name": "定理・命題 p65",
+      "passed": true
+    },
+    {
+      "detail": "破れ 0 件 / 保留 0 件",
+      "name": "定理・命題 p66",
+      "passed": true
+    },
+    {
+      "detail": "破れ 0 件 / 保留 0 件",
+      "name": "定理・命題 p91",
+      "passed": true
+    },
+    {
+      "detail": "破れ 0 件 / 保留 0 件",
+      "name": "定理・命題 c61rhs",
+      "passed": true
+    },
+    {
+      "detail": "39 個",
+      "name": "星族の個数",
+      "passed": true
+    },
+    {
+      "detail": "39 個すべて一致",
+      "name": "星族の再計算",
+      "passed": true
+    },
+    {
+      "detail": "430 件",
+      "name": "星族の集計",
+      "passed": true
+    },
+    {
+      "detail": "反例 0 件",
+      "name": "c40 (WOWII 40, 原文どおり) に反例なし",
+      "passed": true
+    },
+    {
+      "detail": "反例 0 件",
+      "name": "c58 (WOWII 58, 原文どおり) に反例なし",
+      "passed": true
+    },
+    {
+      "detail": "反例 0 件",
+      "name": "c59 (WOWII 59, 原文どおり) に反例なし",
+      "passed": true
+    },
+    {
+      "detail": "反例 0 件",
+      "name": "c61 (WOWII 61, 原文どおり) に反例なし",
+      "passed": true
+    },
+    {
+      "detail": "反例 0 件",
+      "name": "c63 (WOWII 63, 原文どおり) に反例なし",
+      "passed": true
+    },
+    {
+      "detail": "反例 0 件",
+      "name": "c64 (WOWII 64, 原文どおり) に反例なし",
+      "passed": true
+    },
+    {
+      "detail": "反例 0 件",
+      "name": "c65 (WOWII 65, 原文どおり) に反例なし",
+      "passed": true
+    },
+    {
+      "detail": "反例 0 件",
+      "name": "c66a (WOWII 66, 別読み) に反例なし",
+      "passed": true
+    },
+    {
+      "detail": "反例 0 件",
+      "name": "c91 (WOWII 91, 原文どおり) に反例なし",
+      "passed": true
+    },
+    {
+      "detail": "反例 54 件",
+      "name": "c66 (逐語の読み) に反例あり",
+      "passed": true
+    }
+  ],
+  "ok": true,
+  "platform": "Windows 11 (build 26200)",
+  "problem_id": "p0014_wowii_forest_number_bounds",
+  "python": "3.10.11",
+  "seconds": 252.1,
+  "verified_at": "2026-07-28T04:12:08+00:00",
+  "verifier_hash": "55a9b3241d26ad79"
+}
