@@ -1515,3 +1515,254 @@ def bipartite_number(g: Graph) -> int:
     if better is None:
         return lower
     return _popcount(better[0]) + _popcount(better[1])
+
+
+# ---------------------------------------------------------------------------
+# 最大葉全域木 (p0013)
+# ---------------------------------------------------------------------------
+
+def is_connected_dominating(g: Graph, mask: int) -> bool:
+    r"""``mask`` が連結支配集合か (空集合は $n \le 1$ のときだけ真)."""
+    n, adj = g
+    full = (1 << n) - 1
+    if mask == 0:
+        return n <= 1
+    cover = mask
+    rest = mask
+    while rest:
+        bit = rest & -rest
+        rest ^= bit
+        cover |= adj[bit.bit_length() - 1]
+    if cover != full:
+        return False
+    start = mask & -mask
+    seen = start
+    stack = [start.bit_length() - 1]
+    while stack:
+        m = adj[stack.pop()] & mask & ~seen
+        while m:
+            bit = m & -m
+            m ^= bit
+            seen |= bit
+            stack.append(bit.bit_length() - 1)
+    return seen == mask
+
+
+def bfs_leaf_mask(g: Graph, root: int) -> int:
+    r"""``root`` からの幅優先木の葉集合.
+
+    層 $L_i$ の頂点は、次の層に子を持たなければ葉になる。木は全域なので
+    得られた集合はそのまま $L_s(G)$ の下界の証人である。
+    """
+    n, adj = g
+    parent_used = 0            # 子を持つ頂点
+    seen = 1 << root
+    frontier = 1 << root
+    while True:
+        nxt = 0
+        m = frontier
+        while m:
+            bit = m & -m
+            m ^= bit
+            v = bit.bit_length() - 1
+            new = adj[v] & ~seen & ~nxt
+            if new:
+                parent_used |= bit
+                nxt |= new
+        if not nxt:
+            break
+        seen |= nxt
+        frontier = nxt
+    return ((1 << n) - 1) & ~parent_used
+
+
+def greedy_leaf_mask(g: Graph) -> int:
+    r"""貪欲に作った連結支配集合の補集合 ($L_s$ の下界の証人).
+
+    各頂点を種として、被覆が増える順に境界の頂点を足していく。出来た集合は
+    連結支配集合なので、その補集合を葉にする全域木が存在する。
+    """
+    n, adj = g
+    full = (1 << n) - 1
+    closed = [adj[v] | (1 << v) for v in range(n)]
+    best = None
+    for start in range(n):
+        cur = 1 << start
+        cov = closed[start]
+        border = adj[start]
+        while cov != full:
+            cand = border & ~cur
+            pick, gain = -1, -1
+            while cand:
+                bit = cand & -cand
+                cand ^= bit
+                v = bit.bit_length() - 1
+                got = _popcount(closed[v] & ~cov)
+                if got > gain:
+                    pick, gain = v, got
+            if pick < 0:
+                break
+            cur |= 1 << pick
+            cov |= closed[pick]
+            border |= adj[pick]
+        if cov == full and (best is None or _popcount(cur) < _popcount(best)):
+            best = cur
+    return (full & ~best) if best is not None else 0
+
+
+def leaf_witness(g: Graph, target: int) -> int:
+    r"""葉数が ``target`` 以上の葉集合を安い順に探す (届かなければ最良を返す).
+
+    幅優先木 (根を全通り) → 貪欲連結支配集合、の順に試す。
+    """
+    n, adj = g
+    if n <= 2:
+        return (1 << n) - 1
+    best = 0
+    for root in range(n):
+        mask = bfs_leaf_mask(g, root)
+        if _popcount(mask) > _popcount(best):
+            best = mask
+            if _popcount(best) >= target:
+                return best
+    mask = greedy_leaf_mask(g)
+    return mask if _popcount(mask) > _popcount(best) else best
+
+
+def cds_at_most(g: Graph, k: int) -> int | None:
+    """大きさ ``k`` 以下の連結支配集合を返す (無ければ ``None``).
+
+    連結性を保ったまま 1 頂点ずつ伸ばす (境界からしか足さない) 深さ優先。
+    """
+    n, adj = g
+    full = (1 << n) - 1
+    if k <= 0:
+        return 0 if n <= 1 else None
+    closed = [adj[v] | (1 << v) for v in range(n)]
+
+    def grow(cur: int, cov: int, border: int, budget: int) -> int | None:
+        if cov == full:
+            return cur
+        if budget == 0:
+            return None
+        cand = border & ~cur
+        while cand:
+            bit = cand & -cand
+            cand ^= bit
+            v = bit.bit_length() - 1
+            got = grow(cur | bit, cov | closed[v], border | adj[v], budget - 1)
+            if got is not None:
+                return got
+        return None
+
+    for start in range(n):
+        got = grow(1 << start, closed[start], adj[start], k - 1)
+        if got is not None:
+            return got
+    return None
+
+
+def leaf_number(g: Graph, lower: int = 0) -> int:
+    r"""最大葉全域木の葉数 $L_s(G)$.
+
+    $n \ge 3$ の連結グラフでは $L_s = n - \gamma_c$ なので、連結支配集合を
+    小さい方から探す。``lower`` に既知の下界を渡すと探索範囲が縮む。
+    """
+    n, _ = g
+    if n <= 2:
+        return n
+    for size in range(1, n - max(lower, 1) + 1):
+        if cds_at_most(g, size) is not None:
+            return n - size
+    return max(lower, 2)
+
+
+def grow_leaf_mask(g: Graph, seed: int) -> int:
+    r"""連結な ``seed`` から全域木を作り、その葉集合を返す (部分木延長補題).
+
+    ``seed`` の中の全域木に $N(\mathrm{seed}) \setminus \mathrm{seed}$ を葉と
+    してぶら下げ、残りを幅優先で継ぎ足す。継ぎ足しは葉を 1 個増やして高々
+    1 個しか減らさないので、葉数は $|N(\mathrm{seed}) \setminus \mathrm{seed}|$
+    を下回らない。``seed`` が空、または連結でなければ $0$ を返す。
+    """
+    n, adj = g
+    if seed == 0:
+        return 0
+    tdeg = [0] * n
+    start = (seed & -seed).bit_length() - 1
+    reached = 1 << start
+    queue = [start]
+    i = 0
+    while i < len(queue):                       # seed の中の全域木
+        x = queue[i]
+        i += 1
+        m = adj[x] & seed & ~reached
+        while m:
+            bit = m & -m
+            m ^= bit
+            reached |= bit
+            w = bit.bit_length() - 1
+            tdeg[x] += 1
+            tdeg[w] += 1
+            queue.append(w)
+    if reached != seed:                         # seed が連結でない
+        return 0
+    intree = seed
+    i = 0
+    while i < len(queue):                       # 境界を葉にしてから残りを継ぐ
+        x = queue[i]
+        i += 1
+        m = adj[x] & ~intree
+        while m:
+            bit = m & -m
+            m ^= bit
+            intree |= bit
+            w = bit.bit_length() - 1
+            tdeg[x] += 1
+            tdeg[w] += 1
+            queue.append(w)
+    mask = 0
+    for w in range(n):
+        if tdeg[w] == 1:
+            mask |= 1 << w
+    return mask
+
+
+def best_edge_neighbourhood(g: Graph) -> tuple[int, int, int]:
+    r"""$|N(e)|$ が最大の辺 $e = uv$ と、その $|N(e)|$ を返す.
+
+    辺が 1 本も無ければ ``(0, -1, -1)`` を返す。呼び出し側は $|N(e)| = 0$ を
+    見て頂点番号を使わないこと。
+    """
+    n, adj = g
+    best = (0, -1, -1)
+    for u in range(n):
+        m = adj[u] & ~((1 << (u + 1)) - 1)
+        while m:
+            bit = m & -m
+            m ^= bit
+            v = bit.bit_length() - 1
+            size = _popcount(adj[u] | adj[v])
+            if size > best[0]:
+                best = (size, u, v)
+    return best
+
+
+def leaf_number_with_mask(g: Graph, lower_mask: int) -> tuple[int, int]:
+    r"""$L_s(G)$ と、それを実現する葉集合のマスクを返す.
+
+    ``lower_mask`` は既知の葉集合 (下界の証人)。探索がそれを超えられなければ
+    ``lower_mask`` 自身が最適なので、そのまま返す。返す葉数とマスクは常に
+    整合する ($n \ge 3$ の連結グラフでは $\gamma_c \le n - 2$ なので、
+    ループは必ずどこかで成功し、最後の ``return`` には到達しない)。
+    """
+    n, _ = g
+    lower = _popcount(lower_mask)
+    if n <= 2:
+        return n, (1 << n) - 1
+    full = (1 << n) - 1
+    for size in range(1, n - max(lower, 1) + 1):
+        cds = cds_at_most(g, size)
+        if cds is not None:
+            return n - size, full & ~cds
+    return lower, lower_mask

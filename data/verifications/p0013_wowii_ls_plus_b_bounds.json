@@ -1,0 +1,77 @@
+{
+  "certificate_digest": "2bb76f1978f357e5",
+  "checks": [
+    {
+      "detail": "",
+      "name": "記録された反例は予想 176 と 181 だけで、他の 8 本と弱い読み 2 本は反例 0",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証明書の族がモジュールの宣言する走査範囲と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証人ファイルの SHA-256 と長さが証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "12036681 個すべてで葉集合の証人が全域木の葉集合になり (補集合が連結支配集合)、もう 1 つが二部部分グラフを誘導する",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "走査したグラフ数が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "列挙個数が検証器の持つ公表値 (OEIS A001349 / A000055 / A002851 / A006820-A006822) と一致",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証人で閉じない 1664000 個を厳密に再計算し、16 通りの読みすべてで狭義・tight・反例の件数が証明書と一致",
+      "passed": true
+    },
+    {
+      "detail": "上限超過につき一覧を省いた組: 14 (分類は件数照合で閉じる)",
+      "name": "tight なグラフの graph6 全リストが、tight 2,000 個を超えない族・読みすべてに入っている",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "定理 1 (部分木延長補題)・定理 2 (b >= ecc+l)・定理 3 (予想 178) の証明の各場合が走査した全グラフで破れず、定理 4 の閉じた式が二重ほうき木すべてで再現する",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "予想 176 は G^2 距離の読みでも G 距離の読みでも実際に反例をもつ (定理 4 が空振りでない)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "距離を G で読む 184・186 が実際に反例をもつ (読みの判別が空振りでない)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "次数を G で読む 181・182 は tight が 1 個も無い (G^2 で読む方が sharp)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "証明書の合計 (論文の見出し数) が族ごとの集計と一致",
+      "passed": true
+    }
+  ],
+  "ok": true,
+  "platform": "Windows 11 (build 26200)",
+  "problem_id": "p0013_wowii_ls_plus_b_bounds",
+  "python": "3.10.11",
+  "seconds": 4707.1,
+  "verified_at": "2026-07-28T01:41:43+00:00",
+  "verifier_hash": "1148d9283677ccf2"
+}

@@ -35,6 +35,26 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 #: なので、その後ろの ``#`` は素である (``\\#`` → ``\\\#``)。
 _BARE_TEX_SPECIAL = re.compile(r"(?<!\\)((?:\\\\)*)([#%])")
 
+#: 数式の外に素で現れる ``_`` (``L_s = n - gamma_c`` のような書き方で実際に
+#: コンパイルが落ちた)。数式の中の ``_`` は正しい記法なので触らない。
+_BARE_UNDERSCORE = re.compile(r"(?<!\\)((?:\\\\)*)(_)")
+
+
+#: 数式 (``$$...$$`` と ``$...$``)。閉じない ``$`` は数式とみなさない。
+_MATH_SPAN = re.compile(r"(?<!\\)\$\$.*?(?<!\\)\$\$|(?<!\\)\$.*?(?<!\\)\$",
+                        re.DOTALL)
+
+
+def _escape_bare_underscore(text: str) -> str:
+    """数式の外にある素の ``_`` だけをエスケープする."""
+    out, pos = [], 0
+    for m in _MATH_SPAN.finditer(text):
+        out.append(_BARE_UNDERSCORE.sub(r"\1\\\2", text[pos:m.start()]))
+        out.append(m.group(0))
+        pos = m.end()
+    out.append(_BARE_UNDERSCORE.sub(r"\1\\\2", text[pos:]))
+    return "".join(out)
+
 
 @dataclass(frozen=True)
 class Reference:
@@ -49,7 +69,8 @@ class Reference:
         # text は LaTeX 片 ($L_s$ や \emph{}) を許すので全体はエスケープしない。
         # ただし # と % だけは、素で書かれていれば必ず事故になるので直す
         # (EJC の巻号 "#R33" で実際にコンパイルが落ちた)。
-        text = _BARE_TEX_SPECIAL.sub(r"\1\\\2", self.text)
+        text = _escape_bare_underscore(
+            _BARE_TEX_SPECIAL.sub(r"\1\\\2", self.text))
         return f"\\bibitem{{{self.key}}} {text}{tail}"
 
 
