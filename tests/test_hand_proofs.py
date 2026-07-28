@@ -276,8 +276,68 @@ def test_balanced_complete_bipartite_is_sharp_for_200(k: int):
                    for p in itertools.permutations(range(n)))
 
 
+def _refutation_family_200(q: int):
+    """本文 定義 4.1 の $G_q$ を、論文の記述だけから組み立てる.
+
+    探索器の ``refutation_graph`` は呼ばない。手証明の対象は「論文に書いた
+    構成」であって「実装が作るグラフ」ではないため。
+    """
+    n = 2 * q + 1
+    nbr = [set() for _ in range(n)]
+
+    def link(u: int, v: int) -> None:
+        nbr[u].add(v)
+        nbr[v].add(u)
+
+    # 核: a = 0, b = 1, c_1..c_{q-2} = 2..q-1 が K_q から辺 ab を除いたもの
+    for i in range(q):
+        for j in range(i + 1, q):
+            if (i, j) != (0, 1):
+                link(i, j)
+    # x = q, y = q+1 は核の全頂点に隣接し、互いには隣接しない
+    for c in range(q):
+        link(q, c)
+        link(q + 1, c)
+    link(q + 2, 0)          # z は a, b だけに隣接
+    link(q + 2, 1)
+    for i, c in enumerate(range(2, q)):   # c_i のペンダント p_i
+        link(c, q + 3 + i)
+    return (n, nbr)
+
+
+@pytest.mark.parametrize("q", [5, 6])
+def test_family_g_q_refutes_conjecture_200(q: int):
+    """定理 4.2: $G_q$ は仮定を満たすが traceable でない (予想 200 の反例).
+
+    閉じた形 ($S = 4q+4$、$t = \\mathrm{tree} = 4$、葉 $q-2$ 枚) を総当たりで
+    照合し、ハミルトン路が無いことも全探索で確かめる。
+    """
+    g = _refutation_family_200(q)
+    n, nbr = g
+
+    assert ck.connected(g)
+    assert n == 2 * q + 1
+    assert sum(len(s) for s in nbr) // 2 == q * (q - 1) // 2 + 3 * q - 1
+
+    ell = _ell(g)
+    # a, b, c_i が 3、x, y, z が 2、ペンダントが 1
+    assert sorted(ell) == [1] * (q - 2) + [2] * 3 + [3] * q
+    s = sum(ell)
+    assert s == 4 * q + 4 == ck.indep_neighbors_sum(g)
+    assert _t200(n, s) == 4
+
+    # 仮定 tree(G) = t が成り立つ (最大誘導木は星 {a, x, y, z})
+    assert ck.max_induced_tree_size(g) == 4
+    assert ck.induces_tree(g, {0, q, q + 1, q + 2})
+
+    # 葉が 3 枚以上あるのでハミルトン路の端点が足りない
+    leaves = [v for v in range(n) if len(nbr[v]) == 1]
+    assert len(leaves) == q - 2 >= 3
+    assert not ck.has_hamiltonian_path(g)
+
+
 def test_p4_separates_the_two_hypothesis_classes():
-    """命題 5.1: P_4 は予想 194 の仮定を満たすが予想 200 の仮定を満たさない."""
+    """命題 6.1: P_4 は予想 194 の仮定を満たすが予想 200 の仮定を満たさない."""
     nbr = [{1}, {0, 2}, {1, 3}, {2}]
     g = (4, nbr)
     alpha = ck.alpha_and_i(g)[0]
@@ -291,7 +351,7 @@ def test_p4_separates_the_two_hypothesis_classes():
 
 
 def test_alpha_is_not_bounded_by_the_induced_tree_number():
-    """本文 §5 の注: $\\alpha \\le \\mathrm{tree}$ は偽で、その最小反例を押さえる.
+    """本文 §6 の注: $\\alpha \\le \\mathrm{tree}$ は偽で、その最小反例を押さえる.
 
     この不等式が成り立てば「$n \\mid S$ のとき予想 194 $\\Rightarrow$ 予想 200」
     が言えたので、**偽であること**自体が本文の主張になっている。位数 7 まで

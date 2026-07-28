@@ -1,9 +1,34 @@
 {
-  "certificate_digest": "7811a6d52b4561e6",
+  "certificate_digest": "9672f7642f973456",
   "checks": [
     {
       "detail": "0 件",
-      "name": "反例リストは空",
+      "name": "走査した族に反例はない",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "反例族 G_q の 8 項で位数 2q+1・辺数 q(q-1)/2+3q-1 が成り立つ",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "各項で S = 4q+4、閾値 t = 4、tree = 4 となり予想 200 の仮定が成り立つ (tree は検証器が厳密に解き直す)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "各項に葉が 3 枚以上あるのでハミルトン路をもたない (うち 3 項は総当たりでも確認)",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "族の位数 11 の項が公表された反例 J??FFBRq}N_ と同型",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "最小反例の位数がちょうど 11 (位数 4-10 の全連結グラフ 11989760 個に反例が無く、位数 11 に反例がある)",
       "passed": true
     },
     {
@@ -41,7 +66,7 @@
   "platform": "Windows 11 (build 26200)",
   "problem_id": "p0007_wowii200_star_tree",
   "python": "3.10.11",
-  "seconds": 2318.9,
-  "verified_at": "2026-07-26T21:45:41+00:00",
-  "verifier_hash": "660bf14a9b14055f"
+  "seconds": 2215.2,
+  "verified_at": "2026-07-28T07:03:15+00:00",
+  "verifier_hash": "6e8bd68a38294be5"
 }

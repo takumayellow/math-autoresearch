@@ -1,5 +1,5 @@
 {
-  "claim": "連結グラフ 13402242 個すべてで WOWII 予想 200 が成立する。うち 55258 個が仮定 tree(G) = ceil(1 + l_avg(G)) を満たし、そのうち 55249 個は完全グラフでない。仮定を満たすグラフのうち 54015 個は WOWII 予想 194 の仮定 alpha <= 1 + l_avg も満たす。",
+  "claim": "WOWII 予想 200 の最小反例の位数はちょうど 11 である。位数 4 以上 10 以下の全連結グラフ 11989760 個には反例がなく、位数 11 の反例が存在する。さらに q >= 5 の族 G_q (位数 2q+1) が反例になることを 8 個の q で確かめた。走査した連結グラフ 13402242 個のうち 55258 個が仮定 tree(G) = ceil(1 + l_avg(G)) を満たし、そのうち 55249 個は完全グラフでない。仮定を満たすグラフのうち 54015 個は WOWII 予想 194 の仮定 alpha <= 1 + l_avg も満たす。",
   "data": {
     "conjecture": "tree(G) = ceil(1 + S(G)/n)  =>  G has a Hamiltonian path",
     "counterexamples": [],
@@ -36,7 +36,7 @@
         "source_expected": 1,
         "tag": "graphs_02",
         "witness_file": "p0007_graphs_02.bin.gz",
-        "witness_sha256": "3c0511441051bcc8cefa74dddfa31b81d5b2ed71fc0453d46af933dcd613eac8"
+        "witness_sha256": "47362921204d843ec2de40f59afb52dea3b3882c5c34386332129a7807198c78"
       },
       {
         "also194_count": 2,
@@ -64,7 +64,7 @@
         "source_expected": 2,
         "tag": "graphs_03",
         "witness_file": "p0007_graphs_03.bin.gz",
-        "witness_sha256": "713e608bb42805a3dda30a30f5c3a9c09f79372666ad4d2fe96d659fcf95a18f"
+        "witness_sha256": "6c97ee8043db4967a428ecd02ada58a6dfb5a6c1b0b500b055dc0e8c238a1914"
       },
       {
         "also194_count": 4,
@@ -96,7 +96,7 @@
         "source_expected": 6,
         "tag": "graphs_04",
         "witness_file": "p0007_graphs_04.bin.gz",
-        "witness_sha256": "d7d0914d9cf3164bb2412e12f9b767b0a3efcdff3e7787074311d2456deb70b2"
+        "witness_sha256": "e6d527bf66658ac4419c6357db0210ae790c5a5ebf9bc28ca164e06f5dc2554b"
       },
       {
         "also194_count": 8,
@@ -136,7 +136,7 @@
         "source_expected": 21,
         "tag": "graphs_05",
         "witness_file": "p0007_graphs_05.bin.gz",
-        "witness_sha256": "c9f0ca713357a1585cc4e09d251cd826d8a5445756dc895fbc71dd71b389e3ee"
+        "witness_sha256": "f3f67cbcdb1d723c7d4b6684d3eb884af548a45a69618c68105ceea59a2ad061"
       },
       {
         "also194_count": 23,
@@ -191,7 +191,7 @@
         "source_expected": 112,
         "tag": "graphs_06",
         "witness_file": "p0007_graphs_06.bin.gz",
-        "witness_sha256": "70e6432ca74e333e62b5ea6179609e236498b8dfb50fb6d2d4b4d185bb2e636d"
+        "witness_sha256": "05608a996f8e415e4d4735752570d198d4ff9a4289b207d0d6cb70eb9302f2c9"
       },
       {
         "also194_count": 97,
@@ -321,7 +321,7 @@
         "source_expected": 853,
         "tag": "graphs_07",
         "witness_file": "p0007_graphs_07.bin.gz",
-        "witness_sha256": "584ef1d1a67130cbdbeb30f099fa3b8d946d93eaab7e2d9de5bdfe4ef248b357"
+        "witness_sha256": "0cef71b76aa1ccf28eefb62788af6df2eb0727417348945267662ee679a5cb1a"
       },
       {
         "also194_count": 524,
@@ -888,7 +888,7 @@
         "source_expected": 11117,
         "tag": "graphs_08",
         "witness_file": "p0007_graphs_08.bin.gz",
-        "witness_sha256": "a432bbc642e66af1033561d3fa9ad809a4a48654834d9912a50eb848889166f4"
+        "witness_sha256": "6628648956ca76c358b5218d1228dd15d79d1d931c179f72f0e4761c7de2bc22"
       },
       {
         "also194_count": 3698,
@@ -4710,7 +4710,7 @@
         "source_expected": 261080,
         "tag": "graphs_09",
         "witness_file": "p0007_graphs_09.bin.gz",
-        "witness_sha256": "4f4a43d1e00eab81a33231ba91a788d4feb49e304699ca8cfced333ca4d7bcbd"
+        "witness_sha256": "90f5ccd259e285824499da79494fef9815f3d150222761979c1729385946f482"
       },
       {
         "also194_count": 49640,
@@ -55521,7 +55521,7 @@
         "source_expected": 11716571,
         "tag": "graphs_10",
         "witness_file": "p0007_graphs_10.bin.gz",
-        "witness_sha256": "0f9a6011bae87e211ef3176482b0db10771275c48e7d322650944a54bb97fc49"
+        "witness_sha256": "3a3617bd74a830f3726de8c643e6ce3d4a0784930cdeaab57899c7a8f8a8f925"
       },
       {
         "also194_count": 0,
@@ -55543,7 +55543,7 @@
         "source_expected": 235,
         "tag": "trees_11",
         "witness_file": "p0007_trees_11.bin.gz",
-        "witness_sha256": "cd01b83cd560666dde6b36840d1e7e3cfbb1c53867a1a8aba2a997e1b2bfe526"
+        "witness_sha256": "d238d1f91245124f40e020914f8041d34ba95f473f45a90f0479accc0461ddef"
       },
       {
         "also194_count": 0,
@@ -55565,7 +55565,7 @@
         "source_expected": 551,
         "tag": "trees_12",
         "witness_file": "p0007_trees_12.bin.gz",
-        "witness_sha256": "1c5055196b9308c7ae212de855186fb91b91c4b841cdc541c62ddf0a87f5a8ea"
+        "witness_sha256": "4f5fd33c3275e30500e38787c8055018c3bc1f7ceae7d179187c6315b351ede6"
       },
       {
         "also194_count": 0,
@@ -55587,7 +55587,7 @@
         "source_expected": 1301,
         "tag": "trees_13",
         "witness_file": "p0007_trees_13.bin.gz",
-        "witness_sha256": "46ad2e8c3f17c43affdd4bd122bbb74d4be621c7289c359b46955bc7fde3b1c8"
+        "witness_sha256": "3a375d393067af95217bdee20d17fef430787ec7b81bbb1594fbd35ba0cee7ac"
       },
       {
         "also194_count": 0,
@@ -55609,7 +55609,7 @@
         "source_expected": 3159,
         "tag": "trees_14",
         "witness_file": "p0007_trees_14.bin.gz",
-        "witness_sha256": "3f4778d97780b2bd3122c9832a2528f081bc45ce9a4cb57b1ce59b3f0a37e74a"
+        "witness_sha256": "fa42002b8cb75553f9f6aa8484466c9b015aec33ef07152309045485360a6e9f"
       },
       {
         "also194_count": 0,
@@ -55631,7 +55631,7 @@
         "source_expected": 7741,
         "tag": "trees_15",
         "witness_file": "p0007_trees_15.bin.gz",
-        "witness_sha256": "7f25d47ce0cfeb5250283ace263edbff3e4bcf05e1ea4d75e84eba1f5f7b76d7"
+        "witness_sha256": "5fbe1a4f81c42135cf906176101839b1b4b6c9c3f2e90875add350c195e5fc5f"
       },
       {
         "also194_count": 0,
@@ -55653,7 +55653,7 @@
         "source_expected": 19320,
         "tag": "trees_16",
         "witness_file": "p0007_trees_16.bin.gz",
-        "witness_sha256": "ee03df6348c44503a6cf2111f2689dd51e054450e22afcd4c7117e7ebc55fb2c"
+        "witness_sha256": "32281a1b7a2be622fdc8e56dd86750cbcb5f1ab196b44396db13463b2dac4680"
       },
       {
         "also194_count": 0,
@@ -55675,7 +55675,7 @@
         "source_expected": 48629,
         "tag": "trees_17",
         "witness_file": "p0007_trees_17.bin.gz",
-        "witness_sha256": "2c28d2d5a894f77d7e3372df69a280b94d5f68d8be63340d042023f0aa8e8eb5"
+        "witness_sha256": "7f1fefe17b36706840da22885ac054a2b7a1ff3c24857eccbb58d5f17738298c"
       },
       {
         "also194_count": 0,
@@ -55697,7 +55697,7 @@
         "source_expected": 123867,
         "tag": "trees_18",
         "witness_file": "p0007_trees_18.bin.gz",
-        "witness_sha256": "d39da6725045d3d512da1ffac38756b10c1f1181474843f26ee5af0f24f793ae"
+        "witness_sha256": "fcc2c8b50d7fcba7ac5b23a76f1a9a84bb05f91e8fe24d84de0de321cbfebe23"
       },
       {
         "also194_count": 0,
@@ -55719,7 +55719,7 @@
         "source_expected": 317955,
         "tag": "trees_19",
         "witness_file": "p0007_trees_19.bin.gz",
-        "witness_sha256": "f60eb7cb32a6a28bd5049c89401f7f6314a35fb184ec88aa6eddf4cdb4f8247a"
+        "witness_sha256": "b873718fd32315bd67d717f2f1dde3a9c3aaf671793506afa4679d6b9b5d2d95"
       },
       {
         "also194_count": 0,
@@ -55741,7 +55741,7 @@
         "source_expected": 823065,
         "tag": "trees_20",
         "witness_file": "p0007_trees_20.bin.gz",
-        "witness_sha256": "5413721a20d7752a59bf484c1b0d6819f8f95a13c458270940987a79bfa4ea83"
+        "witness_sha256": "9e083379b077998675831ff9371cf5a00fc861f33407616e6d0db5cede394b60"
       },
       {
         "also194_count": 0,
@@ -55763,7 +55763,7 @@
         "source_expected": 85,
         "tag": "reg3_12",
         "witness_file": "p0007_reg3_12.bin.gz",
-        "witness_sha256": "15e59138832be635448e901f4c711a9735fb7e08e537a8e14e7a46c5b521f7c1"
+        "witness_sha256": "f416b9e46d2af56b8e069d2e2bdb026cb6e17e3c7542e07498c5fda701e312b5"
       },
       {
         "also194_count": 0,
@@ -55785,7 +55785,7 @@
         "source_expected": 509,
         "tag": "reg3_14",
         "witness_file": "p0007_reg3_14.bin.gz",
-        "witness_sha256": "a2fa26e25ff6320b64d2cdc9db25c78c0fb614343a043287be9428ddc50cca01"
+        "witness_sha256": "67fe9852fef6c5aaa308fe6a2d8866c63d3674611eb8a5bfdd17e1c566077009"
       },
       {
         "also194_count": 0,
@@ -55807,7 +55807,7 @@
         "source_expected": 4060,
         "tag": "reg3_16",
         "witness_file": "p0007_reg3_16.bin.gz",
-        "witness_sha256": "640627093672757c55ccbdd7eda1fdbc0bd6208bb241f98a81c60b63510bbc2c"
+        "witness_sha256": "f1cbeeb75fe47dfddd479249d1d0ee890898891baf51988b28c2560f452c4765"
       },
       {
         "also194_count": 0,
@@ -55829,7 +55829,7 @@
         "source_expected": 41301,
         "tag": "reg3_18",
         "witness_file": "p0007_reg3_18.bin.gz",
-        "witness_sha256": "d3dce34c1254ca3a442ee17d1e3fb0dcc6b21eaf9c5327407a5ac7ed9a115345"
+        "witness_sha256": "3f360f412759fbd0b294c730b7a24396e82e7d470cebd679428aba20e6992ce9"
       },
       {
         "also194_count": 0,
@@ -55851,7 +55851,7 @@
         "source_expected": 265,
         "tag": "reg4_11",
         "witness_file": "p0007_reg4_11.bin.gz",
-        "witness_sha256": "db4d27968c9542f28fe7e241024f7d3565fca852bd0617e9b02035045f9f2ed7"
+        "witness_sha256": "0ea2d698e9d8af3f682a977922f6f84fa36700885b89f38f2e9da41ca999613c"
       },
       {
         "also194_count": 0,
@@ -55873,7 +55873,7 @@
         "source_expected": 1544,
         "tag": "reg4_12",
         "witness_file": "p0007_reg4_12.bin.gz",
-        "witness_sha256": "29e5692c13e186a5137e70a7955a11f80f9c0952be66c6ef6c21a8ff4a9306e2"
+        "witness_sha256": "5435301a1fd4887350c8eecbba1d6d5d559067677d86be747c69c866b543059b"
       },
       {
         "also194_count": 0,
@@ -55895,7 +55895,7 @@
         "source_expected": 10778,
         "tag": "reg4_13",
         "witness_file": "p0007_reg4_13.bin.gz",
-        "witness_sha256": "7d039153745259348a74d12cb677f04967814dc52570de8088aba69398138391"
+        "witness_sha256": "e9a8692c5dcc1c300e265d98478ff85d572f7a7c677ec5c955f095e7067780a9"
       },
       {
         "also194_count": 2,
@@ -55923,7 +55923,7 @@
         "source_expected": 7848,
         "tag": "reg5_12",
         "witness_file": "p0007_reg5_12.bin.gz",
-        "witness_sha256": "25d9d373f960c00524c410bfbd0b45b96522a506a594c498cfa7a01ba2e5d010"
+        "witness_sha256": "0916ddac482f6fd207ffc52f87c428a7af46ad40480ac1580b2cba1de637b3ce"
       },
       {
         "also194_count": 16,
@@ -55971,10 +55971,239 @@
         "source_expected": 266,
         "tag": "reg6_11",
         "witness_file": "p0007_reg6_11.bin.gz",
-        "witness_sha256": "690237e77471c944e5336e160cac4310c21fa265778b6ab51382d2dd94f89b1f"
+        "witness_sha256": "d175f11a9989f79c2e8dd7b6775532dd833d16974f35b97b9b9c729199657f51"
       }
     ],
     "hypothesis_list_cap": 200000,
+    "refutation": {
+      "exhaustive_max_n": 15,
+      "family": "G_q: K_q から辺 ab を除いた核に、核の全頂点に隣接する非隣接な 2 頂点 x, y と、a, b だけに隣接する z と、各 c_i へのペンダントを足した位数 2q+1 のグラフ",
+      "family_to_published_perm": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "family_to_published_q": 5,
+      "published_by": "J. Prajapati, 2026-07-21 (E. DeLaVina, WOWII resolved.htm に掲載)",
+      "published_g6": "J??FFBRq}N_",
+      "records": [
+        {
+          "S": 24,
+          "edges": 24,
+          "g6": "J^~~u?_C?O?",
+          "hamiltonian_path": false,
+          "hypothesis": true,
+          "leaf_vertices": [
+            8,
+            9,
+            10
+          ],
+          "leaves": 3,
+          "n": 11,
+          "q": 5,
+          "threshold": 4,
+          "tree": 4,
+          "tree_witness": [
+            0,
+            1,
+            2,
+            8
+          ]
+        },
+        {
+          "S": 28,
+          "edges": 32,
+          "g6": "L^~~~z?G?_@?@?",
+          "hamiltonian_path": false,
+          "hypothesis": true,
+          "leaf_vertices": [
+            9,
+            10,
+            11,
+            12
+          ],
+          "leaves": 4,
+          "n": 13,
+          "q": 6,
+          "threshold": 4,
+          "tree": 4,
+          "tree_witness": [
+            0,
+            1,
+            2,
+            9
+          ]
+        },
+        {
+          "S": 32,
+          "edges": 41,
+          "g6": "N^~~~~}o@?A?A?@??O?",
+          "hamiltonian_path": false,
+          "hypothesis": true,
+          "leaf_vertices": [
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "leaves": 5,
+          "n": 15,
+          "q": 7,
+          "threshold": 4,
+          "tree": 4,
+          "tree_witness": [
+            0,
+            1,
+            2,
+            10
+          ]
+        },
+        {
+          "S": 36,
+          "edges": 51,
+          "g6": "P^~~~~~~u?C?C?A??_?C??O?",
+          "hypothesis": true,
+          "leaf_vertices": [
+            11,
+            12,
+            13,
+            14,
+            15,
+            16
+          ],
+          "leaves": 6,
+          "n": 17,
+          "q": 8,
+          "threshold": 4,
+          "tree": 4,
+          "tree_witness": [
+            0,
+            1,
+            2,
+            11
+          ]
+        },
+        {
+          "S": 40,
+          "edges": 62,
+          "g6": "R^~~~~~~~~W?G?C?@??G??_?@??@??",
+          "hypothesis": true,
+          "leaf_vertices": [
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18
+          ],
+          "leaves": 7,
+          "n": 19,
+          "q": 9,
+          "threshold": 4,
+          "tree": 4,
+          "tree_witness": [
+            0,
+            1,
+            2,
+            12
+          ]
+        },
+        {
+          "S": 44,
+          "edges": 74,
+          "g6": "T^~~~~~~~~~}o?G?A??O?@??A??A??@???O?",
+          "hypothesis": true,
+          "leaf_vertices": [
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20
+          ],
+          "leaves": 8,
+          "n": 21,
+          "q": 10,
+          "threshold": 4,
+          "tree": 4,
+          "tree_witness": [
+            0,
+            1,
+            2,
+            13
+          ]
+        },
+        {
+          "S": 48,
+          "edges": 87,
+          "g6": "V^~~~~~~~~~~~}o?C??_?A??C??C??A???_??C???O??",
+          "hypothesis": true,
+          "leaf_vertices": [
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22
+          ],
+          "leaves": 9,
+          "n": 23,
+          "q": 11,
+          "threshold": 4,
+          "tree": 4,
+          "tree_witness": [
+            0,
+            1,
+            2,
+            14
+          ]
+        },
+        {
+          "S": 52,
+          "edges": 101,
+          "g6": "X^~~~~~~~~~~~~~~W?@??C??G??G??C??@???G???_??@???@??",
+          "hypothesis": true,
+          "leaf_vertices": [
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24
+          ],
+          "leaves": 10,
+          "n": 25,
+          "q": 12,
+          "threshold": 4,
+          "tree": 4,
+          "tree_witness": [
+            0,
+            1,
+            2,
+            15
+          ]
+        }
+      ]
+    },
     "source": "E. DeLaVina, Written on the Wall II, Conjecture 200",
     "totals": {
       "also194": 54015,
@@ -55984,20 +56213,21 @@
       "graphs": 13402242,
       "hypothesis": 55258,
       "masks": 13346984,
-      "paths": 55258
+      "paths": 55258,
+      "refutation_orders": 8
     },
     "witness_format": "族ごとの gzip 圧縮バイナリ。先頭が列挙順のモードビット列 (0 = ハミルトン路, 1 = 誘導木)、続いてモード 0 のグラフのハミルトン路を 1 頂点 path_bits ビットで詰めた列、最後にモード 1 のグラフの位数 t+1 の誘導木のマスクを mask_bytes バイトずつ並べる。"
   },
-  "digest": "7811a6d52b4561e6",
+  "digest": "9672f7642f973456",
   "kind": "exhaustive-check-with-witnesses",
   "problem_id": "p0007_wowii200_star_tree",
   "provenance": {
-    "created_at": "2026-07-26T21:07:02+00:00",
-    "git_rev": "b2519ba",
-    "notes": "グラフごとに、閾値 t = ceil(1 + l_avg) より大きい誘導木を探し、見つからなければ (定理 3.1 より) 仮定が成立するので、辞書式最小のハミルトン路を証人にした。",
+    "created_at": "2026-07-28T06:22:37+00:00",
+    "git_rev": "b1ca70b",
+    "notes": "グラフごとに、閾値 t = ceil(1 + l_avg) より大きい誘導木を探し、見つからなければ (定理 3.1 より) 仮定が成立するので、辞書式最小のハミルトン路を証人にした。反例族 G_q は構成して S・tree・葉数を計算し、位数 11 の項が公表された反例に写る置換も添えた。",
     "platform": "Windows 11 (build 26200)",
     "python": "3.10.11",
-    "search_seconds": 1466.1424272060394,
+    "search_seconds": 1474.3361072540283,
     "search_seed": 0
   }
 }
