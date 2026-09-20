@@ -35,14 +35,15 @@ from l1_recipes import (  # noqa: E402
     smallest_connected_set,
 )
 from l1_reduction import (  # noqa: E402
-    boundary_size, case_of, recipe_dprime,
+    boundary_size, case_of, recipe_dprime, stalls_in_ball,
+    which_recipes_close,
 )
 
 #: 総当たりの上限位数 (n <= 8 なら数秒で終わる)。
 MAX_N = 8
 
-#: 場合 C の見張りだけは $n \le 9$ まで回す。docs の主張がその範囲のもので、
-#: 場合 C に落ちるグラフ自体が少ない ($n \le 8$ では 3 件しかない) ため。
+#: 場合 C の見張りだけは $n \le 9$ まで回す。総当たりでの数え上げがその範囲の
+#: もので、場合 C に落ちるグラフ自体が少ない ($n \le 8$ では 3 件) ため。
 CASE_N = 9
 
 #: $n \le 10$ でただ 1 つ、R1・R2・J・F・E がそろって外れたグラフ。
@@ -268,16 +269,18 @@ def test_ball_recipe_alone_is_not_enough():
     assert recipe_dprime(n, adj, dist, r, centers, circles, m) >= m + 1
 
 
-def test_case_c_needs_only_small_sets():
-    """場合 C に残るグラフが $|S| \\le 3$ で閉じることを固定する.
+def test_case_c_stall_counts_for_small_n():
+    """場合 C のうち球内で $m$ 止まりになるものを $n \\le 9$ で固定する.
 
-    D' の証明可能な版は場合 A・B で決着するが、場合 C が仮定の下でも残る。
-    その残りは全部 $m + 1$ に届く連結集合を $|S| \\le 3$ の中に持つ — これが
-    補題 L1 の証明で次に狙う主張 (`tools/l1_reduction.py` の冒頭)。
+    D' の証明可能な版は場合 A・B で決着し、場合 C が仮定の下でも残る。ただし
+    場合 C は**論法が当たらない**だけで、球内の $S$ が $m + 1$ を出すものが
+    混ざる。次の目標 (`tools/l1_reduction.py` の冒頭) が相手にするのは
+    $m$ 止まりの側だけなので、その切り分けごと数を固定する。
     同時に、族 $T_q$ のように最小 $|S|$ が伸びるものは場合 A に入り、
     場合 C を脅かさないことも見張る。
     """
-    case_c = 0
+    case_c = stalled = 0
+    sizes: dict[int, int] = {}
     checked = 0
     for _n, path, op in graph_files(CASE_N):
         with op(path, "rt") as fh:
@@ -286,25 +289,88 @@ def test_case_c_needs_only_small_sets():
                 if not line:
                     continue
                 n, adj = decode_graph6(line)
-                got = case_of(n, adj)
-                if got is None:
+                if case_of(n, adj) is not None:
+                    checked += 1
+                verdict = stalls_in_ball(n, adj)
+                if verdict is None:
                     continue
-                checked += 1
-                _d, _r, centers, circles = centers_and_circles(n, adj)
-                if got != "C" or not any(len(circles[v]) == 1
-                                         for v in centers):
-                    continue
-                m = max(len(circles[c]) for c in centers)
-                small = smallest_connected_set(n, adj, m + 1, 3)
-                assert 0 < small <= 3, line
                 case_c += 1
+                stall, m = verdict
+                if not stall:
+                    continue
+                stalled += 1
+                _d, r, _c, _ci = centers_and_circles(n, adj)
+                assert r == 3, line
+                small = smallest_connected_set(n, adj, m + 1, 4)
+                assert 0 < small <= 3, line
+                sizes[small] = sizes.get(small, 0) + 1
     if checked == 0:
         pytest.skip("元データ (data/graphs) がない")
-    assert case_c > 0
+    assert (case_c, stalled) == (61, 57)
+    assert sizes == {2: 37, 3: 20}
     # 最小 $|S|$ が伸びる族は場合 A なので、この目標を脅かさない。
     for q in QS:
         n, adj, _name = build(q)
         assert case_of(n, adj) == "A", q
+
+
+#: `l1_reduction.hunt_cases` が $n = 11..18$ で拾った証人。どれも場合 C で
+#: 球内は $m$ 止まり、$m + 1$ に届く最小の連結集合が $|S| = 4$ なので、
+#: $|S| \le 3$ までの多項式時間レシピが全部外れる。(graph6, n, r, m)
+STALL_G6 = (
+    ("Jt`?OOAGOh?", 11, 3, 5),
+    ("KjIAC?A@?TAB", 12, 3, 6),
+    ("LpKPc@CC?QA?Oa", 13, 3, 7),
+    ("MqI?a?A?a??O@??G_", 14, 4, 6),
+    ("NhQ?GE??_OO_CO?_O@?", 15, 4, 7),
+)
+
+
+def test_case_c_stall_can_need_four_vertices():
+    """$|S| = 4$ が要る場合 C の証人を固定する.
+
+    これらは $m + 1$ に届く連結集合の最小サイズが 4 なので、レシピ階層
+    ($|S| \\le 3$ まで) が全部すり抜け、球を外した D' だけが $m + 1$ を出す。
+    目標のサイズ上限が 4 であることの証人なので、ここに固定して見張る。
+    """
+    for g6, want_n, want_r, want_m in STALL_G6:
+        n, adj = decode_graph6(g6)
+        dist, r, centers, circles = centers_and_circles(n, adj)
+        m = max(len(circles[c]) for c in centers)
+        assert (n, r, m) == (want_n, want_r, want_m), g6
+        assert stalls_in_ball(n, adj) == (True, m), g6
+        # $|S| \le 3$ のレシピはもちろん、J・F・E も外れる。
+        assert which_recipes_close(n, adj, dist, r, centers, circles,
+                                   m) == [], g6
+        assert smallest_connected_set(n, adj, m + 1, 5) == 4, g6
+        # 球を外した D' は届く。残余が 0 なのはこれのおかげ。
+        assert recipe_dprime(n, adj, dist, r, centers, circles, m) >= m + 1, g6
+
+
+#: 場合 C の球 $B_{r-1}(u)$ が閉路を持つ証人 ($n = 11$, $u = 5$)。
+NONTREE_G6 = "JloG_cC?{__"
+
+
+def test_case_c_ball_can_contain_a_cycle():
+    """場合 C の $S = B_{r-1}(u)$ が木とは限らないことを固定する.
+
+    $C_5$, $C_7$ ではこの球が木になるので、そこから木を仮定して場合 C の証明を
+    書くと落ちる。この $n = 11$ の例では $B_2(5)$ が 6 点 6 辺で、境界は
+    ちょうど $m = 5$ (止まっている側の証人でもある)。
+    """
+    n, adj = decode_graph6(NONTREE_G6)
+    dist, r, centers, circles = centers_and_circles(n, adj)
+    m = max(len(circles[c]) for c in centers)
+    assert (n, r, m) == (11, 3, 5)
+    assert stalls_in_ball(n, adj) == (True, m)
+    u = 5
+    assert len(circles[u]) == m
+    ball = [x for x in range(n) if dist[u][x] <= r - 1]
+    smask = sum(1 << x for x in ball)
+    edges = sum(1 for i in ball for j in ball if i < j and adj[i] >> j & 1)
+    assert (len(ball), edges) == (6, 6)
+    assert connected_sub(n, adj, smask)
+    assert boundary_size(n, adj, smask) == m
 
 
 def test_j_or_f_closes_every_hypothesis_graph():
