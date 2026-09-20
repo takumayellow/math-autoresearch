@@ -103,6 +103,19 @@ digest が変わるので、「更新版」として投稿できる。
 (`.gitignore` 済み)。API を使わずに予約投稿したい場合は
 `~/dev/studyai/tools/x_poster/buffer_auto.py` (Playwright で Buffer に積む) が使える。
 
+台帳ができる前に手で投稿した分が残っていると `--all` が再投稿してしまう。
+資格情報を入れた直後に 1 回だけ次を走らせて、タイムラインと突き合わせて台帳を
+作る (照合の鍵は投稿文に入る論文 PDF の URL。既定は読むだけ):
+
+```
+PYTHONPATH=src python tools/announce_backfill.py           # 照合結果を見る
+PYTHONPATH=src python tools/announce_backfill.py --write   # 台帳に書き戻す
+```
+
+タイムラインは新しい順にしか読めないので、`--limit` (既定 200) まで遡っても
+照合できない成果が残ったら**終了コード 1** を返す。上限の外にある手投稿を
+「未投稿」と読むのが再投稿そのものなので、`--limit` を伸ばして引き直す。
+
 ## 現在の問題
 
 | ID | 種別 | 内容 | 規模 | 結果 |

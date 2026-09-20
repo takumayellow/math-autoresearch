@@ -12,6 +12,7 @@ data/graphs/
 data/refs/
 
 # X の資格情報。絶対に追跡しない (data/announce/posted.json は投稿記録なので追跡する)
-.env
-.env.*
+# `.env.*` ではなく `.env*` にしてあるのは、xclient.py が案内する「`.env` で始まる名前」
+# を取りこぼさないため (`.envlocal` のようにドットを打ち忘れても追跡されない)。
+.env*
 data/announce/schedule.log
