@@ -94,7 +94,7 @@ def best_ball(n: int, adj: list[int],
     for w in range(n):
         dw = dist[w]
         mask = 1 << w
-        for j in range(max(dw)):
+        for j in range(max(dw) - 1):  # 半径 ecc は $S = V$ で境界 0
             for x in range(n):
                 if dw[x] == j + 1:
                     mask |= 1 << x

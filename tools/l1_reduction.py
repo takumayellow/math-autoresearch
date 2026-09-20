@@ -60,6 +60,20 @@ def boundary_size(n: int, adj: list[int], smask: int) -> int:
     return popcount(nb & ~smask)
 
 
+def partial_max(n: int, adj: list[int]) -> int:
+    """$\\partial(G) = \\max\\{|N(S) \\setminus S| : G[S]\\ \\text{連結}\\}$.
+
+    $2^n$ 個の $S$ を全部見るので $n \\le 9$ 程度でしか回せない。レシピが
+    出す下界と違い、これは**還元先そのもの**の値である。
+    """
+    best = 0
+    for smask in range(1, 1 << n):
+        b = boundary_size(n, adj, smask)
+        if b > best and connected_sub(n, adj, smask):
+            best = b
+    return best
+
+
 def min_size_reaching(n: int, adj: list[int], need: int) -> int | None:
     """$|N(S) \\setminus S| \\ge need$ を出す連結 $S$ の最小サイズ."""
     best: int | None = None
@@ -130,6 +144,7 @@ def scan(nmax: int) -> None:
     started = time.time()
     seen = hyp = by_delta = by_dprime = 0
     sizes: Counter[int | None] = Counter()
+    #: $\partial(G) - m$ の分布 (n <= 9 のみ。0 以下が 1 つでもあれば還元は偽)
     slack: Counter[int] = Counter()
     resid: list[tuple[str, int, int, int]] = []
     for n, path, op in graph_files(nmax):
@@ -146,16 +161,14 @@ def scan(nmax: int) -> None:
                 hyp += 1
                 m = max(len(circles[u]) for u in centers)
                 if nn <= 9:
-                    size = min_size_reaching(nn, adj, m + 1)
-                    sizes[size] += 1
+                    sizes[min_size_reaching(nn, adj, m + 1)] += 1
+                    slack[partial_max(nn, adj) - m] += 1
                 if max(popcount(a) for a in adj) >= m + 1:
                     by_delta += 1
-                    slack[1] += 1
                     continue
                 bound = recipe_dprime(nn, adj, dist, r, centers, circles, m)
                 if bound >= m + 1:
                     by_dprime += 1
-                    slack[bound - m] += 1
                 else:
                     resid.append((line, nn, r, m))
     print(f"== 補題 L1 の還元 (n <= {nmax}, {time.time() - started:.1f}s) ==")
@@ -164,6 +177,12 @@ def scan(nmax: int) -> None:
     print(f"  Delta >= m+1 で完了 (S は 1 点): {by_delta:,}")
     print(f"  レシピ D' で完了: {by_dprime:,}")
     print(f"  残余: {len(resid)}")
+    if slack:
+        print("\n  partial(G) - m の分布 (n <= 9 のみ。全探索):")
+        for k in sorted(slack):
+            print(f"    {k:+d}: {slack[k]:,}")
+        bad = sum(c for k, c in slack.items() if k <= 0)
+        print(f"    還元 partial(G) >= m+1 が破れたもの: {bad}")
     if sizes:
         print("\n  m+1 を出す連結 S の最小サイズ (n <= 9 のみ):")
         for k in sorted(sizes, key=lambda x: (x is None, x)):
