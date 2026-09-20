@@ -1204,10 +1204,24 @@ def _p0007_first_path_index(blob: bytearray, fam: dict) -> int:
                 if not ((blob[i >> 3] >> (7 - (i & 7))) & 1))
 
 
+#: 族を縮めた証明書では必ず落ちる検査のラベル (下のテストを参照)。
+_P0007_MINIMALITY = "最小反例の位数がちょうど 11"
+
+
 def test_p0007_clean_certificate_verifies(star):
+    """縮めた証明書は、最小性の検査だけを落として他はすべて通る.
+
+    最小性は「位数 4-10 の全連結グラフを走査していること」を前提にするので、
+    位数 6-7 の 2 族に縮めたテスト用の証明書では原理的に成立しない。落ちること
+    自体も検査して、この項目が族の欠落を見逃さないことを確かめる
+    (本物の証明書での PASS は ``data/verifications/`` の検証記録が担保する)。
+    """
     cert, prob, _ = star
     report = prob.verify(cert)
-    assert report.ok, _failed(report)
+    others = [label for label, ok, _ in report.checks
+              if not ok and _P0007_MINIMALITY not in label]
+    assert not others, " | ".join(others)
+    assert _detail(report, _P0007_MINIMALITY) == "走査していない位数: [4, 5, 8, 9, 10]"
 
 
 def test_p0007_bit_flip_in_witness_is_detected(star):
