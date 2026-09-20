@@ -25,16 +25,25 @@ if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
 from l1_coverage import (  # noqa: E402
-    centers_and_circles, connected_sub, decode_graph6, graph_files,
+    centers_and_circles, connected_sub, decode_graph6, graph_files, popcount,
+)
+from l1_family import (  # noqa: E402
+    QS, build, encode_graph6, hunt, winning_set,
 )
 from l1_recipes import (  # noqa: E402
     best_ball, best_edge, best_triple, recipe_e, recipe_f, recipe_j,
     smallest_connected_set,
 )
-from l1_reduction import boundary_size  # noqa: E402
+from l1_reduction import (  # noqa: E402
+    boundary_size, case_of, recipe_dprime,
+)
 
 #: 総当たりの上限位数 (n <= 8 なら数秒で終わる)。
 MAX_N = 8
+
+#: 場合 C の見張りだけは $n \le 9$ まで回す。docs の主張がその範囲のもので、
+#: 場合 C に落ちるグラフ自体が少ない ($n \le 8$ では 3 件しかない) ため。
+CASE_N = 9
 
 #: $n \le 10$ でただ 1 つ、R1・R2・J・F・E がそろって外れたグラフ。
 #: R3 (連結三つ組) を足した理由そのものなので、ここに固定して見張る。
@@ -178,6 +187,124 @@ def test_small_connected_sets_close_the_hard_graph():
     _dist, _r, centers, circles = centers_and_circles(n, adj)
     m = max(len(circles[c]) for c in centers)
     assert smallest_connected_set(n, adj, m + 1, 4) == 3
+
+
+def test_family_pushes_the_smallest_connected_set_arbitrarily_high():
+    """$T_q$ が仮定を満たし、最小の $|S|$ がちょうど $q + 1$ であること.
+
+    これは「$|S| \\le k$ の連結集合だけで補題 L1 が出る」を**どんな固定の
+    $k$ でも**示せないことの証人である (`tools/l1_family.py`)。同時に、
+    R1 (球) は $m + 1$ に届くので $T_q$ は L1 の反例ではないことも見張る。
+    """
+    for q in QS:
+        n, adj, name = build(q)
+        dist, r, centers, circles = centers_and_circles(n, adj)
+        # 仮定: $r \ge 3$ かつ $|R(v)| = 1$ の中心がある。
+        assert r == 3, q
+        assert sorted(centers) == sorted((name["v1"], name["v2"])), q
+        assert circles[name["v1"]] == [name["z"]], q
+        m = max(len(circles[u]) for u in centers)
+        assert m == 2 * q, q
+        # サイズを縛ると届かない: 最小はちょうど $q + 1$。
+        assert max(popcount(a) for a in adj) < m + 1, q
+        assert smallest_connected_set(n, adj, m + 1, q + 2) == q + 1, q
+        assert boundary_size(n, adj, winning_set(q, name)) == m + 1, q
+        # 球なら届くので、L1 そのものは破れていない。
+        assert best_ball(n, adj, dist)[0] >= m + 1, q
+
+
+#: `l1_family.hunt` が拾った $n = 15$ の証人。R1 (球) が $m$ 止まりになる。
+BALL_FAILS_G6 = "NkCcCG_C??`??A?I@??"
+
+
+def test_graph6_round_trips():
+    """`encode_graph6` が `decode_graph6` の逆であること.
+
+    乱択の証人を graph6 で控えるので、ここがずれると証人が別のグラフを指す。
+    """
+    checked = 0
+    for _n, path, op in graph_files(7):
+        with op(path, "rt") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                n, adj = decode_graph6(line)
+                assert encode_graph6(n, adj) == line
+                checked += 1
+    if checked == 0:
+        pytest.skip("元データ (data/graphs) がない")
+
+
+def test_hunt_finds_large_k_without_the_hand_made_family():
+    """乱択でも最小 $|S| \\ge 4$ が出ること (種を固定した短い走査).
+
+    `l1_family.py` の族は手で組んだものなので、「大きい $k$ は作為の産物では
+    ないか」が残る。種と試行数を固定した乱択でも出ることを見張る。
+    """
+    hits, dist_k, _witness = hunt(seed=20260921, trials=20_000)
+    assert hits > 1_000
+    assert sum(v for k, v in dist_k.items() if k >= 4) > 0
+
+
+def test_ball_recipe_alone_is_not_enough():
+    """R1 (球) が $m$ 止まりになる証人を固定する.
+
+    サイズ上限つきが駄目なら残るのは R1 と D' だが、**R1 単独でも足りない**。
+    この $n = 15$ のグラフでは最良の球の境界が $m$ で、J と D' だけが
+    $m + 1$ に届く。D' を本命に置く根拠なので、ここに固定して見張る。
+    """
+    n, adj = decode_graph6(BALL_FAILS_G6)
+    dist, r, centers, circles = centers_and_circles(n, adj)
+    m = max(len(circles[c]) for c in centers)
+    assert (n, r, m) == (15, 4, 6)
+    assert any(len(circles[v]) == 1 for v in centers)
+    assert best_ball(n, adj, dist)[0] == m
+    assert best_edge(n, adj) < m + 1
+    assert best_triple(n, adj) < m + 1
+    assert not recipe_f(n, adj, dist, r, centers, circles, m)
+    assert not recipe_e(n, adj, dist, r, centers, circles, m)
+    assert recipe_j(n, adj, dist, r, centers, circles, m)
+    assert recipe_dprime(n, adj, dist, r, centers, circles, m) >= m + 1
+
+
+def test_case_c_needs_only_small_sets():
+    """場合 C に残るグラフが $|S| \\le 3$ で閉じることを固定する.
+
+    D' の証明可能な版は場合 A・B で決着するが、場合 C が仮定の下でも残る。
+    その残りは全部 $m + 1$ に届く連結集合を $|S| \\le 3$ の中に持つ — これが
+    補題 L1 の証明で次に狙う主張 (`tools/l1_reduction.py` の冒頭)。
+    同時に、族 $T_q$ のように最小 $|S|$ が伸びるものは場合 A に入り、
+    場合 C を脅かさないことも見張る。
+    """
+    case_c = 0
+    checked = 0
+    for _n, path, op in graph_files(CASE_N):
+        with op(path, "rt") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                n, adj = decode_graph6(line)
+                got = case_of(n, adj)
+                if got is None:
+                    continue
+                checked += 1
+                _d, _r, centers, circles = centers_and_circles(n, adj)
+                if got != "C" or not any(len(circles[v]) == 1
+                                         for v in centers):
+                    continue
+                m = max(len(circles[c]) for c in centers)
+                small = smallest_connected_set(n, adj, m + 1, 3)
+                assert 0 < small <= 3, line
+                case_c += 1
+    if checked == 0:
+        pytest.skip("元データ (data/graphs) がない")
+    assert case_c > 0
+    # 最小 $|S|$ が伸びる族は場合 A なので、この目標を脅かさない。
+    for q in QS:
+        n, adj, _name = build(q)
+        assert case_of(n, adj) == "A", q
 
 
 def test_j_or_f_closes_every_hypothesis_graph():
