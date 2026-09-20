@@ -28,11 +28,40 @@ $S$ が $B_{r-1}(u)$ まで膨らんで $X = R(u)$ ちょうどになり、$m$ �
 * どちらでもないと $S = B_{r-1}(u)$ が木で葉がすべて $L_{r-1}(u)$ に載る形
   ($C_5$, $C_7$ の形) に限られる。
 
-の最後の形を仮定で排除することに絞られる。
+の最後の形 (**場合 C**) をどう始末するかが残りである。
+
+## 場合 C は仮定では消えない — 消えるのは「小さい $S$」で
+
+`--cases` は、証明が使える版 ($S \subseteq B_{r-1}(u)$ に限った版。`case_of`
+の docstring を見よ) の決着先を**仮定の有無で対照して**数える。$r \ge 3$
+かつ $\Delta < m + 1$ (1 点では済まない) のグラフに絞ると、$n \le 9$ の
+総当たりで
+
+| | A | B | C |
+|---|---|---|---|
+| 仮定あり | 141 | 1 | **61** |
+| 仮定なし (対照) | 20 | 21 | 81 |
+
+仮定を課しても場合 C は 61 件残るので、場合 C は仮定とは別の道具で始末する。
+
+その 61 件を測ると全部が **R3 (連結三つ組) で閉じ**、$m + 1$ に届く連結集合の
+最小サイズは **3 を超えない** (レシピごとの内訳は `--cases` の出力と
+`docs/next-problems.md` を見よ)。`l1_family.py` の族 $T_q$ — 最小 $|S|$ が
+$q + 1$ といくらでも伸びるもの — は全項が**場合 A** なので、サイズが伸びる例は
+場合 C に入ってこない。
+
+したがって次の目標は
+
+> **場合 C なら、$|S| \le 3$ の連結集合が $|N(S) \setminus S| \ge m + 1$ を
+> 与える。**
+
+である。場合 A・B は証明済みなので、これが出れば補題 L1 が落ちる。
+回帰テストは `tests/test_l1_recipes.py::test_case_c_needs_only_small_sets`。
 
 使い方 (data/graphs に McKay の graph6 が要る):
 
     PYTHONIOENCODING=utf-8 python tools/l1_reduction.py 9
+    PYTHONIOENCODING=utf-8 python tools/l1_reduction.py 9 --cases
 """
 from __future__ import annotations
 
@@ -106,13 +135,25 @@ def _covered(adj: list[int], comb: tuple[int, ...], targets: int) -> int:
     return cov
 
 
-def min_connected_supersets(n: int, adj: list[int],
-                            wmask: int) -> list[int]:
-    """$W$ を含む最小サイズの連結集合をすべて返す."""
-    for size in range(popcount(wmask), n + 1):
-        found = [smask for smask in range(1 << n)
-                 if popcount(smask) == size and (smask & wmask) == wmask
-                 and connected_sub(n, adj, smask)]
+def min_connected_supersets(n: int, adj: list[int], wmask: int,
+                            within: int | None = None) -> list[int]:
+    """$W$ を含む最小サイズの連結集合をすべて返す.
+
+    `within` を渡すとその中だけで探す。D' は $S \\subseteq B_{r-1}(u)$ を
+    要求する ($S$ が球からはみ出すと $R(u) \\cap S \\ne \\emptyset$ になり
+    $X \\supseteq R(u)$ が崩れる) ので、呼ぶ側は必ず球を渡す。
+    """
+    pool = (1 << n) - 1 if within is None else within
+    for size in range(popcount(wmask), popcount(pool) + 1):
+        found = []
+        smask = pool
+        while True:
+            if popcount(smask) == size and (smask & wmask) == wmask \
+                    and connected_sub(n, adj, smask):
+                found.append(smask)
+            if smask == 0:
+                break
+            smask = (smask - 1) & pool
         if found:
             return found
     return []
@@ -129,11 +170,20 @@ def recipe_dprime(n: int, adj: list[int], dist: list[list[int]], r: int,
         for y in circles[u]:
             targets |= 1 << y
         layer = [x for x in range(n) if du[x] == r - 1]
+        bmask = 0
+        for x in range(n):
+            if du[x] <= r - 1:
+                bmask |= 1 << x
         for comb in min_covers(n, adj, layer, targets):
             wmask = 0
             for w in comb:
                 wmask |= 1 << w
-            for smask in min_connected_supersets(n, adj, wmask):
+            # 球の中だけで取る版と、制限なしの版。どちらも連結 $S$ の境界を
+            # 直に数えるので $\partial(G)$ の正しい下界であり、強いほうを取る
+            # (証明に使えるのは球の中の版だけ — `case_of` を見よ)。
+            cands = min_connected_supersets(n, adj, wmask, bmask)
+            cands += min_connected_supersets(n, adj, wmask)
+            for smask in cands:
                 best = max(best, boundary_size(n, adj, smask))
                 if best >= m + 1:
                     return best
@@ -206,8 +256,167 @@ def check_hypothesis_is_needed() -> None:
               f"(m+1={m + 1}) 仮定を満たす={hyp}")
 
 
+def reachable_within(n: int, adj: list[int], wmask: int,
+                     pool: int) -> int | None:
+    """`pool` の中で $W$ をつなぐ連結集合 (無ければ `None`).
+
+    `pool` 内で $W$ の 1 点から到達できる範囲を返す。$W$ が 1 つの成分に
+    収まるかどうかだけを見るので、返り値は最大のもの。
+    """
+    if wmask & ~pool:
+        return None
+    seen = frontier = wmask & -wmask
+    while frontier:
+        nxt = 0
+        rest = frontier
+        while rest:
+            b = rest & -rest
+            rest ^= b
+            nxt |= adj[b.bit_length() - 1] & pool & ~seen
+        seen |= nxt
+        frontier = nxt
+    return seen if not (wmask & ~seen) else None
+
+
+def case_of(n: int, adj: list[int]) -> str | None:
+    """**証明可能な**版の D' が、どの場合で決着するかを返す (`A`/`B`/`C`).
+
+    証明が使えるのは $S \\subseteq B_{r-1}(u)$ に限った版だけである
+    ($S$ が球からはみ出すと $R(u) \\cap S \\ne \\emptyset$ になり得て
+    $X \\supseteq R(u)$ が崩れる)。その版の場合分けは
+
+    * **A** — $B_{r-1}(u) \\setminus \\{u\\}$ の中で $W$ がつながる。任意の
+      そういう $S$ で、$u$ に最も近い $S$ の点の親が $X \\setminus R(u)$ に
+      入るので $|X| \\ge m + 1$。
+    * **B** — つながらないが、$W$ を含む球内の最小連結集合が $N(u)$ を
+      全部は含まない。その隣人が $X \\setminus R(u)$ に入る。
+    * **C** — どちらでもない。$X = R(u)$ ちょうどで $m$ 止まりになる。
+
+    $r < 3$ か $\\Delta \\ge m + 1$ (1 点で済む) なら `None`。
+    """
+    dist, r, centers, circles = centers_and_circles(n, adj)
+    if r < 3:
+        return None
+    m = max(len(circles[u]) for u in centers)
+    if max(popcount(a) for a in adj) >= m + 1:
+        return None
+    verdict = "C"
+    for u in (c for c in centers if len(circles[c]) == m):
+        du = dist[u]
+        targets = 0
+        for y in circles[u]:
+            targets |= 1 << y
+        layer = [x for x in range(n) if du[x] == r - 1]
+        bmask = 0
+        for x in range(n):
+            if du[x] <= r - 1:
+                bmask |= 1 << x
+        for comb in min_covers(n, adj, layer, targets):
+            wmask = 0
+            for w in comb:
+                wmask |= 1 << w
+            if reachable_within(n, adj, wmask, bmask & ~(1 << u)) is not None:
+                return "A"
+            for smask in min_connected_supersets(n, adj, wmask, bmask):
+                if adj[u] & ~smask:
+                    verdict = "B"
+    return verdict
+
+
+#: `l1_recipes.py` の階層と同じ順のレシピ名。0 件のレシピも表に出すために
+#: 名前だけ先に持っておく。
+RECIPES = ("R1/球", "R2 辺", "R3 連結三つ組", "J 真部分球", "F 相互最遠対",
+           "E 錐")
+
+
+def which_recipes_close(n: int, adj: list[int], dist: list[list[int]], r: int,
+                        centers: list[int], circles: dict[int, list[int]],
+                        m: int) -> list[str]:
+    """$m + 1$ に届くレシピの名前を並べる.
+
+    下界を返すレシピは $m + 1$ に届いたかで、真偽を返すレシピはそのまま
+    判定する (`l1_recipes.py` の階層と同じ順)。
+    """
+    # 循環参照 (`l1_recipes` が本 module を import する) を避けるため関数内。
+    from l1_recipes import (best_ball, best_edge, best_triple, recipe_e,
+                            recipe_f, recipe_j)
+
+    got = (
+        ("R1/球", best_ball(n, adj, dist)[0] >= m + 1),
+        ("R2 辺", best_edge(n, adj) >= m + 1),
+        ("R3 連結三つ組", best_triple(n, adj) >= m + 1),
+        ("J 真部分球", recipe_j(n, adj, dist, r, centers, circles, m)),
+        ("F 相互最遠対", recipe_f(n, adj, dist, r, centers, circles, m)),
+        ("E 錐", recipe_e(n, adj, dist, r, centers, circles, m)),
+    )
+    assert [tag for tag, _ in got] == list(RECIPES)
+    return [tag for tag, ok in got if ok]
+
+
+def scan_cases(nmax: int) -> None:
+    """A / B / C の内訳を、仮定の有無で対照して数える.
+
+    仮定ありで場合 C に残ったものについては、$m + 1$ に届く連結集合の最小
+    サイズと、どのレシピが閉じるかも数える (次の目標の根拠)。
+    """
+    from l1_recipes import smallest_connected_set  # 循環参照を避けるため
+
+    stat: dict[bool, Counter[str]] = {True: Counter(), False: Counter()}
+    sizes: Counter[int] = Counter()
+    closed: Counter[str] = Counter()
+    witnesses: list[str] = []
+    for _n, path, op in graph_files(nmax):
+        with op(path, "rt") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                nn, adj = decode_graph6(line)
+                case = case_of(nn, adj)
+                if case is None:
+                    continue
+                dist, r, centers, circles = centers_and_circles(nn, adj)
+                hyp = any(len(circles[v]) == 1 for v in centers)
+                stat[hyp][case] += 1
+                if case != "C" or not hyp:
+                    continue
+                if len(witnesses) < 8:
+                    witnesses.append(line)
+                m = max(len(circles[c]) for c in centers)
+                sizes[smallest_connected_set(nn, adj, m + 1, 6)] += 1
+                for tag in which_recipes_close(nn, adj, dist, r, centers,
+                                               circles, m):
+                    closed[tag] += 1
+    _print_cases(nmax, stat, witnesses, sizes, closed)
+
+
+def _print_cases(nmax: int, stat: dict[bool, Counter[str]],
+                 witnesses: list[str], sizes: Counter[int],
+                 closed: Counter[str]) -> None:
+    print(f"== 証明可能な版の D' の内訳 (n <= {nmax}) ==")
+    for hyp in (True, False):
+        tag = "仮定あり" if hyp else "仮定なし (対照)"
+        body = " / ".join(f"{k}: {stat[hyp][k]:,}" for k in ("A", "B", "C"))
+        print(f"  {tag}: {body}")
+    if witnesses:
+        print(f"  仮定ありで場合 C に残る証人: {witnesses}")
+    if sizes:
+        print("\n  仮定ありで場合 C に残ったものの、m+1 を出す最小 |S|:")
+        for k in sorted(sizes):
+            tag = f"{k}" if k else "7 以上 (打ち切り)"
+            print(f"    |S| = {tag}: {sizes[k]:,}")
+        print("  同じものを閉じるレシピ:")
+        for tag in sorted(RECIPES, key=lambda t: -closed[t]):
+            print(f"    {tag}: {closed[tag]:,}")
+
+
 if __name__ == "__main__":
-    print("-- 仮定が要ることの確認 --")
-    check_hypothesis_is_needed()
-    print()
-    scan(int(sys.argv[1]) if len(sys.argv) > 1 else 9)
+    args = [a for a in sys.argv[1:] if not a.startswith("-")]
+    nmax = int(args[0]) if args else 9
+    if "--cases" in sys.argv:
+        scan_cases(nmax)
+    else:
+        print("-- 仮定が要ることの確認 --")
+        check_hypothesis_is_needed()
+        print()
+        scan(nmax)

@@ -34,10 +34,16 @@ from l1_recipes import (  # noqa: E402
     best_ball, best_edge, best_triple, recipe_e, recipe_f, recipe_j,
     smallest_connected_set,
 )
-from l1_reduction import boundary_size, recipe_dprime  # noqa: E402
+from l1_reduction import (  # noqa: E402
+    boundary_size, case_of, recipe_dprime,
+)
 
 #: 総当たりの上限位数 (n <= 8 なら数秒で終わる)。
 MAX_N = 8
+
+#: 場合 C の見張りだけは $n \le 9$ まで回す。docs の主張がその範囲のもので、
+#: 場合 C に落ちるグラフ自体が少ない ($n \le 8$ では 3 件しかない) ため。
+CASE_N = 9
 
 #: $n \le 10$ でただ 1 つ、R1・R2・J・F・E がそろって外れたグラフ。
 #: R3 (連結三つ組) を足した理由そのものなので、ここに固定して見張る。
@@ -260,6 +266,45 @@ def test_ball_recipe_alone_is_not_enough():
     assert not recipe_e(n, adj, dist, r, centers, circles, m)
     assert recipe_j(n, adj, dist, r, centers, circles, m)
     assert recipe_dprime(n, adj, dist, r, centers, circles, m) >= m + 1
+
+
+def test_case_c_needs_only_small_sets():
+    """場合 C に残るグラフが $|S| \\le 3$ で閉じることを固定する.
+
+    D' の証明可能な版は場合 A・B で決着するが、場合 C が仮定の下でも残る。
+    その残りは全部 $m + 1$ に届く連結集合を $|S| \\le 3$ の中に持つ — これが
+    補題 L1 の証明で次に狙う主張 (`tools/l1_reduction.py` の冒頭)。
+    同時に、族 $T_q$ のように最小 $|S|$ が伸びるものは場合 A に入り、
+    場合 C を脅かさないことも見張る。
+    """
+    case_c = 0
+    checked = 0
+    for _n, path, op in graph_files(CASE_N):
+        with op(path, "rt") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                n, adj = decode_graph6(line)
+                got = case_of(n, adj)
+                if got is None:
+                    continue
+                checked += 1
+                _d, _r, centers, circles = centers_and_circles(n, adj)
+                if got != "C" or not any(len(circles[v]) == 1
+                                         for v in centers):
+                    continue
+                m = max(len(circles[c]) for c in centers)
+                small = smallest_connected_set(n, adj, m + 1, 3)
+                assert 0 < small <= 3, line
+                case_c += 1
+    if checked == 0:
+        pytest.skip("元データ (data/graphs) がない")
+    assert case_c > 0
+    # 最小 $|S|$ が伸びる族は場合 A なので、この目標を脅かさない。
+    for q in QS:
+        n, adj, _name = build(q)
+        assert case_of(n, adj) == "A", q
 
 
 def test_j_or_f_closes_every_hypothesis_graph():
