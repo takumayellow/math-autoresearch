@@ -231,6 +231,39 @@ def test_backfill_matches_on_the_paper_url_not_on_the_text():
     assert not backfill.matches(other, tweet)
 
 
+def test_backfill_ignores_links_that_are_not_the_paper_pdf():
+    """リポジトリ紹介やプレビュー画像のリンクを告知と取り違えない.
+
+    取り違えると未投稿の成果が「投稿済み」になり、二度と告知されない。
+    """
+    post = _post("p0008_wowii141_girth_tree")
+    preview = _tweet("1", "2026-09-01T00:00:00+00:00",
+                     "https://github.com/takumayellow/math-autoresearch/"
+                     "blob/main/papers/p0008_wowii141_girth_tree/preview/"
+                     "page01.png")
+    assert not backfill.matches(post, preview)
+
+
+def test_backfill_does_not_treat_an_unknown_time_as_the_oldest():
+    """時刻の取れないツイートを原投稿と誤認しない."""
+    post = _post("p0008_wowii141_girth_tree")
+    known = _tweet("1", "2026-09-01T00:00:00+00:00", post.pdf_url)
+    unknown = _tweet("2", "", post.pdf_url)
+    pairs = backfill.pair_up([post], [unknown, known])
+    assert [t["id"] for _, t in pairs] == ["1"]
+
+
+def test_backfill_fails_when_the_timeline_was_truncated(monkeypatch, capsys):
+    """上限で打ち切ったまま「未投稿」と断定しない (= 再投稿しない)."""
+    monkeypatch.setattr(backfill, "fetch_recent_tweets",
+                        lambda limit: ([], False))
+    assert backfill.main([]) == 1
+    monkeypatch.setattr(backfill, "fetch_recent_tweets",
+                        lambda limit: ([], True))
+    assert backfill.main([]) == 0
+    capsys.readouterr()
+
+
 def test_backfill_picks_the_oldest_tweet_for_the_same_result():
     post = _post("p0008_wowii141_girth_tree")
     late = _tweet("2", "2026-09-05T00:00:00+00:00", post.pdf_url)

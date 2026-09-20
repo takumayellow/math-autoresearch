@@ -15,15 +15,24 @@
     PYTHONPATH=src python tools/announce_backfill.py          # 照合結果を見る
     PYTHONPATH=src python tools/announce_backfill.py --write  # 台帳に書く
 
-記録する ``certificate_digest`` は**今の**証明書のもの。投稿後に探索を
-やり直して証明書が変わっていれば digest が合わず「更新版」として再投稿
-対象に戻るが、それは台帳の設計どおりの挙動である。
+タイムラインは新しい順にしか読めないので、``--limit`` まで遡って
+**見つからなかった成果が残った**ときは、その成果が本当に未投稿なのか
+上限の外にあるだけなのか区別できない。この場合は終了コード 1 を返す
+(``--limit`` を伸ばして引き直す)。ここで「未投稿」と決めつけるのが
+再投稿そのものなので、黙って 0 を返さない。
+
+記録する ``certificate_digest`` は**今の**証明書のもの。投稿してから
+証明書を作り直していると、古い版を告知したツイートに新しい digest を
+刻むことになり、更新版の告知が出なくなる。証明書の ``created_at`` が
+ツイートより新しい対は警告を出すので、内容を更新していたならその記録を
+台帳から消して告知し直す。
 """
 
 from __future__ import annotations
 
 import argparse
 import sys
+from datetime import datetime
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -40,8 +49,12 @@ class BackfillError(RuntimeError):
     """タイムラインが読めない."""
 
 
-def fetch_recent_tweets(limit: int = DEFAULT_LIMIT) -> list[dict]:
-    """自分の直近ツイートを ``{"id", "created_at", "text", "urls"}`` で返す."""
+def fetch_recent_tweets(limit: int = DEFAULT_LIMIT) -> tuple[list[dict], bool]:
+    """自分の直近ツイートと、**最後まで読み切ったか**を返す.
+
+    ツイートは ``{"id", "created_at", "text", "urls"}``。第 2 要素が False の
+    ときは ``limit`` で打ち切っており、それより古い投稿は見えていない。
+    """
     try:
         import tweepy  # 遅延 import: 照合しないときは不要
     except ImportError as exc:  # pragma: no cover - 環境依存
@@ -74,8 +87,8 @@ def fetch_recent_tweets(limit: int = DEFAULT_LIMIT) -> list[dict]:
                     "urls": urls,
                 })
                 if len(out) >= limit:
-                    return out
-        return out
+                    return out, False
+        return out, True
     except Exception as exc:  # pragma: no cover - ネットワーク依存
         if isinstance(exc, BackfillError):
             raise
@@ -83,11 +96,25 @@ def fetch_recent_tweets(limit: int = DEFAULT_LIMIT) -> list[dict]:
 
 
 def matches(post: announce.Post, tweet: dict) -> bool:
-    """この成果の投稿かどうか (PDF の URL が一致するかで判定)."""
-    needle = f"papers/{post.problem_id}/"
-    if any(needle in url for url in tweet["urls"]):
+    """この成果の告知かどうか (論文 PDF の URL が一致するかで判定).
+
+    ``papers/<id>/`` の部分一致ではなく ``main.pdf`` まで含む完全な URL を
+    見る。プレビュー画像やリポジトリ紹介のリンクを告知と取り違えると、
+    未投稿の成果が「投稿済み」になって二度と告知されない。
+    """
+    needle = post.pdf_url
+    if any(url.startswith(needle) for url in tweet["urls"]):
         return True
     return needle in tweet["text"]
+
+
+def _age_key(tweet: dict) -> tuple[bool, str]:
+    """古い順に並べる鍵。時刻不明は最後に回す.
+
+    空文字を素朴に比較すると「いちばん古い」と読まれ、原投稿ではなく
+    時刻の取れなかった返信を記録してしまう。
+    """
+    return (tweet["created_at"] == "", tweet["created_at"])
 
 
 def pair_up(posts: list[announce.Post],
@@ -97,8 +124,27 @@ def pair_up(posts: list[announce.Post],
     for post in posts:
         hits = [tw for tw in tweets if matches(post, tw)]
         if hits:
-            pairs.append((post, min(hits, key=lambda tw: tw["created_at"])))
+            pairs.append((post, min(hits, key=_age_key)))
     return pairs
+
+
+def certificate_is_newer(post: announce.Post, tweet: dict) -> bool:
+    """証明書がツイートより後に作られているか.
+
+    後なら、そのツイートは**別の版**を告知した可能性がある。今の digest を
+    「投稿済み」として刻むと更新版の告知が出なくなるので、警告を出す。
+    """
+    from mar.certificate import Certificate
+
+    created = Certificate.load(
+        announce.CERT_DIR / f"{post.problem_id}.json").provenance.created_at
+    if not created or not tweet["created_at"]:
+        return False
+    try:  # 文字列比較だとタイムゾーン表記の差で狂う
+        return (datetime.fromisoformat(created)
+                > datetime.fromisoformat(tweet["created_at"]))
+    except ValueError:
+        return False
 
 
 def to_record(post: announce.Post, tweet: dict) -> state.PostRecord:
@@ -121,35 +167,49 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        tweets = fetch_recent_tweets(args.limit)
+        tweets, exhausted = fetch_recent_tweets(args.limit)
     except (BackfillError, xclient.CredentialsError) as exc:
         print(exc, file=sys.stderr)
         return 1
-    print(f"タイムライン {len(tweets)} 件を取得")
+    print(f"タイムライン {len(tweets)} 件を取得"
+          f"{'' if exhausted else f' (上限 {args.limit} で打ち切り)'}")
 
     posts = [announce.build_post(pid) for pid in announce.ready_problems()]
     pairs = pair_up(posts, tweets)
-    if not pairs:
-        print("投稿済みの成果は見つからなかった (台帳は空のままでよい)")
-        return 0
 
     for post, tweet in pairs:
         known = post.already_posted is not None
         print(f"  {post.problem_id}  digest={post.certificate_digest}"
               f"  tweet={tweet['id']}  {tweet['created_at']}"
               f"  {'[台帳にある]' if known else '[台帳に無い]'}")
+        if certificate_is_newer(post, tweet):
+            print(f"    警告: 証明書がこのツイートより後に作られている。"
+                  f"内容を更新していたなら、{post.problem_id} の記録を台帳から"
+                  f"消して告知し直す")
 
     fresh = [(p, t) for p, t in pairs if p.already_posted is None]
-    if not fresh:
-        print("すべて台帳にある。追記することは無い")
-        return 0
-    if not args.write:
+    if args.write and fresh:
+        for post, tweet in fresh:
+            path = state.append(to_record(post, tweet))
+            print(f"台帳に追記: {post.problem_id} -> {path}")
+    elif fresh:
         print(f"\n{len(fresh)} 件が台帳に無い。"
               "書き戻すなら --write を付けて実行する")
-        return 0
-    for post, tweet in fresh:
-        path = state.append(to_record(post, tweet))
-        print(f"台帳に追記: {post.problem_id} -> {path}")
+    elif pairs:
+        print("すべて台帳にある。追記することは無い")
+    else:
+        print("投稿済みの成果は見つからなかった")
+
+    # 見つからなかった成果が残っていて、かつタイムラインを読み切っていない
+    # なら、「未投稿」と断定できない。ここで 0 を返すと再投稿につながる。
+    missing = [p.problem_id for p in posts
+               if not any(q.problem_id == p.problem_id for q, _ in pairs)]
+    if missing and not exhausted:
+        print(f"\n照合できなかった成果が {len(missing)} 件ある一方で、"
+              f"タイムラインは上限 {args.limit} 件で打ち切っている。"
+              f"未投稿とは断定できないので --limit を伸ばして引き直す:\n"
+              f"  {', '.join(missing)}", file=sys.stderr)
+        return 1
     return 0
 
 

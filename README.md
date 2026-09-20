@@ -112,6 +112,10 @@ PYTHONPATH=src python tools/announce_backfill.py           # 照合結果を見�
 PYTHONPATH=src python tools/announce_backfill.py --write   # 台帳に書き戻す
 ```
 
+タイムラインは新しい順にしか読めないので、`--limit` (既定 200) まで遡っても
+照合できない成果が残ったら**終了コード 1** を返す。上限の外にある手投稿を
+「未投稿」と読むのが再投稿そのものなので、`--limit` を伸ばして引き直す。
+
 ## 現在の問題
 
 | ID | 種別 | 内容 | 規模 | 結果 |
