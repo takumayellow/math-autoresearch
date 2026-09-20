@@ -27,11 +27,18 @@ if str(TOOLS) not in sys.path:
 from l1_coverage import (  # noqa: E402
     centers_and_circles, connected_sub, decode_graph6, graph_files,
 )
-from l1_recipes import recipe_f, recipe_j  # noqa: E402
+from l1_recipes import (  # noqa: E402
+    best_ball, best_edge, best_triple, recipe_e, recipe_f, recipe_j,
+    smallest_connected_set,
+)
 from l1_reduction import boundary_size  # noqa: E402
 
 #: 総当たりの上限位数 (n <= 8 なら数秒で終わる)。
 MAX_N = 8
+
+#: $n \le 10$ でただ 1 つ、R1・R2・J・F・E がそろって外れたグラフ。
+#: R3 (連結三つ組) を足した理由そのものなので、ここに固定して見張る。
+HARD_G6 = "I?BD?pWco"
 
 
 def _hypothesis_pairs(nmax: int):
@@ -104,8 +111,83 @@ def test_recipe_f_is_sound():
     assert checked > 0
 
 
+def test_hard_graph_needs_the_triple_recipe():
+    """$n \\le 10$ の難物 1 個が R3 でだけ閉じることを固定する.
+
+    `I?BD?pWco` は $r = 3$, $m = 4$ で、$|R(v)| = 1$ の証人 $v = 9$ の唯一の
+    最遠点が頂点 1 — **中心ではない** ので相互最遠対が無く F が空振りし、
+    J も破れる。勝つのは誘導パス $9$–$3$–$8$ で、境界は
+    $\\{0, 1, 4, 6, 7\\}$ のちょうど $m + 1 = 5$ 個。
+    """
+    n, adj = decode_graph6(HARD_G6)
+    dist, r, centers, circles = centers_and_circles(n, adj)
+    m = max(len(circles[c]) for c in centers)
+    assert (n, r, m) == (10, 3, 4)
+    # 仮定は満たすが、相互最遠対が無いので F は効かない。
+    assert any(len(circles[v]) == 1 for v in centers)
+    assert not any(circles.get(v) == [u]
+                   for u in centers if len(circles[u]) == m
+                   for v in circles[u])
+    assert not recipe_f(n, adj, dist, r, centers, circles, m)
+    assert not recipe_j(n, adj, dist, r, centers, circles, m)
+    assert not recipe_e(n, adj, dist, r, centers, circles, m)
+    assert best_ball(n, adj, dist)[0] < m + 1
+    assert best_edge(n, adj) < m + 1
+    # R3 だけが $m + 1$ に届く。証人はパス 9-3-8。
+    assert best_triple(n, adj) >= m + 1
+    smask = (1 << 9) | (1 << 3) | (1 << 8)
+    assert connected_sub(n, adj, smask)
+    assert boundary_size(n, adj, smask) == m + 1
+
+
+def test_smallest_connected_set_agrees_with_brute_force():
+    """`smallest_connected_set` を、全部分集合の総当たりと突き合わせる.
+
+    速い経路 ($k \\le 3$) と総当たり経路 ($k \\ge 4$) が混ざっているので、
+    境目の $k = 3, 4$ で食い違わないことを小さい族で確かめる。
+    """
+    kmax = 4
+    checked = 0
+    for _n, path, op in graph_files(6):
+        with op(path, "rt") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                n, adj = decode_graph6(line)
+                _dist, _r, centers, circles = centers_and_circles(n, adj)
+                target = max(len(circles[c]) for c in centers) + 1
+                want = 0
+                for smask in range(1, 1 << n):
+                    k = bin(smask).count("1")
+                    if k > kmax or (want and k >= want):
+                        continue
+                    if connected_sub(n, adj, smask) \
+                            and boundary_size(n, adj, smask) >= target:
+                        want = k
+                assert smallest_connected_set(n, adj, target, kmax) == want, \
+                    line
+                checked += 1
+    if checked == 0:
+        pytest.skip("元データ (data/graphs) がない")
+
+
+def test_small_connected_sets_close_the_hard_graph():
+    """`I?BD?pWco` は $|S| = 3$ が最小で、J を使わずに閉じる."""
+    n, adj = decode_graph6(HARD_G6)
+    _dist, _r, centers, circles = centers_and_circles(n, adj)
+    m = max(len(circles[c]) for c in centers)
+    assert smallest_connected_set(n, adj, m + 1, 4) == 3
+
+
 def test_j_or_f_closes_every_hypothesis_graph():
-    """J $\\lor$ F で仮定を満たすグラフが全部閉じること (n <= MAX_N)."""
+    """J $\\lor$ F で仮定を満たすグラフが全部閉じること (n <= MAX_N).
+
+    これは**一般には偽**で、$n = 10$ には J も F も効かないグラフが 22 個ある
+    (`docs/next-problems.md` の「どのレシピが効くかを全部測る」)。ここで
+    守っているのは「小さい族での挙動が変わらないこと」だけなので、
+    `MAX_N` を 10 へ上げてはいけない。
+    """
     checked = 0
     for _n, path, op in graph_files(MAX_N):
         with op(path, "rt") as fh:
