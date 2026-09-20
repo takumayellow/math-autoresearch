@@ -17,7 +17,9 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 
+import announce_backfill as backfill  # noqa: E402
 from mar import announce  # noqa: E402
 from mar.announce import state  # noqa: E402
 from mar.announce.compose import (X_LIMIT, ComposeError, compose, detex,  # noqa: E402
@@ -204,3 +206,46 @@ def test_ledger_record_missing_a_required_field_is_reported(tmp_path):
     path.write_text('{"posts": [{"problem_id": "p0000"}]}', encoding="utf-8")
     with pytest.raises(state.LedgerError):
         state.load_ledger(path)
+
+
+# --- 台帳の書き戻し ------------------------------------------------------
+
+def _post(problem_id: str, digest: str = "aaaa") -> announce.Post:
+    return announce.Post(
+        problem_id=problem_id, certificate_digest=digest, text="本文",
+        replies=(), pdf_url=announce.pdf_url(problem_id), image=None,
+        already_posted=None)
+
+
+def _tweet(tweet_id: str, created_at: str, url: str) -> dict:
+    return {"id": tweet_id, "created_at": created_at,
+            "text": "本文 https://t.co/xxxx", "urls": [url]}
+
+
+def test_backfill_matches_on_the_paper_url_not_on_the_text():
+    """短縮 URL を展開して照合するので、問題を取り違えない."""
+    target = _post("p0008_wowii141_girth_tree")
+    other = _post("p0009_wowii2_leaf_local_indep")
+    tweet = _tweet("1", "2026-09-01T00:00:00+00:00", target.pdf_url)
+    assert backfill.matches(target, tweet)
+    assert not backfill.matches(other, tweet)
+
+
+def test_backfill_picks_the_oldest_tweet_for_the_same_result():
+    post = _post("p0008_wowii141_girth_tree")
+    late = _tweet("2", "2026-09-05T00:00:00+00:00", post.pdf_url)
+    early = _tweet("1", "2026-09-01T00:00:00+00:00", post.pdf_url)
+    pairs = backfill.pair_up([post], [late, early])
+    assert [(p.problem_id, t["id"]) for p, t in pairs] \
+        == [(post.problem_id, "1")]
+
+
+def test_backfill_record_keeps_the_tweet_id_and_original_time():
+    post = _post("p0008_wowii141_girth_tree", digest="beef")
+    rec = backfill.to_record(
+        post, _tweet("42", "2026-09-01T00:00:00+00:00", post.pdf_url))
+    assert rec.tweet_id == "42"
+    assert rec.tweet_url.endswith("/42")
+    assert rec.posted_at == "2026-09-01T00:00:00+00:00"
+    assert rec.certificate_digest == "beef"
+    assert not rec.dry_run  # 書き戻した記録は実投稿として数える
