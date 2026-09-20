@@ -25,43 +25,44 @@ $S$ が $B_{r-1}(u)$ まで膨らんで $X = R(u)$ ちょうどになり、$m$ �
 
 * $u \notin S$ なら、$S$ のうち $u$ に最も近い点の親が $X \setminus R(u)$ に入る。
 * $u \in S$ なら $N(u) \setminus S \ne \emptyset$ で足りる。
-* どちらでもないと $S = B_{r-1}(u)$ が木で葉がすべて $L_{r-1}(u)$ に載る形
-  ($C_5$, $C_7$ の形) に限られる。
+* どちらでもないと $S$ は $u$ と $N(u)$ を丸ごと含む。測った範囲では、そこで
+  $S = B_{r-1}(u)$ になり $G[S]$ の葉はすべて $L_{r-1}(u)$ に載る ($C_5$,
+  $C_7$ の形)。$C_5$, $C_7$ では $G[S]$ は木だが、一般には閉路を持つ
+  ($n = 11$ の `JloG_cC?{__` では $B_2(5)$ が 6 点 6 辺)。
 
 の最後の形 (**場合 C**) をどう始末するかが残りである。
 
-## 場合 C は仮定では消えない — 消えるのは「小さい $S$」で
+## 場合 C は仮定では消えず、そのうえ大半は下界が届いている
 
 `--cases` は、証明が使える版 ($S \subseteq B_{r-1}(u)$ に限った版。`case_of`
-の docstring を見よ) の決着先を**仮定の有無で対照して**数える。$r \ge 3$
-かつ $\Delta < m + 1$ (1 点では済まない) のグラフに絞ると、$n \le 9$ の
-総当たりで
+の docstring を見よ) の決着先を**仮定の有無で対照して**数える。`--hunt` は
+同じものを総当たりの外 (乱択 $n = 11..18$) で測る。$r \ge 3$ かつ
+$\Delta < m + 1$ (1 点では済まない) のグラフに絞って数えると、仮定を課しても
+場合 C は残るので、場合 C は仮定とは別の道具で始末する。
 
-| | A | B | C |
-|---|---|---|---|
-| 仮定あり | 141 | 1 | **61** |
-| 仮定なし (対照) | 20 | 21 | 81 |
-
-仮定を課しても場合 C は 61 件残るので、場合 C は仮定とは別の道具で始末する。
-
-その 61 件を測ると全部が **R3 (連結三つ組) で閉じ**、$m + 1$ に届く連結集合の
-最小サイズは **3 を超えない** (レシピごとの内訳は `--cases` の出力と
-`docs/next-problems.md` を見よ)。`l1_family.py` の族 $T_q$ — 最小 $|S|$ が
-$q + 1$ といくらでも伸びるもの — は全項が**場合 A** なので、サイズが伸びる例は
-場合 C に入ってこない。
+ただし場合 C は「$S$ が球に収まる版の**論法が当たらない**」だけで、下界が
+$m$ で止まるとは限らない。実際に $\partial$ を測ると、球の中の $S$ が
+$m + 1$ を出しているものが多い。本当に止まるもの (`stalls_in_ball`) に絞ると
+$r$ が 3 か 4 に限られ、$m + 1$ に届く連結集合の最小サイズも 4 までしか
+伸びない (件数の内訳は `--cases` / `--hunt` の出力と `docs/next-problems.md`
+を見よ)。`l1_family.py` の族 $T_q$ — 最小 $|S|$ が $q + 1$ といくらでも伸びる
+もの — は全項が**場合 A** なので、サイズが伸びる例は場合 C に入ってこない。
 
 したがって次の目標は
 
-> **場合 C なら、$|S| \le 3$ の連結集合が $|N(S) \setminus S| \ge m + 1$ を
-> 与える。**
+> **場合 C で球内の下界が $m$ で止まるなら、$r \le 4$ かつ $|S| \le 4$ の
+> 連結集合が $|N(S) \setminus S| \ge m + 1$ を与える。**
 
 である。場合 A・B は証明済みなので、これが出れば補題 L1 が落ちる。
-回帰テストは `tests/test_l1_recipes.py::test_case_c_needs_only_small_sets`。
+$|S| = 4$ が要るものは多項式時間レシピの階層 ($|S| \le 3$ まで) をすり抜ける
+が、球を外した D' はそこでも $m + 1$ を出している (`--hunt` の証人欄)。
+回帰テストは `tests/test_l1_recipes.py` の `test_case_c_stall_*`。
 
-使い方 (data/graphs に McKay の graph6 が要る):
+使い方 (`--cases` までは data/graphs に McKay の graph6 が要る):
 
     PYTHONIOENCODING=utf-8 python tools/l1_reduction.py 9
     PYTHONIOENCODING=utf-8 python tools/l1_reduction.py 9 --cases
+    PYTHONIOENCODING=utf-8 python tools/l1_reduction.py 20260923 60000 --hunt
 """
 from __future__ import annotations
 
@@ -159,11 +160,14 @@ def min_connected_supersets(n: int, adj: list[int], wmask: int,
     return []
 
 
-def recipe_dprime(n: int, adj: list[int], dist: list[list[int]], r: int,
-                  centers: list[int], circles: dict[int, list[int]],
-                  m: int) -> int:
-    """レシピ D' が出す下界 (打ち切りつき)."""
-    best = 0
+def dprime_seeds(n: int, adj: list[int], dist: list[list[int]], r: int,
+                 centers: list[int], circles: dict[int, list[int]],
+                 m: int):
+    """レシピ D' の出発点 $(u, W, B_{r-1}(u))$ を並べる.
+
+    $u$ は $|R(u)| = m$ を実現する中心、$W \\subseteq L_{r-1}(u)$ は $R(u)$ の
+    サイズ最小の支配集合。$W$ の取り方は一般に複数あるので全部返す。
+    """
     for u in (c for c in centers if len(circles[c]) == m):
         du = dist[u]
         targets = 0
@@ -178,15 +182,42 @@ def recipe_dprime(n: int, adj: list[int], dist: list[list[int]], r: int,
             wmask = 0
             for w in comb:
                 wmask |= 1 << w
-            # 球の中だけで取る版と、制限なしの版。どちらも連結 $S$ の境界を
-            # 直に数えるので $\partial(G)$ の正しい下界であり、強いほうを取る
-            # (証明に使えるのは球の中の版だけ — `case_of` を見よ)。
-            cands = min_connected_supersets(n, adj, wmask, bmask)
-            cands += min_connected_supersets(n, adj, wmask)
-            for smask in cands:
-                best = max(best, boundary_size(n, adj, smask))
-                if best >= m + 1:
-                    return best
+            yield u, wmask, bmask
+
+
+def recipe_dprime(n: int, adj: list[int], dist: list[list[int]], r: int,
+                  centers: list[int], circles: dict[int, list[int]],
+                  m: int) -> int:
+    """レシピ D' が出す下界 (打ち切りつき)."""
+    best = 0
+    for _u, wmask, bmask in dprime_seeds(n, adj, dist, r, centers, circles, m):
+        # 球の中だけで取る版と、制限なしの版。どちらも連結 $S$ の境界を
+        # 直に数えるので $\partial(G)$ の正しい下界であり、強いほうを取る
+        # (証明に使えるのは球の中の版だけ — `case_of` を見よ)。
+        cands = min_connected_supersets(n, adj, wmask, bmask)
+        cands += min_connected_supersets(n, adj, wmask)
+        for smask in cands:
+            best = max(best, boundary_size(n, adj, smask))
+            if best >= m + 1:
+                return best
+    return best
+
+
+def dprime_ball_bound(n: int, adj: list[int], dist: list[list[int]], r: int,
+                      centers: list[int], circles: dict[int, list[int]],
+                      m: int) -> int:
+    """**証明可能な**版 ($S \\subseteq B_{r-1}(u)$) の D' が出す下界.
+
+    `recipe_dprime` は球を外した $S$ も試して強いほうを取るが、証明が通るのは
+    球の中に収まる版だけである (`case_of` を見よ)。場合 C が本当に $m$ で
+    止まるかは、`case_of` ではなくこの値で測る。
+    """
+    best = 0
+    for _u, wmask, bmask in dprime_seeds(n, adj, dist, r, centers, circles, m):
+        for smask in min_connected_supersets(n, adj, wmask, bmask):
+            best = max(best, boundary_size(n, adj, smask))
+            if best >= m + 1:
+                return best
     return best
 
 
@@ -290,7 +321,11 @@ def case_of(n: int, adj: list[int]) -> str | None:
       入るので $|X| \\ge m + 1$。
     * **B** — つながらないが、$W$ を含む球内の最小連結集合が $N(u)$ を
       全部は含まない。その隣人が $X \\setminus R(u)$ に入る。
-    * **C** — どちらでもない。$X = R(u)$ ちょうどで $m$ 止まりになる。
+    * **C** — どちらの論法も当たらない。
+
+    返り値は**論法が当たるか**であって、下界が届くかではない。場合 C でも
+    球内の $S$ が $m + 1$ を出すことは多く (`--hunt` の出力を見よ)、本当に
+    $m$ で止まるかは `dprime_ball_bound` で測る。
 
     $r < 3$ か $\\Delta \\ge m + 1$ (1 点で済む) なら `None`。
     """
@@ -301,25 +336,12 @@ def case_of(n: int, adj: list[int]) -> str | None:
     if max(popcount(a) for a in adj) >= m + 1:
         return None
     verdict = "C"
-    for u in (c for c in centers if len(circles[c]) == m):
-        du = dist[u]
-        targets = 0
-        for y in circles[u]:
-            targets |= 1 << y
-        layer = [x for x in range(n) if du[x] == r - 1]
-        bmask = 0
-        for x in range(n):
-            if du[x] <= r - 1:
-                bmask |= 1 << x
-        for comb in min_covers(n, adj, layer, targets):
-            wmask = 0
-            for w in comb:
-                wmask |= 1 << w
-            if reachable_within(n, adj, wmask, bmask & ~(1 << u)) is not None:
-                return "A"
-            for smask in min_connected_supersets(n, adj, wmask, bmask):
-                if adj[u] & ~smask:
-                    verdict = "B"
+    for u, wmask, bmask in dprime_seeds(n, adj, dist, r, centers, circles, m):
+        if reachable_within(n, adj, wmask, bmask & ~(1 << u)) is not None:
+            return "A"
+        for smask in min_connected_supersets(n, adj, wmask, bmask):
+            if adj[u] & ~smask:
+                verdict = "B"
     return verdict
 
 
@@ -353,65 +375,133 @@ def which_recipes_close(n: int, adj: list[int], dist: list[list[int]], r: int,
     return [tag for tag, ok in got if ok]
 
 
-def scan_cases(nmax: int) -> None:
-    """A / B / C の内訳を、仮定の有無で対照して数える.
+def stalls_in_ball(n: int, adj: list[int]) -> tuple[bool, int] | None:
+    """仮定を満たす場合 C のグラフか、そして球内で $m$ 止まりかを返す.
 
-    仮定ありで場合 C に残ったものについては、$m + 1$ に届く連結集合の最小
-    サイズと、どのレシピが閉じるかも数える (次の目標の根拠)。
+    返り値は `(球内で m 止まりか, m)`。仮定 ($|R(v)| = 1$ の中心がある) を
+    満たさない・$r < 3$・$\\Delta \\ge m + 1$・場合 C でない、のいずれかなら
+    `None`。
     """
-    from l1_recipes import smallest_connected_set  # 循環参照を避けるため
+    dist, r, centers, circles = centers_and_circles(n, adj)
+    if not any(len(circles[v]) == 1 for v in centers):
+        return None
+    if case_of(n, adj) != "C":
+        return None
+    m = max(len(circles[c]) for c in centers)
+    bound = dprime_ball_bound(n, adj, dist, r, centers, circles, m)
+    return bound < m + 1, m
 
-    stat: dict[bool, Counter[str]] = {True: Counter(), False: Counter()}
-    sizes: Counter[int] = Counter()
-    closed: Counter[str] = Counter()
-    witnesses: list[str] = []
+
+class CaseStats:
+    """場合 C の実態をためる入れ物 (総当たりと乱択で同じものを測る)."""
+
+    def __init__(self) -> None:
+        self.cases: dict[bool, Counter[str]] = {True: Counter(),
+                                                False: Counter()}
+        self.stall: Counter[str] = Counter()
+        self.radii: Counter[int] = Counter()
+        self.sizes: Counter[int] = Counter()
+        self.closed: Counter[str] = Counter()
+        self.witnesses: list[tuple[str, int, int, int, int]] = []
+
+    def feed(self, name: str, n: int, adj: list[int]) -> None:
+        """グラフ 1 つを測る (`name` は証人として残す graph6 文字列)."""
+        from l1_recipes import smallest_connected_set  # 循環参照を避けるため
+
+        case = case_of(n, adj)
+        if case is None:
+            return
+        dist, r, centers, circles = centers_and_circles(n, adj)
+        hyp = any(len(circles[v]) == 1 for v in centers)
+        self.cases[hyp][case] += 1
+        if case != "C" or not hyp:
+            return
+        m = max(len(circles[c]) for c in centers)
+        if dprime_ball_bound(n, adj, dist, r, centers, circles, m) >= m + 1:
+            self.stall["球内で m+1 に届く"] += 1
+            return
+        self.stall["球内で m 止まり"] += 1
+        self.radii[r] += 1
+        self.sizes[smallest_connected_set(n, adj, m + 1, 6)] += 1
+        tags = which_recipes_close(n, adj, dist, r, centers, circles, m)
+        for tag in tags:
+            self.closed[tag] += 1
+        if not tags and len(self.witnesses) < 8:
+            full = recipe_dprime(n, adj, dist, r, centers, circles, m)
+            self.witnesses.append((name, n, r, m, full))
+
+    def report(self, head: str) -> None:
+        print(f"== {head} ==")
+        for hyp in (True, False):
+            tag = "仮定あり" if hyp else "仮定なし (対照)"
+            body = " / ".join(f"{k}: {self.cases[hyp][k]:,}"
+                              for k in ("A", "B", "C"))
+            print(f"  証明可能な版の決着先 ({tag}): {body}")
+        if not self.stall:
+            return
+        print("\n  仮定ありで場合 C に残ったものの内訳:")
+        for tag in sorted(self.stall):
+            print(f"    {tag}: {self.stall[tag]:,}")
+        print("  球内で m 止まりのものの r:")
+        for k in sorted(self.radii):
+            print(f"    r = {k}: {self.radii[k]:,}")
+        print("  同じものが m+1 を出す最小 |S|:")
+        for k in sorted(self.sizes):
+            tag = f"{k}" if k else "7 以上 (打ち切り)"
+            print(f"    |S| = {tag}: {self.sizes[k]:,}")
+        print("  同じものを閉じるレシピ:")
+        for tag in sorted(RECIPES, key=lambda t: -self.closed[t]):
+            print(f"    {tag}: {self.closed[tag]:,}")
+        if self.witnesses:
+            print("  どのレシピも閉じない証人 "
+                  "(graph6, n, r, m, 球を外した D' の下界):")
+            for row in self.witnesses:
+                print(f"    {row}")
+
+
+def scan_cases(nmax: int) -> None:
+    """A / B / C の内訳を、仮定の有無で対照して総当たりで数える."""
+    stats = CaseStats()
     for _n, path, op in graph_files(nmax):
         with op(path, "rt") as fh:
             for line in fh:
                 line = line.strip()
-                if not line:
-                    continue
-                nn, adj = decode_graph6(line)
-                case = case_of(nn, adj)
-                if case is None:
-                    continue
-                dist, r, centers, circles = centers_and_circles(nn, adj)
-                hyp = any(len(circles[v]) == 1 for v in centers)
-                stat[hyp][case] += 1
-                if case != "C" or not hyp:
-                    continue
-                if len(witnesses) < 8:
-                    witnesses.append(line)
-                m = max(len(circles[c]) for c in centers)
-                sizes[smallest_connected_set(nn, adj, m + 1, 6)] += 1
-                for tag in which_recipes_close(nn, adj, dist, r, centers,
-                                               circles, m):
-                    closed[tag] += 1
-    _print_cases(nmax, stat, witnesses, sizes, closed)
+                if line:
+                    nn, adj = decode_graph6(line)
+                    stats.feed(line, nn, adj)
+    stats.report(f"総当たり n <= {nmax}")
 
 
-def _print_cases(nmax: int, stat: dict[bool, Counter[str]],
-                 witnesses: list[str], sizes: Counter[int],
-                 closed: Counter[str]) -> None:
-    print(f"== 証明可能な版の D' の内訳 (n <= {nmax}) ==")
-    for hyp in (True, False):
-        tag = "仮定あり" if hyp else "仮定なし (対照)"
-        body = " / ".join(f"{k}: {stat[hyp][k]:,}" for k in ("A", "B", "C"))
-        print(f"  {tag}: {body}")
-    if witnesses:
-        print(f"  仮定ありで場合 C に残る証人: {witnesses}")
-    if sizes:
-        print("\n  仮定ありで場合 C に残ったものの、m+1 を出す最小 |S|:")
-        for k in sorted(sizes):
-            tag = f"{k}" if k else "7 以上 (打ち切り)"
-            print(f"    |S| = {tag}: {sizes[k]:,}")
-        print("  同じものを閉じるレシピ:")
-        for tag in sorted(RECIPES, key=lambda t: -closed[t]):
-            print(f"    {tag}: {closed[tag]:,}")
+#: `--hunt` が振る位数。総当たり (n <= 10) の外を見るためのもの。
+HUNT_NS = (11, 12, 13, 14, 15, 16, 17, 18)
+
+
+def hunt_cases(seed: int, trials: int) -> None:
+    """総当たりの外を乱択で叩き、場合 C の実態を測る.
+
+    `scan_cases` と同じものを数える。$n \\le 10$ の観測が小さい $n$ の
+    偶然でないかを見るためのもの。
+    """
+    import random  # `--hunt` のときだけ要る
+
+    from l1_family import encode_graph6, random_graph  # 循環参照を避けるため
+
+    rng = random.Random(seed)
+    stats = CaseStats()
+    for _ in range(trials):
+        n = rng.choice(HUNT_NS)
+        adj = random_graph(rng, n)
+        stats.feed(encode_graph6(n, adj), n, adj)
+    stats.report(f"乱択 n in {HUNT_NS} (seed={seed}, {trials:,} 回)")
 
 
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("-")]
+    if "--hunt" in sys.argv:
+        # `--hunt` だけは位置引数が (種, 試行数)。他は (上限位数)。
+        hunt_cases(int(args[0]) if args else 20260923,
+                   int(args[1]) if len(args) > 1 else 60_000)
+        sys.exit(0)
     nmax = int(args[0]) if args else 9
     if "--cases" in sys.argv:
         scan_cases(nmax)
