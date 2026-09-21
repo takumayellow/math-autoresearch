@@ -25,10 +25,11 @@ $S$ が $B_{r-1}(u)$ まで膨らんで $X = R(u)$ ちょうどになり、$m$ �
 
 * $u \notin S$ なら、$S$ のうち $u$ に最も近い点の親が $X \setminus R(u)$ に入る。
 * $u \in S$ なら $N(u) \setminus S \ne \emptyset$ で足りる。
-* どちらでもないと $S$ は $u$ と $N(u)$ を丸ごと含む。測った範囲では、そこで
-  $S = B_{r-1}(u)$ になり $G[S]$ の葉はすべて $L_{r-1}(u)$ に載る ($C_5$,
-  $C_7$ の形)。$C_5$, $C_7$ では $G[S]$ は木だが、一般には閉路を持つ
-  ($n = 11$ の `JloG_cC?{__` では $B_2(5)$ が 6 点 6 辺)。
+* どちらでもないと $S$ は $u$ と $N(u)$ を丸ごと含む。このとき下界が $m$ で
+  止まることと $S = B_{r-1}(u)$ であることは同値で、$G[S]$ の葉は
+  $L_{r-1}(u)$ に載り、$u$ は $G[S]$ の切断点になる。$G[S]$ は閉路を持つことも
+  ある ($n = 11$ の `JloG_cC?{__` では $B_2(5)$ が 6 点 6 辺)。証明と測定は
+  `docs/next-problems.md` および `stall_structure` / `stall_recipe_probes`。
 
 の最後の形 (**場合 C**) をどう始末するかが残りである。
 
@@ -75,7 +76,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from l1_coverage import (  # noqa: E402
-    centers_and_circles, connected_sub, decode_graph6, graph_files, popcount,
+    ball_mask, bfs, centers_and_circles, connected_sub, decode_graph6,
+    graph_files, popcount,
 )
 
 
@@ -392,6 +394,125 @@ def stalls_in_ball(n: int, adj: list[int]) -> tuple[bool, int] | None:
     return bound < m + 1, m
 
 
+def components(n: int, adj: list[int], mask: int) -> list[int]:
+    """`mask` が張る誘導部分グラフの連結成分をマスクの列で返す."""
+    parts, seen = [], 0
+    for s in range(n):
+        if not (mask >> s & 1) or seen >> s & 1:
+            continue
+        dist = bfs(n, adj, s, mask)
+        comp = 0
+        for x in range(n):
+            if mask >> x & 1 and dist[x] >= 0:
+                comp |= 1 << x
+        seen |= comp
+        parts.append(comp)
+    return parts
+
+
+def stalling_balls(n: int, adj: list[int], m: int, dist: list[list[int]],
+                   r: int, centers: list[int],
+                   circles: dict[int, list[int]]
+                   ) -> list[tuple[int, int, int]]:
+    """球内で止まっている $(u, W, B_{r-1}(u))$ を、重複なく並べて返す."""
+    seen, out = set(), []
+    for u, wmask, bmask in dprime_seeds(n, adj, dist, r, centers, circles, m):
+        for smask in min_connected_supersets(n, adj, wmask, bmask):
+            if boundary_size(n, adj, smask) >= m + 1:
+                continue
+            if (u, wmask, smask) not in seen:
+                seen.add((u, wmask, smask))
+                out.append((u, wmask, smask))
+    return out
+
+
+def ball_shapes(n: int, adj: list[int], dist: list[list[int]], r: int,
+                balls: list[tuple[int, int, int]]
+                ) -> tuple[tuple[int, bool], ...]:
+    """止まっている球ごとに `(u を抜いた成分数, 形が 1..3 のとおりか)` を返す.
+
+    `balls` は `stalling_balls` の返り値。1..3 は
+    `docs/next-problems.md` の「止まっている側について、次の 3 点が証明
+    できる」にある主張で、ここで測るのは実装がその証明どおりに動くことである。
+    成分数は証明していない測定値なので、真偽とは別に返す。
+    """
+    shapes: list[tuple[int, bool]] = []
+    for u, wmask, smask in balls:
+        cut = components(n, adj, smask & ~(1 << u))
+        ok = (smask == ball_mask(n, dist, u, r - 1)
+              and all(c & wmask for c in cut)
+              and all(not connected_sub(n, adj, smask & ~(1 << x))
+                      for x in range(n)
+                      if smask >> x & 1 and not (wmask >> x & 1)))
+        if (len(cut), ok) not in shapes:
+            shapes.append((len(cut), ok))
+    return tuple(sorted(shapes))
+
+
+def recipe_probes(n: int, adj: list[int], centers: list[int],
+                  circles: dict[int, list[int]],
+                  balls: list[tuple[int, int, int]]) -> tuple[int, int, int]:
+    """止まる場合に、別の連結集合を取る案がどこまで伸びるかを返す.
+
+    `balls` は `stalling_balls` の返り値。返り値は
+    `(レシピ K, K + 中心, 仮定の頂点を混ぜた案)` で、それぞれその案が
+    出せる最大の境界。$m + 1$ 以上なら閉じたことになる。
+
+    * **レシピ K** — 3 から出る $B_{r-1}(u) - u$ の成分 $C$。その境界は
+      $|N(C) \\cap R(u)| + 1$ になる。
+    * **K + 中心** — $C \\cup \\{u\\}$。
+    * **仮定の頂点を混ぜた案** — $|R(v)| = 1$ の中心 $v$ を、球・球から $u$ を
+      抜いたもの・成分・成分 $\\cup \\{u\\}$ に足したもの (連結なものだけ)。
+      補題 L1 の仮定を使う唯一の手掛かりなので、伸びるかどうかを見ておく。
+    """
+    hypothesis = [c for c in centers if len(circles[c]) == 1]
+    k = ku = kv = 0
+    for u, _wmask, smask in balls:
+        cut = components(n, adj, smask & ~(1 << u))
+        for c in cut:
+            k = max(k, boundary_size(n, adj, c))
+            ku = max(ku, boundary_size(n, adj, c | 1 << u))
+        for v in hypothesis:
+            for base in [smask, smask & ~(1 << u), *cut,
+                         *(c | 1 << u for c in cut)]:
+                cand = base | 1 << v
+                if connected_sub(n, adj, cand):
+                    kv = max(kv, boundary_size(n, adj, cand))
+    return k, ku, kv
+
+
+def stall_structure(
+        n: int,
+        adj: list[int]) -> tuple[int, tuple[tuple[int, bool], ...]] | None:
+    """`ball_shapes` を、グラフだけ渡して呼べるようにしたもの.
+
+    返り値は `(m, 球ごとの形)`。止まらない・仮定を満たさないなら `None`。
+    """
+    verdict = stalls_in_ball(n, adj)
+    if verdict is None or not verdict[0]:
+        return None
+    m = verdict[1]
+    dist, r, centers, circles = centers_and_circles(n, adj)
+    balls = stalling_balls(n, adj, m, dist, r, centers, circles)
+    return m, ball_shapes(n, adj, dist, r, balls)
+
+
+def stall_recipe_probes(
+        n: int, adj: list[int]) -> tuple[int, int, int, int] | None:
+    """`recipe_probes` を、グラフだけ渡して呼べるようにしたもの.
+
+    返り値は `(m, レシピ K, K + 中心, 仮定の頂点を混ぜた案)`。止まらない・
+    仮定を満たさないなら `None`。
+    """
+    verdict = stalls_in_ball(n, adj)
+    if verdict is None or not verdict[0]:
+        return None
+    m = verdict[1]
+    dist, r, centers, circles = centers_and_circles(n, adj)
+    balls = stalling_balls(n, adj, m, dist, r, centers, circles)
+    return m, *recipe_probes(n, adj, centers, circles, balls)
+
+
 class CaseStats:
     """場合 C の実態をためる入れ物 (総当たりと乱択で同じものを測る)."""
 
@@ -402,6 +523,9 @@ class CaseStats:
         self.radii: Counter[int] = Counter()
         self.sizes: Counter[int] = Counter()
         self.closed: Counter[str] = Counter()
+        self.shapes: Counter[tuple[tuple[int, bool], ...]] = Counter()
+        self.gaps: Counter[tuple[int, int]] = Counter()
+        self.vclosed: Counter[bool] = Counter()
         self.witnesses: list[tuple[str, int, int, int, int]] = []
 
     def feed(self, name: str, n: int, adj: list[int]) -> None:
@@ -423,6 +547,11 @@ class CaseStats:
         self.stall["球内で m 止まり"] += 1
         self.radii[r] += 1
         self.sizes[smallest_connected_set(n, adj, m + 1, 6)] += 1
+        balls = stalling_balls(n, adj, m, dist, r, centers, circles)
+        self.shapes[ball_shapes(n, adj, dist, r, balls)] += 1
+        k, ku, kv = recipe_probes(n, adj, centers, circles, balls)
+        self.gaps[(m + 1 - k, m + 1 - ku)] += 1
+        self.vclosed[kv >= m + 1] += 1
         tags = which_recipes_close(n, adj, dist, r, centers, circles, m)
         for tag in tags:
             self.closed[tag] += 1
@@ -452,6 +581,17 @@ class CaseStats:
         print("  同じものを閉じるレシピ:")
         for tag in sorted(RECIPES, key=lambda t: -self.closed[t]):
             print(f"    {tag}: {self.closed[tag]:,}")
+        print("  球の形 ((u を抜いた成分数, 証明した 3 点に合うか) の集まり):")
+        for key in sorted(self.shapes):
+            print(f"    {key}: {self.shapes[key]:,}")
+        print("  レシピ K / K + 中心が m+1 に足りない分:")
+        for key in sorted(self.gaps):
+            print(f"    K は {key[0]} 不足 / K + 中心は {key[1]} 不足: "
+                  f"{self.gaps[key]:,}")
+        print("  仮定の頂点 v を混ぜると閉じるか:")
+        for key in (True, False):
+            tag = "閉じる" if key else "閉じない"
+            print(f"    {tag}: {self.vclosed[key]:,}")
         if self.witnesses:
             print("  どのレシピも閉じない証人 "
                   "(graph6, n, r, m, 球を外した D' の下界):")

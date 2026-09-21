@@ -35,8 +35,8 @@ from l1_recipes import (  # noqa: E402
     smallest_connected_set,
 )
 from l1_reduction import (  # noqa: E402
-    boundary_size, case_of, recipe_dprime, stalls_in_ball,
-    which_recipes_close,
+    boundary_size, case_of, components, recipe_dprime, stall_recipe_probes,
+    stall_structure, stalls_in_ball, which_recipes_close,
 )
 
 #: 総当たりの上限位数 (n <= 8 なら数秒で終わる)。
@@ -279,7 +279,7 @@ def test_case_c_stall_counts_for_small_n():
     同時に、族 $T_q$ のように最小 $|S|$ が伸びるものは場合 A に入り、
     場合 C を脅かさないことも見張る。
     """
-    case_c = stalled = 0
+    case_c = stalled = closed_by_v = 0
     sizes: dict[int, int] = {}
     checked = 0
     for _n, path, op in graph_files(CASE_N):
@@ -303,11 +303,22 @@ def test_case_c_stall_counts_for_small_n():
                 assert r == 3, line
                 small = smallest_connected_set(n, adj, m + 1, 4)
                 assert 0 < small <= 3, line
+                # 形の 1..3 は docs で証明済みなので、実装がそのとおりに動く
+                # ことを見張る。成分数が 2 であることは測定値。
+                assert stall_structure(n, adj) == (m, ((2, True),)), line
+                # レシピ K も K + 中心も $m$ 止まり。$v$ を混ぜると伸びる
+                # ものがある。
+                probe = stall_recipe_probes(n, adj)
+                assert probe[:3] == (m, m, m), line
+                if probe[3] >= m + 1:
+                    closed_by_v += 1
                 sizes[small] = sizes.get(small, 0) + 1
     if checked == 0:
         pytest.skip("元データ (data/graphs) がない")
     assert (case_c, stalled) == (61, 57)
     assert sizes == {2: 37, 3: 20}
+    # $v$ を混ぜる案は半分強にしか効かないので、これ単独では閉じない。
+    assert closed_by_v == 37
     # 最小 $|S|$ が伸びる族は場合 A なので、この目標を脅かさない。
     for q in QS:
         n, adj, _name = build(q)
@@ -316,13 +327,14 @@ def test_case_c_stall_counts_for_small_n():
 
 #: `l1_reduction.hunt_cases` が $n = 11..18$ で拾った証人。どれも場合 C で
 #: 球内は $m$ 止まり、$m + 1$ に届く最小の連結集合が $|S| = 4$ なので、
-#: $|S| \le 3$ までの多項式時間レシピが全部外れる。(graph6, n, r, m)
+#: $|S| \le 3$ までの多項式時間レシピが全部外れる。証人ごとに
+#: (graph6, $n$, $r$, $m$, レシピ K の最大境界)。
 STALL_G6 = (
-    ("Jt`?OOAGOh?", 11, 3, 5),
-    ("KjIAC?A@?TAB", 12, 3, 6),
-    ("LpKPc@CC?QA?Oa", 13, 3, 7),
-    ("MqI?a?A?a??O@??G_", 14, 4, 6),
-    ("NhQ?GE??_OO_CO?_O@?", 15, 4, 7),
+    ("Jt`?OOAGOh?", 11, 3, 5, 5),
+    ("KjIAC?A@?TAB", 12, 3, 6, 6),
+    ("LpKPc@CC?QA?Oa", 13, 3, 7, 6),
+    ("MqI?a?A?a??O@??G_", 14, 4, 6, 5),
+    ("NhQ?GE??_OO_CO?_O@?", 15, 4, 7, 6),
 )
 
 
@@ -333,7 +345,7 @@ def test_case_c_stall_can_need_four_vertices():
     ($|S| \\le 3$ まで) が全部すり抜け、球を外した D' だけが $m + 1$ を出す。
     目標のサイズ上限が 4 であることの証人なので、ここに固定して見張る。
     """
-    for g6, want_n, want_r, want_m in STALL_G6:
+    for g6, want_n, want_r, want_m, want_k in STALL_G6:
         n, adj = decode_graph6(g6)
         dist, r, centers, circles = centers_and_circles(n, adj)
         m = max(len(circles[c]) for c in centers)
@@ -345,6 +357,11 @@ def test_case_c_stall_can_need_four_vertices():
         assert smallest_connected_set(n, adj, m + 1, 5) == 4, g6
         # 球を外した D' は届く。残余が 0 なのはこれのおかげ。
         assert recipe_dprime(n, adj, dist, r, centers, circles, m) >= m + 1, g6
+        # 球を $u$ で割る案 (レシピ K) は $m$ にすら届かないことがある。
+        # $v$ を混ぜる案もこの 5 件には効かない。
+        assert stall_structure(n, adj) == (m, ((2, True),)), g6
+        assert stall_recipe_probes(n, adj) == (m, want_k, want_k, m), g6
+        assert want_k <= m, g6
 
 
 #: 場合 C の球 $B_{r-1}(u)$ が閉路を持つ証人 ($n = 11$, $u = 5$)。
@@ -371,6 +388,12 @@ def test_case_c_ball_can_contain_a_cycle():
     assert (len(ball), edges) == (6, 6)
     assert connected_sub(n, adj, smask)
     assert boundary_size(n, adj, smask) == m
+    # 閉路があっても $u$ は切断点で、割った成分はどちらも $W$ の点を持つ。
+    assert [[x for x in range(n) if c >> x & 1]
+            for c in components(n, adj, smask & ~(1 << u))] == [[0, 1, 4],
+                                                                [8, 9]]
+    assert stall_structure(n, adj) == (m, ((2, True),))
+    assert stall_recipe_probes(n, adj) == (m, 4, 4, m)
 
 
 def test_j_or_f_closes_every_hypothesis_graph():
