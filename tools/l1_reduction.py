@@ -44,18 +44,24 @@ $\Delta < m + 1$ (1 点では済まない) のグラフに絞って数えると�
 ただし場合 C は「$S$ が球に収まる版の**論法が当たらない**」だけで、下界が
 $m$ で止まるとは限らない。実際に $\partial$ を測ると、球の中の $S$ が
 $m + 1$ を出しているものが多い。本当に止まるもの (`stalls_in_ball`) に絞ると
-$r$ が 3 か 4 に限られ、$m + 1$ に届く連結集合の最小サイズも 4 までしか
-伸びない (件数の内訳は `--cases` / `--hunt` の出力と `docs/next-problems.md`
-を見よ)。`l1_family.py` の族 $T_q$ — 最小 $|S|$ が $q + 1$ といくらでも伸びる
-もの — は全項が**場合 A** なので、サイズが伸びる例は場合 C に入ってこない。
+$r$ は 3 か 4 に限られる。一方で $m + 1$ に届く連結集合の**サイズには上限が
+張れない**: ``OkMCC_C?gH`??`AAW?K?@`` ($n = 16$, $r = 3$, $m = 10$,
+$\Delta = 7$) は最小の連結集合が 5 点を要する。`l1_family.py` の族 $T_q$ —
+最小 $|S|$ が $q + 1$ といくらでも伸びるもの — が**場合 A** について示して
+いた「サイズを縛ったままの一般証明は書けない」が、場合 C でも同じように
+成り立つ (件数の内訳は `--cases` / `--hunt` の出力と
+`docs/next-problems.md`)。
 
-したがって次の目標は
+代わりに使えるのが球の側の飽和である。止まっているとき、$B_{r-1}(u)$ の
+連結な部分集合が出せる境界の最大値は測った 162 件すべてで**ちょうど $m$**
+(`ball_ceiling`)、そして $m + 1$ を出す最小の連結集合 $T$ は例外なく球の外へ
+出て、$u$ を含まず、$R(u)$ に交わる (`witness_shapes`)。したがって次の目標は
 
-> **場合 C で球内の下界が $m$ で止まるなら、$r \le 4$ かつ $|S| \le 4$ の
-> 連結集合が $|N(S) \setminus S| \ge m + 1$ を与える。**
+> **場合 C で球内の下界が $m$ で止まるなら、$R(u)$ の点を含む連結集合 $S$ が
+> $|N(S) \setminus S| \ge m + 1$ を与える。**
 
 である。場合 A・B は証明済みなので、これが出れば補題 L1 が落ちる。
-$|S| = 4$ が要るものは多項式時間レシピの階層 ($|S| \le 3$ まで) をすり抜ける
+$|S| \ge 4$ が要るものは多項式時間レシピの階層 ($|S| \le 3$ まで) をすり抜ける
 が、球を外した D' はそこでも $m + 1$ を出している (`--hunt` の証人欄)。
 回帰テストは `tests/test_l1_recipes.py` の `test_case_c_stall_*`。
 
@@ -420,6 +426,9 @@ def stalling_balls(n: int, adj: list[int], m: int, dist: list[list[int]],
         for smask in min_connected_supersets(n, adj, wmask, bmask):
             if boundary_size(n, adj, smask) >= m + 1:
                 continue
+            # 止まる $\iff$ $S = B_{r-1}(u)$ (`docs/next-problems.md` の 1)。
+            # 下流は第 3 要素を球として読むので、等式をここで確かめておく。
+            assert smask == bmask, (u, smask, bmask)
             if (u, wmask, smask) not in seen:
                 seen.add((u, wmask, smask))
                 out.append((u, wmask, smask))
@@ -481,6 +490,65 @@ def recipe_probes(n: int, adj: list[int], centers: list[int],
     return k, ku, kv
 
 
+def ball_ceiling(n: int, adj: list[int], bmask: int) -> int:
+    """球に収まる連結集合が出せる境界の最大値.
+
+    D' は $W$ を含む最小の $S$ しか見ないので、球の中に他に強い $S$ が
+    残っている可能性を潰していない。ここは球の部分集合を全部見る。
+    """
+    best = 0
+    sub = bmask
+    while sub:
+        b = boundary_size(n, adj, sub)
+        if b > best and connected_sub(n, adj, sub):
+            best = b
+        sub = (sub - 1) & bmask
+    return best
+
+
+def min_witnesses(n: int, adj: list[int], need: int,
+                  kmax: int) -> tuple[int, list[int]]:
+    """境界が `need` 以上の連結集合のうち、最小サイズのものを全部返す.
+
+    返り値は `(サイズ, マスクの列)`。サイズの小さい方から試すので
+    $O(n^{kmax})$ で、`kmax` 以下に無ければ `(0, [])`。
+    """
+    for k in range(1, kmax + 1):
+        found = []
+        for comb in combinations(range(n), k):
+            mask = 0
+            for x in comb:
+                mask |= 1 << x
+            if boundary_size(n, adj, mask) >= need \
+                    and connected_sub(n, adj, mask):
+                found.append(mask)
+        if found:
+            return k, found
+    return 0, []
+
+
+def witness_shapes(n: int, adj: list[int], m: int,
+                   circles: dict[int, list[int]],
+                   balls: list[tuple[int, int, int]],
+                   kmax: int = 6) -> tuple[tuple[int, bool, bool, int], ...]:
+    """$m + 1$ を出す**最小**の連結集合 $T$ の形を、重複なく並べて返す.
+
+    `balls` は `stalling_balls` の返り値。返り値は
+    `(|T|, 球に収まるか, u を含むか, |T \\cap R(u)|)` の集まりで、球が
+    複数あるときは球ごとに数える。`kmax` 以下に $T$ が無ければ空。
+    """
+    size, wits = min_witnesses(n, adj, m + 1, kmax)
+    shapes: set[tuple[int, bool, bool, int]] = set()
+    for u, _wmask, bmask in balls:
+        rmask = 0
+        for y in circles[u]:
+            rmask |= 1 << y
+        for t in wits:
+            shapes.add((size, not t & ~bmask, bool(t >> u & 1),
+                        popcount(t & rmask)))
+    return tuple(sorted(shapes))
+
+
 def stall_structure(
         n: int,
         adj: list[int]) -> tuple[int, tuple[tuple[int, bool], ...]] | None:
@@ -513,6 +581,38 @@ def stall_recipe_probes(
     return m, *recipe_probes(n, adj, centers, circles, balls)
 
 
+def stall_ball_ceiling(n: int, adj: list[int]) -> tuple[int, int] | None:
+    """`ball_ceiling` を、グラフだけ渡して呼べるようにしたもの.
+
+    返り値は `(m, 球の中で出せる境界の最大値)`。球が複数あるときは最大を
+    取る。止まらない・仮定を満たさないなら `None`。
+    """
+    verdict = stalls_in_ball(n, adj)
+    if verdict is None or not verdict[0]:
+        return None
+    m = verdict[1]
+    dist, r, centers, circles = centers_and_circles(n, adj)
+    balls = stalling_balls(n, adj, m, dist, r, centers, circles)
+    return m, max(ball_ceiling(n, adj, bmask) for _u, _w, bmask in balls)
+
+
+def stall_witness_shapes(
+        n: int, adj: list[int]
+) -> tuple[int, tuple[tuple[int, bool, bool, int], ...]] | None:
+    """`witness_shapes` を、グラフだけ渡して呼べるようにしたもの.
+
+    返り値は `(m, 最小の証人の形)`。止まらない・仮定を満たさないなら
+    `None`。
+    """
+    verdict = stalls_in_ball(n, adj)
+    if verdict is None or not verdict[0]:
+        return None
+    m = verdict[1]
+    dist, r, centers, circles = centers_and_circles(n, adj)
+    balls = stalling_balls(n, adj, m, dist, r, centers, circles)
+    return m, witness_shapes(n, adj, m, circles, balls)
+
+
 class CaseStats:
     """場合 C の実態をためる入れ物 (総当たりと乱択で同じものを測る)."""
 
@@ -526,6 +626,9 @@ class CaseStats:
         self.shapes: Counter[tuple[tuple[int, bool], ...]] = Counter()
         self.gaps: Counter[tuple[int, int]] = Counter()
         self.vclosed: Counter[bool] = Counter()
+        self.ceiling: Counter[int] = Counter()
+        self.wshapes: Counter[tuple[tuple[int, bool, bool, int], ...]] \
+            = Counter()
         self.witnesses: list[tuple[str, int, int, int, int]] = []
 
     def feed(self, name: str, n: int, adj: list[int]) -> None:
@@ -552,6 +655,9 @@ class CaseStats:
         k, ku, kv = recipe_probes(n, adj, centers, circles, balls)
         self.gaps[(m + 1 - k, m + 1 - ku)] += 1
         self.vclosed[kv >= m + 1] += 1
+        self.ceiling[m + 1 - max(ball_ceiling(n, adj, bmask)
+                                 for _u, _w, bmask in balls)] += 1
+        self.wshapes[witness_shapes(n, adj, m, circles, balls)] += 1
         tags = which_recipes_close(n, adj, dist, r, centers, circles, m)
         for tag in tags:
             self.closed[tag] += 1
@@ -592,6 +698,14 @@ class CaseStats:
         for key in (True, False):
             tag = "閉じる" if key else "閉じない"
             print(f"    {tag}: {self.vclosed[key]:,}")
+        print("  球に収まる連結集合の境界の最大値が m+1 に足りない分:")
+        for key in sorted(self.ceiling):
+            print(f"    {key} 不足: {self.ceiling[key]:,}")
+        print("  m+1 を出す最小の T の形 "
+              "((|T|, 球に収まるか, u を含むか, |T∩R(u)|) の集まり):")
+        for key in sorted(self.wshapes):
+            label = f"{key}" if key else "最小の T が kmax を超えた"
+            print(f"    {label}: {self.wshapes[key]:,}")
         if self.witnesses:
             print("  どのレシピも閉じない証人 "
                   "(graph6, n, r, m, 球を外した D' の下界):")

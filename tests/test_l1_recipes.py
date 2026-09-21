@@ -35,8 +35,9 @@ from l1_recipes import (  # noqa: E402
     smallest_connected_set,
 )
 from l1_reduction import (  # noqa: E402
-    boundary_size, case_of, components, recipe_dprime, stall_recipe_probes,
-    stall_structure, stalls_in_ball, which_recipes_close,
+    boundary_size, case_of, components, recipe_dprime, stall_ball_ceiling,
+    stall_recipe_probes, stall_structure, stall_witness_shapes,
+    stalls_in_ball, which_recipes_close,
 )
 
 #: 総当たりの上限位数 (n <= 8 なら数秒で終わる)。
@@ -312,6 +313,11 @@ def test_case_c_stall_counts_for_small_n():
                 assert probe[:3] == (m, m, m), line
                 if probe[3] >= m + 1:
                     closed_by_v += 1
+                # 球の中は $m$ で使い切られていて、最小の証人は必ず球の外・
+                # $u$ を含まず・$R(u)$ に交わる (どちらも測定値)。
+                assert stall_ball_ceiling(n, adj) == (m, m), line
+                shapes = stall_witness_shapes(n, adj)[1]
+                assert shapes == ((small, False, False, 1),), line
                 sizes[small] = sizes.get(small, 0) + 1
     if checked == 0:
         pytest.skip("元データ (data/graphs) がない")
@@ -343,7 +349,6 @@ def test_case_c_stall_can_need_four_vertices():
 
     これらは $m + 1$ に届く連結集合の最小サイズが 4 なので、レシピ階層
     ($|S| \\le 3$ まで) が全部すり抜け、球を外した D' だけが $m + 1$ を出す。
-    目標のサイズ上限が 4 であることの証人なので、ここに固定して見張る。
     """
     for g6, want_n, want_r, want_m, want_k in STALL_G6:
         n, adj = decode_graph6(g6)
@@ -362,6 +367,38 @@ def test_case_c_stall_can_need_four_vertices():
         assert stall_structure(n, adj) == (m, ((2, True),)), g6
         assert stall_recipe_probes(n, adj) == (m, want_k, want_k, m), g6
         assert want_k <= m, g6
+        # 球の中は使い切られていて、証人は必ず球の外に出る。
+        assert stall_ball_ceiling(n, adj) == (m, m), g6
+        for size, inside, has_u, hits in stall_witness_shapes(n, adj)[1]:
+            assert (size, inside, has_u) == (4, False, False), g6
+            assert hits >= 1, g6
+
+
+#: 最小の $|S|$ が 5 になる場合 C の証人 (`--hunt 20260921 60000` が拾う)。
+#: $n = 16$, $r = 3$, $m = 10$, $\Delta = 7$。
+BIG_STALL_G6 = "OkMCC_C?gH`??`AAW?K?@"
+
+
+def test_case_c_stall_can_need_five_vertices():
+    """$m + 1$ に届く連結集合のサイズに上限が張れないことを固定する.
+
+    $|S| \\le 4$ で足りるなら $O(n^4)$ のレシピ階層で場合 C が閉じるが、この
+    証人は最小 $|S| = 5$ なので、サイズを縛ったままの一般証明は場合 C でも
+    書けない (族 $T_q$ が場合 A について示したことの、場合 C 版)。
+    """
+    n, adj = decode_graph6(BIG_STALL_G6)
+    dist, r, centers, circles = centers_and_circles(n, adj)
+    m = max(len(circles[c]) for c in centers)
+    assert (n, r, m) == (16, 3, 10)
+    assert max(popcount(a) for a in adj) == 7  # $\Delta < m + 1$
+    assert stalls_in_ball(n, adj) == (True, m)
+    assert which_recipes_close(n, adj, dist, r, centers, circles, m) == []
+    assert smallest_connected_set(n, adj, m + 1, 4) == 0
+    assert smallest_connected_set(n, adj, m + 1, 6) == 5
+    assert recipe_dprime(n, adj, dist, r, centers, circles, m) >= m + 1
+    assert stall_ball_ceiling(n, adj) == (m, m)
+    assert stall_witness_shapes(n, adj) == (
+        m, ((5, False, False, 1), (5, False, False, 2)))
 
 
 #: 場合 C の球 $B_{r-1}(u)$ が閉路を持つ証人 ($n = 11$, $u = 5$)。
