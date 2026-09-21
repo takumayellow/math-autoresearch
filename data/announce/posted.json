@@ -1,0 +1,14 @@
+{
+  "posts": [
+    {
+      "problem_id": "p0008_wowii141_girth_tree",
+      "certificate_digest": "76de2b9099790564",
+      "posted_at": "",
+      "text": "Graffiti.pc が2005年に出した未解決予想 Written on the Wall II #141 を証明しました。連結グラフで girth/2 − 1 + ℓmax ≤ tree(G)。半径 ⌊girth/2⌋−1 の球が木を誘導する、という初等的な議論です。等号は girth=4 かつ最大誘導木が星のときに限ることも示しました。",
+      "tweet_id": "",
+      "tweet_url": "",
+      "tweet_ids": [],
+      "dry_run": false
+    }
+  ]
+}
