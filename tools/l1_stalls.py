@@ -9,8 +9,8 @@ r"""止まっている場合 C の証人を、種を振り直さずに使える�
     PYTHONIOENCODING=utf-8 python tools/l1_stalls.py --rebuild
 
 で作り直せる (総当たり $n \le 9$ + 乱択 4 種、合わせて 3 分ほど)。中身が本当に
-止まっているかは `tests/test_l1_stalls.py` が毎回確かめるので、キャッシュが
-古くなっても嘘をつくことはない。
+止まっているかは `tests/test_l1_stalls.py` が毎回確かめる。ただしキャッシュに
+入っていない止まりは見ないので、判定の側を変えたら作り直す。
 
 使い方:
 
@@ -120,7 +120,12 @@ def _generate() -> tuple[list[str], list[int]]:
     for src in SOURCES:
         before = len(found)
         if src[0] == "brute":
-            for _n, path, op in graph_files(src[1]):
+            files = list(graph_files(src[1]))
+            missing = sorted(set(range(3, src[1] + 1)) - {f[0] for f in files})
+            if missing:
+                # 足りないまま書き出すと、正しいキャッシュを黙って縮めてしまう。
+                raise LookupError(f"data/graphs に位数 {missing} の graph6 が無い")
+            for _n, path, op in files:
                 with op(path, "rt") as fh:
                     for line in fh:
                         line = line.strip()

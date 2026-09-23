@@ -1,8 +1,9 @@
 r"""止まっている場合 C の証人 265 件について、測った事実をまとめて固定する.
 
-`tools/l1_stalls.py` のキャッシュは生成に数分かかるので、中身が本当に止まって
-いるか・測定値が書いたとおりかを毎回ここで確かめる。キャッシュが古くなっても
-このテストが落ちるので、`docs/next-problems.md` の数字が嘘になることはない。
+`tools/l1_stalls.py` のキャッシュは生成に数分かかるので、キャッシュにある
+グラフが本当に止まっているか・下の性質を満たすかを毎回ここで確かめる。
+キャッシュに入っていない止まりは見ない (作り直しは `--rebuild`)。
+265 件は graph6 の文字列として数えたもので、同型を除くと 255 グラフになる。
 
 固定するのは次の 5 点である。
 
@@ -25,7 +26,9 @@ TOOLS = Path(__file__).resolve().parent.parent / "tools"
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
-from l1_coverage import ball_mask, centers_and_circles  # noqa: E402
+from l1_coverage import (  # noqa: E402
+    ball_mask, centers_and_circles, decode_graph6,
+)
 from l1_reduction import (  # noqa: E402
     ball_ceiling, boundary_size, connected_sub, greedy_circle, min_witnesses,
     stalls_in_ball,
@@ -43,7 +46,7 @@ SOURCE_COUNTS = [57, 50, 55, 51, 52]
 
 
 def test_cache_is_well_formed():
-    """キャッシュが出どころ付きで、重複なく 265 件あることを固定する."""
+    """キャッシュが出どころ付きで、graph6 の文字列として重複なく 265 件あることを固定する."""
     blob = json.loads(CACHE.read_text(encoding="utf-8"))
     assert [tuple(s) for s in blob["sources"]] == list(SOURCES)
     assert blob["counts"] == SOURCE_COUNTS
@@ -64,10 +67,15 @@ def test_by_source_splits_in_order():
 
 def test_every_cached_graph_really_stalls():
     """キャッシュの中身が本当に止まっていることを、定義から確かめ直す."""
+    # `stalls()` は止まらないグラフを黙って飛ばすので、1 件ずつ定義から見る。
+    graphs = load()
+    for g in graphs:
+        verdict = stalls_in_ball(*decode_graph6(g))
+        assert verdict is not None and verdict[0], g
     cases = stalls()
     assert len(cases) == STALL_COUNT
+    assert [c.name for c in cases] == graphs  # 1 グラフにつき球 1 つ
     for c in cases:
-        assert stalls_in_ball(c.n, c.adj) == (True, c.m), c.name
         # 止まる $\iff$ $S = B_{r-1}(u)$ なので、球の側も一致するはず。
         dist, r, _centers, circles = centers_and_circles(c.n, c.adj)
         assert (r, len(circles[c.u])) == (c.r, len(c.circle)), c.name
