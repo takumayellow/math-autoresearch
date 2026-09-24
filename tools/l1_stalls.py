@@ -33,13 +33,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from l1_coverage import (  # noqa: E402
     centers_and_circles, decode_graph6, graph_files,
 )
-from l1_reduction import stalling_balls, stalls_in_ball  # noqa: E402
+from l1_reduction import (  # noqa: E402
+    HUNT_NS, iter_brute, iter_hunt, stalling_balls, stalls_in_ball,
+)
 
 #: キャッシュの置き場所。
 CACHE = Path(__file__).resolve().parent.parent / "data" / "stalls" / \
     "case_c.json"
 
 #: キャッシュの出どころ。`("brute", 上限位数)` と `("hunt", 種, 試行数)`。
+#: 乱択が振る位数 `HUNT_NS` もキャッシュに書き、テストで照合する。
 SOURCES: tuple[tuple, ...] = (
     ("brute", 9),
     ("hunt", 20260923, 60_000),
@@ -55,11 +58,11 @@ class Stall:
 
     name: str                    #: graph6
     n: int
-    adj: list[int]
+    adj: tuple[int, ...]
     r: int                       #: 半径
     m: int                       #: $\max_{u \in C} |R(u)|$
     u: int                       #: 止まっている球の中心
-    circle: list[int]            #: $R(u)$
+    circle: tuple[int, ...]      #: $R(u)$
     bmask: int                   #: $B_{r-1}(u)$
     wmask: int                   #: $R(u)$ を支配する $W \subseteq L_{r-1}(u)$
 
@@ -85,7 +88,8 @@ def stalls(names: list[str] | None = None) -> list[Stall]:
         dist, r, centers, circles = centers_and_circles(n, adj)
         for u, wmask, bmask in stalling_balls(n, adj, m, dist, r, centers,
                                               circles):
-            out.append(Stall(name, n, adj, r, m, u, circles[u], bmask, wmask))
+            out.append(Stall(name, n, tuple(adj), r, m, u, tuple(circles[u]),
+                             bmask, wmask))
     return out
 
 
@@ -107,42 +111,26 @@ def by_source() -> list[tuple[tuple, list[Stall]]]:
 def _generate() -> tuple[list[str], list[int]]:
     """`SOURCES` のとおりに止まりを集め直す (数分かかる).
 
-    返り値は `(graph6 の列, 出どころごとの件数)`。
+    返り値は `(graph6 の列, 出どころごとの件数)`。グラフの引き方は `--cases` /
+    `--hunt` と同じ `iter_brute` / `iter_hunt` を使う。
     """
-    import random
-
-    from l1_family import encode_graph6, random_graph
-
-    from l1_reduction import HUNT_NS
-
     found: list[str] = []
     counts: list[int] = []
     for src in SOURCES:
-        before = len(found)
         if src[0] == "brute":
-            files = list(graph_files(src[1]))
-            missing = sorted(set(range(3, src[1] + 1)) - {f[0] for f in files})
+            have = {f[0] for f in graph_files(src[1])}
+            missing = sorted(set(range(3, src[1] + 1)) - have)
             if missing:
                 # 足りないまま書き出すと、正しいキャッシュを黙って縮めてしまう。
                 raise LookupError(f"data/graphs に位数 {missing} の graph6 が無い")
-            for _n, path, op in files:
-                with op(path, "rt") as fh:
-                    for line in fh:
-                        line = line.strip()
-                        if not line:
-                            continue
-                        nn, adj = decode_graph6(line)
-                        v = stalls_in_ball(nn, adj)
-                        if v is not None and v[0]:
-                            found.append(line)
+            graphs = iter_brute(src[1])
         else:
-            rng = random.Random(src[1])
-            for _ in range(src[2]):
-                nn = rng.choice(HUNT_NS)
-                adj = random_graph(rng, nn)
-                v = stalls_in_ball(nn, adj)
-                if v is not None and v[0]:
-                    found.append(encode_graph6(nn, adj))
+            graphs = iter_hunt(src[1], src[2])
+        before = len(found)
+        for name, n, adj in graphs:
+            verdict = stalls_in_ball(n, adj)
+            if verdict is not None and verdict[0]:
+                found.append(name)
         counts.append(len(found) - before)
         print(f"  {src}: {counts[-1]} 件", file=sys.stderr)
     return found, counts
@@ -153,7 +141,8 @@ def rebuild() -> list[str]:
     graphs, counts = _generate()
     CACHE.parent.mkdir(parents=True, exist_ok=True)
     CACHE.write_text(
-        json.dumps({"sources": [list(s) for s in SOURCES], "counts": counts,
+        json.dumps({"sources": [list(s) for s in SOURCES],
+                    "hunt_ns": list(HUNT_NS), "counts": counts,
                     "graphs": graphs}, indent=1) + "\n",
         encoding="utf-8", newline="\n")
     print(f"{len(graphs)} 件 -> {CACHE}", file=sys.stderr)

@@ -427,11 +427,11 @@ def test_case_c_stall_defeats_greedy():
     u = 12  # $|R(u)| = m$ を実現する中心 (止まっている球の中心)
     assert u in centers and len(circles[u]) == m
     best = {0, 1, 2, 3, 10}
-    bmask = 0
+    tmask = 0
     for x in best:
-        bmask |= 1 << x
-    assert connected_sub(n, adj, bmask)
-    assert boundary_size(n, adj, bmask) == m + 1
+        tmask |= 1 << x
+    assert connected_sub(n, adj, tmask)
+    assert boundary_size(n, adj, tmask) == m + 1
     assert best & set(circles[u])
     assert smallest_connected_set(n, adj, m + 1, 6) == 5
     # 球の中は他の止まりと同じく使い切られている。

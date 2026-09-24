@@ -90,6 +90,7 @@ from __future__ import annotations
 import sys
 import time
 from collections import Counter
+from collections.abc import Iterator
 from itertools import combinations
 from pathlib import Path
 
@@ -592,6 +593,37 @@ def greedy_circle(n: int, adj: list[int], circle: list[int]) -> int:
     return best
 
 
+def greedy_circle_span(n: int, adj: list[int],
+                       circle: list[int]) -> tuple[int, int]:
+    """`greedy_circle` の同点の崩し方をすべて試したときの `(最悪, 最良)`.
+
+    `greedy_circle` は利得が同じなら番号の小さい点を取るので、閉じるかどうかが
+    頂点の番号付けに左右されうる。崩し方は各段で自由に選べるものとし、出発点
+    $y$ ごとに最悪・最良を取ってから $y$ について最大を取る。
+    """
+    memo: dict[int, tuple[int, int]] = {}
+
+    def run(mask: int) -> tuple[int, int]:
+        if mask in memo:
+            return memo[mask]
+        cur, nb = boundary_size(n, adj, mask), 0
+        for x in range(n):
+            if mask >> x & 1:
+                nb |= adj[x]
+        steps = [(boundary_size(n, adj, mask | 1 << z) - cur, z)
+                 for z in range(n) if not (mask >> z & 1) and nb >> z & 1]
+        gain = max((g for g, _z in steps), default=0)
+        if gain <= 0:
+            memo[mask] = (cur, cur)
+        else:
+            outs = [run(mask | 1 << z) for g, z in steps if g == gain]
+            memo[mask] = (min(o[0] for o in outs), max(o[1] for o in outs))
+        return memo[mask]
+
+    ends = [run(1 << y) for y in circle]
+    return max(lo for lo, _hi in ends), max(hi for _lo, hi in ends)
+
+
 def stall_structure(
         n: int,
         adj: list[int]) -> tuple[int, tuple[tuple[int, bool], ...]] | None:
@@ -779,21 +811,43 @@ class CaseStats:
                 print(f"    {row}")
 
 
-def scan_cases(nmax: int) -> None:
-    """A / B / C の内訳を、仮定の有無で対照して総当たりで数える."""
-    stats = CaseStats()
+#: `--hunt` が振る位数。総当たり (n <= 10) の外を見るためのもの。
+HUNT_NS = (11, 12, 13, 14, 15, 16, 17, 18)
+
+
+def iter_brute(nmax: int) -> Iterator[tuple[str, int, list[int]]]:
+    """`data/graphs` の $n \\le$ `nmax` を `(graph6, n, adj)` で順に返す."""
     for _n, path, op in graph_files(nmax):
         with op(path, "rt") as fh:
             for line in fh:
                 line = line.strip()
                 if line:
-                    nn, adj = decode_graph6(line)
-                    stats.feed(line, nn, adj)
+                    yield (line, *decode_graph6(line))
+
+
+def iter_hunt(seed: int, trials: int) -> Iterator[tuple[str, int, list[int]]]:
+    """種 `seed` の乱択グラフを `trials` 個、`(graph6, n, adj)` で順に返す.
+
+    `--hunt` と `tools/l1_stalls.py` のキャッシュが同じ列を見るよう、引き方は
+    ここ 1 か所に置く。
+    """
+    import random  # `--hunt` のときだけ要る
+
+    from l1_family import encode_graph6, random_graph  # 循環参照を避けるため
+
+    rng = random.Random(seed)
+    for _ in range(trials):
+        n = rng.choice(HUNT_NS)
+        adj = random_graph(rng, n)
+        yield encode_graph6(n, adj), n, adj
+
+
+def scan_cases(nmax: int) -> None:
+    """A / B / C の内訳を、仮定の有無で対照して総当たりで数える."""
+    stats = CaseStats()
+    for name, n, adj in iter_brute(nmax):
+        stats.feed(name, n, adj)
     stats.report(f"総当たり n <= {nmax}")
-
-
-#: `--hunt` が振る位数。総当たり (n <= 10) の外を見るためのもの。
-HUNT_NS = (11, 12, 13, 14, 15, 16, 17, 18)
 
 
 def hunt_cases(seed: int, trials: int) -> None:
@@ -802,16 +856,9 @@ def hunt_cases(seed: int, trials: int) -> None:
     `scan_cases` と同じものを数える。$n \\le 10$ の観測が小さい $n$ の
     偶然でないかを見るためのもの。
     """
-    import random  # `--hunt` のときだけ要る
-
-    from l1_family import encode_graph6, random_graph  # 循環参照を避けるため
-
-    rng = random.Random(seed)
     stats = CaseStats()
-    for _ in range(trials):
-        n = rng.choice(HUNT_NS)
-        adj = random_graph(rng, n)
-        stats.feed(encode_graph6(n, adj), n, adj)
+    for name, n, adj in iter_hunt(seed, trials):
+        stats.feed(name, n, adj)
     stats.report(f"乱択 n in {HUNT_NS} (seed={seed}, {trials:,} 回)")
 
 
