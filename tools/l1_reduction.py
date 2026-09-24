@@ -53,7 +53,7 @@ $\Delta = 7$) は最小の連結集合が 5 点を要する。`l1_family.py` の
 `docs/next-problems.md`)。
 
 代わりに使えるのが球の側の飽和である。止まっているとき、$B_{r-1}(u)$ の
-連結な部分集合が出せる境界の最大値は測った 162 件すべてで**ちょうど $m$**
+連結な部分集合が出せる境界の最大値は測った 265 件すべてで**ちょうど $m$**
 (`ball_ceiling`)、そして $m + 1$ を出す最小の連結集合 $T$ は例外なく球の外へ
 出て、$u$ を含まず、$R(u)$ に交わる (`witness_shapes`)。したがって次の目標は
 
@@ -65,17 +65,32 @@ $|S| \ge 4$ が要るものは多項式時間レシピの階層 ($|S| \le 3$ ま
 が、球を外した D' はそこでも $m + 1$ を出している (`--hunt` の証人欄)。
 回帰テストは `tests/test_l1_recipes.py` の `test_case_c_stall_*`。
 
+## この目標を**具体的なレシピで**出そうとする路線は折れている
+
+最小の証人はどれも $R(u)$ の点を含む 2〜5 点の連結集合 (265 件中 264 件で
+木に取れる) なので、$R(u)$ の点から貪欲に伸ばすレシピ (`greedy_circle`。
+多項式・サイズ無制限) が残った唯一の形だった。測ると 265 件のうち 264 件を
+閉じるが、``OkG__R?C?_?C@??B?@Oc?`` ($n = 16$, $r = 4$, $m = 7$) で局所最適に
+落ちる: $0 \in R(u)$ から $\{0\} \to \{0, 3\} \to \{0, 3, 10\}$ と伸びて境界 7
+で止まる。$1$ を足しても境界は 7 のままで ($2$ は $1$ を足すまで隣接しない)、
+$1$ と $2$ を両方足して初めて境界 8 の $\{0, 1, 2, 3, 10\}$ になる。$R(u)$ に
+限らずどの点から始めても同じである。サイズを縛った
+階層はサイズ上限の反証で、縛らない貪欲はこの証人で折れたので、目標は
+レシピでなく**証明として**取りに行く。
+
 使い方 (`--cases` までは data/graphs に McKay の graph6 が要る):
 
     PYTHONIOENCODING=utf-8 python tools/l1_reduction.py 9
     PYTHONIOENCODING=utf-8 python tools/l1_reduction.py 9 --cases
     PYTHONIOENCODING=utf-8 python tools/l1_reduction.py 20260923 60000 --hunt
+    PYTHONIOENCODING=utf-8 python tools/l1_reduction.py 20260924 60000 --hunt
 """
 from __future__ import annotations
 
 import sys
 import time
 from collections import Counter
+from collections.abc import Iterator
 from itertools import combinations
 from pathlib import Path
 
@@ -549,6 +564,66 @@ def witness_shapes(n: int, adj: list[int], m: int,
     return tuple(sorted(shapes))
 
 
+def greedy_circle(n: int, adj: list[int], circle: list[int]) -> int:
+    """$R(u)$ の点から境界が伸びる限り隣接点を足したときの、境界の最大値.
+
+    最小の証人はどれも $R(u)$ の点を含む小さい連結集合なので、そこから貪欲に
+    伸ばすレシピ (多項式・サイズ無制限) が当たるかを測る。サイズ上限が
+    張れない以上、サイズを縛らないレシピはここしか残っていない。当たらない
+    ことは `tests/test_l1_recipes.py` の `test_case_c_stall_defeats_greedy`
+    が固定する。
+    """
+    best = 0
+    for y in circle:
+        mask, cur, nb = 1 << y, boundary_size(n, adj, 1 << y), adj[y]
+        while True:
+            gain, pick = 0, -1
+            for z in range(n):
+                if (mask >> z & 1) or not (nb >> z & 1):
+                    continue
+                val = boundary_size(n, adj, mask | (1 << z))
+                if val - cur > gain:
+                    gain, pick = val - cur, z
+            if pick < 0:
+                break
+            mask |= 1 << pick
+            nb |= adj[pick]
+            cur += gain
+        best = max(best, cur)
+    return best
+
+
+def greedy_circle_span(n: int, adj: list[int],
+                       circle: list[int]) -> tuple[int, int]:
+    """`greedy_circle` の同点の崩し方をすべて試したときの `(最悪, 最良)`.
+
+    `greedy_circle` は利得が同じなら番号の小さい点を取るので、閉じるかどうかが
+    頂点の番号付けに左右されうる。崩し方は各段で自由に選べるものとし、出発点
+    $y$ ごとに最悪・最良を取ってから $y$ について最大を取る。
+    """
+    memo: dict[int, tuple[int, int]] = {}
+
+    def run(mask: int) -> tuple[int, int]:
+        if mask in memo:
+            return memo[mask]
+        cur, nb = boundary_size(n, adj, mask), 0
+        for x in range(n):
+            if mask >> x & 1:
+                nb |= adj[x]
+        steps = [(boundary_size(n, adj, mask | 1 << z) - cur, z)
+                 for z in range(n) if not (mask >> z & 1) and nb >> z & 1]
+        gain = max((g for g, _z in steps), default=0)
+        if gain <= 0:
+            memo[mask] = (cur, cur)
+        else:
+            outs = [run(mask | 1 << z) for g, z in steps if g == gain]
+            memo[mask] = (min(o[0] for o in outs), max(o[1] for o in outs))
+        return memo[mask]
+
+    ends = [run(1 << y) for y in circle]
+    return max(lo for lo, _hi in ends), max(hi for _lo, hi in ends)
+
+
 def stall_structure(
         n: int,
         adj: list[int]) -> tuple[int, tuple[tuple[int, bool], ...]] | None:
@@ -613,6 +688,21 @@ def stall_witness_shapes(
     return m, witness_shapes(n, adj, m, circles, balls)
 
 
+def stall_greedy(n: int, adj: list[int]) -> tuple[int, int] | None:
+    """`greedy_circle` を、グラフだけ渡して呼べるようにしたもの.
+
+    返り値は `(m, 貪欲が出せる境界)`。球が複数あるときは最悪 (最小) を
+    取る。止まらない・仮定を満たさないなら `None`。
+    """
+    verdict = stalls_in_ball(n, adj)
+    if verdict is None or not verdict[0]:
+        return None
+    m = verdict[1]
+    dist, r, centers, circles = centers_and_circles(n, adj)
+    balls = stalling_balls(n, adj, m, dist, r, centers, circles)
+    return m, min(greedy_circle(n, adj, circles[u]) for u, _w, _b in balls)
+
+
 class CaseStats:
     """場合 C の実態をためる入れ物 (総当たりと乱択で同じものを測る)."""
 
@@ -629,6 +719,7 @@ class CaseStats:
         self.ceiling: Counter[int] = Counter()
         self.wshapes: Counter[tuple[tuple[int, bool, bool, int], ...]] \
             = Counter()
+        self.greedy: Counter[int] = Counter()
         self.witnesses: list[tuple[str, int, int, int, int]] = []
 
     def feed(self, name: str, n: int, adj: list[int]) -> None:
@@ -658,6 +749,9 @@ class CaseStats:
         self.ceiling[m + 1 - max(ball_ceiling(n, adj, bmask)
                                  for _u, _w, bmask in balls)] += 1
         self.wshapes[witness_shapes(n, adj, m, circles, balls)] += 1
+        # 貪欲は $m + 1$ を越えることがあるので、足りない分は 0 で止める。
+        self.greedy[max(0, m + 1 - min(greedy_circle(n, adj, circles[u])
+                                       for u, _w, _b in balls))] += 1
         tags = which_recipes_close(n, adj, dist, r, centers, circles, m)
         for tag in tags:
             self.closed[tag] += 1
@@ -706,6 +800,10 @@ class CaseStats:
         for key in sorted(self.wshapes):
             label = f"{key}" if key else "最小の T が kmax を超えた"
             print(f"    {label}: {self.wshapes[key]:,}")
+        print("  R(u) 起点の貪欲が m+1 に足りない分:")
+        for key in sorted(self.greedy):
+            tag = "届く (閉じる)" if key == 0 else f"{key} 不足"
+            print(f"    {tag}: {self.greedy[key]:,}")
         if self.witnesses:
             print("  どのレシピも閉じない証人 "
                   "(graph6, n, r, m, 球を外した D' の下界):")
@@ -713,21 +811,43 @@ class CaseStats:
                 print(f"    {row}")
 
 
-def scan_cases(nmax: int) -> None:
-    """A / B / C の内訳を、仮定の有無で対照して総当たりで数える."""
-    stats = CaseStats()
+#: `--hunt` が振る位数。総当たり (n <= 10) の外を見るためのもの。
+HUNT_NS = (11, 12, 13, 14, 15, 16, 17, 18)
+
+
+def iter_brute(nmax: int) -> Iterator[tuple[str, int, list[int]]]:
+    """`data/graphs` の $n \\le$ `nmax` を `(graph6, n, adj)` で順に返す."""
     for _n, path, op in graph_files(nmax):
         with op(path, "rt") as fh:
             for line in fh:
                 line = line.strip()
                 if line:
-                    nn, adj = decode_graph6(line)
-                    stats.feed(line, nn, adj)
+                    yield (line, *decode_graph6(line))
+
+
+def iter_hunt(seed: int, trials: int) -> Iterator[tuple[str, int, list[int]]]:
+    """種 `seed` の乱択グラフを `trials` 個、`(graph6, n, adj)` で順に返す.
+
+    `--hunt` と `tools/l1_stalls.py` のキャッシュが同じ列を見るよう、引き方は
+    ここ 1 か所に置く。
+    """
+    import random  # `--hunt` のときだけ要る
+
+    from l1_family import encode_graph6, random_graph  # 循環参照を避けるため
+
+    rng = random.Random(seed)
+    for _ in range(trials):
+        n = rng.choice(HUNT_NS)
+        adj = random_graph(rng, n)
+        yield encode_graph6(n, adj), n, adj
+
+
+def scan_cases(nmax: int) -> None:
+    """A / B / C の内訳を、仮定の有無で対照して総当たりで数える."""
+    stats = CaseStats()
+    for name, n, adj in iter_brute(nmax):
+        stats.feed(name, n, adj)
     stats.report(f"総当たり n <= {nmax}")
-
-
-#: `--hunt` が振る位数。総当たり (n <= 10) の外を見るためのもの。
-HUNT_NS = (11, 12, 13, 14, 15, 16, 17, 18)
 
 
 def hunt_cases(seed: int, trials: int) -> None:
@@ -736,16 +856,9 @@ def hunt_cases(seed: int, trials: int) -> None:
     `scan_cases` と同じものを数える。$n \\le 10$ の観測が小さい $n$ の
     偶然でないかを見るためのもの。
     """
-    import random  # `--hunt` のときだけ要る
-
-    from l1_family import encode_graph6, random_graph  # 循環参照を避けるため
-
-    rng = random.Random(seed)
     stats = CaseStats()
-    for _ in range(trials):
-        n = rng.choice(HUNT_NS)
-        adj = random_graph(rng, n)
-        stats.feed(encode_graph6(n, adj), n, adj)
+    for name, n, adj in iter_hunt(seed, trials):
+        stats.feed(name, n, adj)
     stats.report(f"乱択 n in {HUNT_NS} (seed={seed}, {trials:,} 回)")
 
 

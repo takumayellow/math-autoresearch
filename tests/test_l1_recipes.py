@@ -35,9 +35,9 @@ from l1_recipes import (  # noqa: E402
     smallest_connected_set,
 )
 from l1_reduction import (  # noqa: E402
-    boundary_size, case_of, components, recipe_dprime, stall_ball_ceiling,
-    stall_recipe_probes, stall_structure, stall_witness_shapes,
-    stalls_in_ball, which_recipes_close,
+    boundary_size, case_of, components, greedy_circle, recipe_dprime,
+    stall_ball_ceiling, stall_greedy, stall_recipe_probes, stall_structure,
+    stall_witness_shapes, stalls_in_ball, which_recipes_close,
 )
 
 #: 総当たりの上限位数 (n <= 8 なら数秒で終わる)。
@@ -399,6 +399,43 @@ def test_case_c_stall_can_need_five_vertices():
     assert stall_ball_ceiling(n, adj) == (m, m)
     assert stall_witness_shapes(n, adj) == (
         m, ((5, False, False, 1), (5, False, False, 2)))
+
+
+#: 貪欲レシピが局所最適に落ちる場合 C の証人 (`--hunt 20260924 60000`)。
+#: $n = 16$, $r = 4$, $m = 7$。
+GREEDY_TRAP_G6 = "OkG__R?C?_?C@??B?@Oc?"
+
+
+def test_case_c_stall_defeats_greedy():
+    """$R(u)$ 起点の貪欲では場合 C が閉じないことを固定する.
+
+    サイズを縛ったレシピ階層はサイズ上限の反証で折れたので、残る形は
+    サイズを縛らない貪欲 (`greedy_circle`) だけだった。この証人では
+    $y = 0 \\in R(u)$ から $\\{0\\} \\to \\{0, 3\\} \\to \\{0, 3, 10\\}$ と
+    伸びて境界 $m$ で止まり、$m + 1$ を出す $\\{0, 1, 2, 3, 10\\}$ に届かない。
+    どの点から始めても同じなので、目標はレシピでなく証明として取りに行く。
+    """
+    n, adj = decode_graph6(GREEDY_TRAP_G6)
+    _dist, r, centers, circles = centers_and_circles(n, adj)
+    m = max(len(circles[c]) for c in centers)
+    assert (n, r, m) == (16, 4, 7)
+    assert stalls_in_ball(n, adj) == (True, m)
+    # 貪欲は $m$ で止まる。$R(u)$ に限らずどの点から始めても同じ。
+    assert stall_greedy(n, adj) == (m, m)
+    assert greedy_circle(n, adj, list(range(n))) == m
+    # それでも目標の命題は成り立つ: $R(u)$ に触れる連結集合が $m + 1$ を出す。
+    u = 12  # $|R(u)| = m$ を実現する中心 (止まっている球の中心)
+    assert u in centers and len(circles[u]) == m
+    best = {0, 1, 2, 3, 10}
+    tmask = 0
+    for x in best:
+        tmask |= 1 << x
+    assert connected_sub(n, adj, tmask)
+    assert boundary_size(n, adj, tmask) == m + 1
+    assert best & set(circles[u])
+    assert smallest_connected_set(n, adj, m + 1, 6) == 5
+    # 球の中は他の止まりと同じく使い切られている。
+    assert stall_ball_ceiling(n, adj) == (m, m)
 
 
 #: 場合 C の球 $B_{r-1}(u)$ が閉路を持つ証人 ($n = 11$, $u = 5$)。
